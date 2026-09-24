@@ -1,0 +1,70 @@
+import { useState } from 'react'
+import { CalendarDays, Check, MapPin } from 'lucide-react'
+import { PageHeader } from '../../components/ui/Headers'
+import { Button } from '../../components/ui/Button'
+import { useApp } from '../../stores/AppStore'
+import { useAuth } from '../../stores/AuthStore'
+import { providerUsers } from '../../data/mock'
+import { cn } from '../../lib/cn'
+
+const DAYS = ['lun', 'mar', 'mer', 'jeu', 'ven', 'sam', 'dim']
+const SLOTS = ['08:00', '09:00', '10:00', '11:00', '12:00', '14:00', '15:00', '16:00', '17:00']
+
+export function ProviderAvailabilityPage() {
+  const { t, toast } = useApp()
+  const { user } = useAuth()
+  const me = providerUsers.find((p) => p.id === user?.id)
+  const [on, setOn] = useState<Record<string, boolean>>(() => {
+    const base: Record<string, boolean> = {}
+    DAYS.forEach((d) => SLOTS.forEach((s) => (base[`${d}-${s}`] = true)))
+    return base
+  })
+
+  const toggle = (k: string) => setOn((p) => ({ ...p, [k]: !p[k] }))
+
+  return (
+    <div className="page-container max-w-3xl py-5 sm:py-7">
+      <PageHeader title={t('prov.availability')} subtitle={me ? `${me.firstName} ${me.lastName}` : user?.firstName} />
+
+      <div className="mt-4 overflow-hidden rounded-3xl border border-line bg-card">
+        <div className="flex items-center gap-2 border-b border-line bg-surface-soft px-5 py-3">
+          <CalendarDays className="h-4 w-4 text-brand-600" />
+          <span className="text-xs font-semibold text-ink-soft">
+            {on['lun-08:00'] ? t('prov.available') : t('prov.unavailable')}
+          </span>
+        </div>
+        <div className="grid gap-px bg-line sm:grid-cols-2 lg:grid-cols-3">
+          {DAYS.map((d) =>
+            SLOTS.map((s) => {
+              const k = `${d}-${s}`
+              return (
+                <button
+                  key={k}
+                  onClick={() => toggle(k)}
+                  className={cn(
+                    'flex items-center gap-2 px-4 py-3 text-left text-sm transition',
+                    on[k] ? 'bg-brand-50 text-brand-800' : 'bg-card text-ink-faint',
+                  )}
+                >
+                  <Check className={cn('h-4 w-4', on[k] ? 'text-brand-600' : 'opacity-30')} />
+                  <span className="w-10 font-semibold">{t(`apt.dayShort.${d}`)}</span>
+                  <span className="ml-auto font-mono text-xs">{s}</span>
+                </button>
+              )
+            }),
+          )}
+        </div>
+      </div>
+
+      <div className="mt-9 flex items-center justify-between">
+        <div className="flex items-center gap-2 text-sm text-ink-soft">
+          <MapPin className="h-4 w-4" />
+          {me?.location ?? t('common.location')}
+        </div>
+        <Button onClick={() => toast(t('prov.availabilitySaved'), t('apt.stepDone'), 'success')}>
+          <Check className="h-4 w-4" /> {t('common.save')}
+        </Button>
+      </div>
+    </div>
+  )
+}

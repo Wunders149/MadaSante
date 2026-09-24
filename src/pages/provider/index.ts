@@ -1,0 +1,6 @@
+export { ProviderDashboardPage } from './ProviderDashboardPage'
+export { ProviderAppointmentsPage } from './ProviderAppointmentsPage'
+export { ProviderAvailabilityPage } from './ProviderAvailabilityPage'
+export { ProviderRequestsPage } from './ProviderRequestsPage'
+export { ProviderPaymentsPage } from './ProviderPaymentsPage'
+export { ProviderProfilePage } from './ProviderProfilePage'
