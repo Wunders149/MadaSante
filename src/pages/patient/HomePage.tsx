@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Ambulance as AmbulanceIcon,
@@ -21,7 +21,7 @@ import { SectionHeader } from '../../components/ui/Headers'
 import { Button } from '../../components/ui/Button'
 import { OrientationBanner } from '../../components/OrientationBanner'
 import { useApp } from '../../stores/AppStore'
-import { doctors, medicines, imagingCenters, laboratories, nurses, hospitals } from '../../data/mock'
+import { useCatalogSummary } from '../../lib/hooks'
 import type { LucideIcon } from 'lucide-react'
 
 const quick = [
@@ -64,17 +64,7 @@ export function HomePage() {
   const navigate = useNavigate()
   const [query, setQuery] = useState('')
 
-  const summary = useMemo(
-    () => ({
-      doctors: doctors.length,
-      medicines: medicines.length,
-      labs: laboratories.length,
-      imaging: imagingCenters.length,
-      nurses: nurses.length,
-      facilities: hospitals.length,
-    }),
-    [],
-  )
+  const { data: summary = {} } = useCatalogSummary()
 
   const submit = () => {
     navigate(query.trim() ? `/patient/search?q=${encodeURIComponent(query.trim())}` : '/patient/search')

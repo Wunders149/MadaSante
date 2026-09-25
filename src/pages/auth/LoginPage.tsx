@@ -11,7 +11,7 @@ import type { Role } from '../../types'
 const providerRoles: Role[] = ['doctor', 'nurse', 'pharmacy', 'laboratory', 'imaging_center', 'hospital', 'ambulance_driver']
 
 export function LoginPage() {
-  const { t } = useApp()
+  const { t, toast } = useApp()
   const { login, loginAsPatient, loginAsProvider } = useAuth()
   const navigate = useNavigate()
   const [tab, setTab] = useState<'patient' | 'provider'>('patient')
@@ -29,6 +29,8 @@ export function LoginPage() {
       const role = tab === 'patient' ? 'patient' : providerRole
       await login(email, password, role as Role)
       go(role as Role)
+    } catch (err) {
+      toast('Connexion impossible', err instanceof Error ? err.message : 'Erreur inattendue', 'error')
     } finally {
       setLoading(false)
     }
@@ -36,14 +38,26 @@ export function LoginPage() {
 
   const quickPatient = async () => {
     setLoading(true)
-    await loginAsPatient()
-    navigate('/patient')
+    try {
+      await loginAsPatient()
+      navigate('/patient')
+    } catch (err) {
+      toast('Connexion impossible', err instanceof Error ? err.message : 'Erreur inattendue', 'error')
+    } finally {
+      setLoading(false)
+    }
   }
 
   const quickProvider = async (role: Role) => {
     setLoading(true)
-    await loginAsProvider(role)
-    navigate('/provider')
+    try {
+      await loginAsProvider(role)
+      navigate('/provider')
+    } catch (err) {
+      toast('Connexion impossible', err instanceof Error ? err.message : 'Erreur inattendue', 'error')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (

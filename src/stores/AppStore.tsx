@@ -10,8 +10,8 @@ import type {
   PaymentMethod,
   Theme,
 } from '../types'
-import { initialAppointments, initialDeliveries, initialEmergency, initialNotifications, initialPayments } from '../data/mock'
-import { generateReference } from '../lib/format'
+import { apiRoutes } from '../lib/api'
+import { useAuth } from './AuthStore'
 import { translate } from '../i18n'
 
 export interface Toast {
@@ -36,6 +36,7 @@ interface BookAppointmentInput {
 interface PayInput {
   service: string
   providerName: string
+  providerId?: string
   amount: number
   method: PaymentMethod
   breakdown: { label: string; amount: number }[]
@@ -93,9 +94,16 @@ interface AppContextValue {
 
 const AppContext = createContext<AppContextValue | null>(null)
 
-const wait = (ms = 900) => new Promise<void>((r) => setTimeout(r, ms))
+const EMPTY = {
+  appointments: [] as Appointment[],
+  payments: [] as Payment[],
+  deliveries: [] as DeliveryOrder[],
+  emergencyRequests: [] as EmergencyRequest[],
+  notifications: [] as NotificationItem[],
+}
 
 export function AppProvider({ children }: { children: ReactNode }) {
+  const { user } = useAuth()
   const [lang, setLangState] = useState<Lang>(() => {
     const saved = localStorage.getItem('ms_lang')
     return saved === 'mg' || saved === 'en' ? saved : 'fr'
@@ -105,11 +113,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return saved === 'v2' ? 'v2' : 'v1'
   })
   const [toasts, setToasts] = useState<Toast[]>([])
-  const [notifications, setNotifications] = useState<NotificationItem[]>(initialNotifications)
-  const [appointments, setAppointments] = useState<Appointment[]>(initialAppointments)
-  const [payments, setPayments] = useState<Payment[]>(initialPayments)
-  const [deliveries, setDeliveries] = useState<DeliveryOrder[]>(initialDeliveries)
-  const [emergencyRequests, setEmergencyRequests] = useState<EmergencyRequest[]>(initialEmergency)
+  const [data, setData] = useState(EMPTY)
   const timers = useRef<number[]>([])
 
   useEffect(() => {
@@ -125,13 +129,39 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return () => timers.current.forEach((id) => window.clearTimeout(id))
   }, [])
 
+  useEffect(() => {
+    if (!user) {
+      setData(EMPTY)
+      return
+    }
+    let cancelled = false
+    Promise.all([
+      apiRoutes.appointments(),
+      apiRoutes.payments(),
+      apiRoutes.deliveries(),
+      apiRoutes.emergencyRequests(),
+      apiRoutes.notifications(),
+    ])
+      .then(([appointments, payments, deliveries, emergencyRequests, notifications]) => {
+        if (cancelled) return
+        setData({ appointments, payments, deliveries, emergencyRequests, notifications })
+      })
+      .catch(() => {
+        if (cancelled) return
+        setData(EMPTY)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [user])
+
   const t = useCallback(
     (key: string, params?: Record<string, string | number>) => translate(lang, key, params),
     [lang],
   )
 
   const dismissToast = useCallback((id: string) => {
-    setToasts((prev) => prev.filter((t) => t.id !== id))
+    setToasts((prev) => prev.filter((toast) => toast.id !== id))
   }, [])
 
   const toast = useCallback(
@@ -143,136 +173,64 @@ export function AppProvider({ children }: { children: ReactNode }) {
     [dismissToast],
   )
 
-  const pushNotification = useCallback((n: Omit<NotificationItem, 'id' | 'read' | 'createdAt'>) => {
-    setNotifications((prev) => [
-      {
-        ...n,
-        id: `notif-${Date.now()}`,
-        read: false,
-        createdAt: new Date().toISOString(),
-      },
-      ...prev,
-    ])
-  }, [])
+  const pushNotification = useCallback(
+    async (n: Omit<NotificationItem, 'id' | 'read' | 'createdAt'>) => {
+      const created = await apiRoutes.createNotification(n)
+      setData((prev) => ({ ...prev, notifications: [created, ...prev.notifications] }))
+    },
+    [],
+  )
 
   const markNotificationRead = useCallback((id: string) => {
-    setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)))
+    apiRoutes.markNotificationRead(id).catch(() => undefined)
+    setData((prev) => ({
+      ...prev,
+      notifications: prev.notifications.map((n) => (n.id === id ? { ...n, read: true } : n)),
+    }))
   }, [])
 
   const markAllNotificationsRead = useCallback(() => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })))
+    apiRoutes.markAllNotificationsRead().catch(() => undefined)
+    setData((prev) => ({
+      ...prev,
+      notifications: prev.notifications.map((n) => ({ ...n, read: true })),
+    }))
   }, [])
 
-  const unreadCount = useMemo(() => notifications.filter((n) => !n.read).length, [notifications])
-
-  const bookAppointment = useCallback(
-    async (input: BookAppointmentInput): Promise<Appointment> => {
-      await wait()
-      const appointment: Appointment = {
-        id: `ap-${Date.now()}`,
-        reference: generateReference('MS'),
-        patientId: 'u_patient_1',
-        providerId: input.providerId,
-        providerType: input.providerType,
-        providerName: input.providerName,
-        providerPhoto: input.providerPhoto,
-        type: input.type,
-        date: input.date,
-        time: input.time,
-        location: input.location,
-        status: 'confirmed',
-        price: input.price,
-        paymentStatus: 'unpaid',
-      }
-      setAppointments((prev) => [appointment, ...prev])
-      return appointment
-    },
-    [],
+  const unreadCount = useMemo(
+    () => data.notifications.filter((n) => !n.read).length,
+    [data.notifications],
   )
 
-  const pay = useCallback(
-    async (input: PayInput): Promise<Payment> => {
-      await wait(1200)
-      const payment: Payment = {
-        id: `pay-${Date.now()}`,
-        reference: generateReference('PAY'),
-        service: input.service,
-        providerName: input.providerName,
-        date: new Date().toISOString().slice(0, 10),
-        amount: input.amount,
-        method: input.method,
-        status: 'success',
-        breakdown: input.breakdown,
-      }
-      setPayments((prev) => [payment, ...prev])
-      return payment
-    },
-    [],
-  )
+  const bookAppointment = useCallback(async (input: BookAppointmentInput): Promise<Appointment> => {
+    const appointment = await apiRoutes.createAppointment(input)
+    setData((prev) => ({ ...prev, appointments: [appointment, ...prev.appointments] }))
+    return appointment
+  }, [])
+
+  const pay = useCallback(async (input: PayInput): Promise<Payment> => {
+    const payment = await apiRoutes.createPayment(input)
+    setData((prev) => ({ ...prev, payments: [payment, ...prev.payments] }))
+    return payment
+  }, [])
 
   const placeDeliveryOrder = useCallback(async (input: DeliveryInput): Promise<DeliveryOrder> => {
-    await wait()
-    const order: DeliveryOrder = {
-      id: `del-${Date.now()}`,
-      reference: generateReference('DEL'),
-      medicineId: input.medicineId,
-      medicineName: input.medicineName,
-      dose: input.dose,
-      quantity: input.quantity,
-      pharmacyId: input.pharmacyId,
-      pharmacyName: input.pharmacyName,
-      deliveryAddress: input.deliveryAddress,
-      deliveryTimeSlot: input.deliveryTimeSlot,
-      deliveryFee: input.deliveryFee,
-      total: input.total,
-      status: 'received',
-      date: new Date().toISOString().slice(0, 10),
-    }
-    setDeliveries((prev) => [order, ...prev])
+    const order = await apiRoutes.createDelivery(input)
+    setData((prev) => ({ ...prev, deliveries: [order, ...prev.deliveries] }))
     return order
   }, [])
 
   const requestAmbulance = useCallback(async (input: EmergencyInput): Promise<EmergencyRequest> => {
-    await wait(600)
-    const request: EmergencyRequest = {
-      id: `erg-${Date.now()}`,
-      reference: generateReference('AMBU'),
-      patientName: input.patientName,
-      phone: input.phone,
-      location: input.location,
-      emergencyType: input.emergencyType,
-      destinationHospital: input.destinationHospital,
-      status: 'searching',
-      date: new Date().toISOString().slice(0, 10),
-    }
-    setEmergencyRequests((prev) => [request, ...prev])
+    const request = await apiRoutes.createEmergencyRequest(input)
+    setData((prev) => ({ ...prev, emergencyRequests: [request, ...prev.emergencyRequests] }))
     return request
   }, [])
 
-  const requestNurse = useCallback(
-    async (input: BookAppointmentInput): Promise<Appointment> => {
-      await wait()
-      const request: Appointment = {
-        id: `n-${Date.now()}`,
-        reference: generateReference('MS'),
-        patientId: 'u_patient_1',
-        providerId: input.providerId,
-        providerType: input.providerType,
-        providerName: input.providerName,
-        providerPhoto: input.providerPhoto,
-        type: input.type,
-        date: input.date,
-        time: input.time,
-        location: input.location,
-        status: 'pending',
-        price: input.price,
-        paymentStatus: 'pending',
-      }
-      setAppointments((prev) => [request, ...prev])
-      return request
-    },
-    [],
-  )
+  const requestNurse = useCallback(async (input: BookAppointmentInput): Promise<Appointment> => {
+    const appointment = await apiRoutes.createAppointment({ ...input, status: 'pending', paymentStatus: 'pending' })
+    setData((prev) => ({ ...prev, appointments: [appointment, ...prev.appointments] }))
+    return appointment
+  }, [])
 
   const setLang = useCallback((l: Lang) => setLangState(l), [])
   const setTheme = useCallback((x: Theme) => setThemeState(x), [])
@@ -286,15 +244,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
     toasts,
     toast,
     dismissToast,
-    notifications,
+    notifications: data.notifications,
     unreadCount,
     markNotificationRead,
     markAllNotificationsRead,
     pushNotification,
-    appointments,
-    payments,
-    deliveries,
-    emergencyRequests,
+    appointments: data.appointments,
+    payments: data.payments,
+    deliveries: data.deliveries,
+    emergencyRequests: data.emergencyRequests,
     bookAppointment,
     pay,
     placeDeliveryOrder,

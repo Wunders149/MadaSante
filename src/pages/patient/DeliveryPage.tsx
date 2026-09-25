@@ -7,7 +7,7 @@ import { DeliveryCard } from '../../components/DeliveryCard'
 import { EmptyState } from '../../components/ui/States'
 import { Button } from '../../components/ui/Button'
 import { useApp } from '../../stores/AppStore'
-import { medicines } from '../../data/mock'
+import { useMedicines } from '../../lib/hooks'
 import type { Medicine } from '../../types'
 import { formatAr } from '../../lib/format'
 
@@ -24,6 +24,7 @@ export function DeliveryPage() {
   const [placing, setPlacing] = useState(false)
 
   const { deliveries, placeDeliveryOrder } = useApp()
+  const { data: medicines = [] } = useMedicines()
 
   const list = useMemo(
     () =>
@@ -34,7 +35,7 @@ export function DeliveryPage() {
           m.genericName.toLowerCase().includes(needle) ||
           m.pharmacyName.toLowerCase().includes(needle),
       ),
-    [needle],
+    [medicines, needle],
   )
 
   const fee = selected ? (selected.price * selected.stock >= FREE_ABOVE ? 0 : DELIVERY_FEE) : 0

@@ -20,6 +20,7 @@ export interface User {
   photo?: string
   role: Role
   location?: string
+  providerId?: string | null
 }
 
 export type ConsultationType = 'cabinet' | 'home' | 'hospital'
@@ -164,6 +165,8 @@ export type PaymentStatus = 'success' | 'pending' | 'failed'
 export interface Payment {
   id: string
   reference: string
+  patientId: string
+  providerId?: string
   service: string
   providerName: string
   date: string

@@ -15,7 +15,7 @@ import {
   Stethoscope,
 } from 'lucide-react'
 import { useApp } from '../../stores/AppStore'
-import { doctors } from '../../data/mock'
+import { useDoctor } from '../../lib/hooks'
 import { Avatar } from '../../components/Avatar'
 import { Button } from '../../components/ui/Button'
 import { Badge } from '../../components/ui/Badge'
@@ -27,7 +27,15 @@ export function DoctorProfilePage() {
   const navigate = useNavigate()
   const { t } = useApp()
   const [showContact, setShowContact] = useState(false)
-  const doctor = doctors.find((d) => d.id === id)
+  const { data: doctor, isLoading } = useDoctor(id)
+
+  if (isLoading) {
+    return (
+      <div className="page-container py-10 text-center">
+        <p className="text-sm text-ink-soft">Chargement…</p>
+      </div>
+    )
+  }
 
   if (!doctor) {
     return (

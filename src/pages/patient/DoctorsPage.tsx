@@ -8,7 +8,8 @@ import { FilterPanel, FilterGroup, FilterChip } from '../../components/FilterPan
 import { EmptyState } from '../../components/ui/States'
 import { Button } from '../../components/ui/Button'
 import { useApp } from '../../stores/AppStore'
-import { CITIES, doctors } from '../../data/mock'
+import { CITIES } from '../../lib/constants'
+import { useDoctors } from '../../lib/hooks'
 import type { ConsultationType, Doctor } from '../../types'
 import { cn } from '../../lib/cn'
 
@@ -21,8 +22,6 @@ interface Filters {
   price: string
   availableToday: boolean
 }
-
-const specialities = Array.from(new Set(doctors.map((d) => d.specialty))).sort()
 
 const priceBands = [
   { key: 'all', label: 'Tous les prix' },
@@ -49,6 +48,8 @@ const defaultFilters: Filters = {
 
 export function DoctorsPage() {
   const { t } = useApp()
+  const { data: allDoctors = [] } = useDoctors()
+  const specialities = useMemo(() => Array.from(new Set(allDoctors.map((d) => d.specialty))).sort(), [allDoctors])
   const [params] = useSearchParams()
   const [filters, setFilters] = useState<Filters>(() => ({
     ...defaultFilters,
@@ -69,7 +70,7 @@ export function DoctorsPage() {
 
   const results = useMemo(() => {
     const needle = filters.text.trim().toLowerCase()
-    return doctors
+    return allDoctors
       .filter((d) => {
         if (needle && !(d.name.toLowerCase().includes(needle) || d.specialty.toLowerCase().includes(needle))) return false
         if (filters.type !== 'all' && d.type !== filters.type) return false
@@ -91,7 +92,7 @@ export function DoctorsPage() {
         }
         return b.rating - a.rating
       })
-  }, [filters])
+  }, [allDoctors, filters])
 
   const set = <K extends keyof Filters>(key: K, value: Filters[K]) =>
     setFilters((f) => ({ ...f, [key]: value }))
@@ -115,7 +116,7 @@ export function DoctorsPage() {
           onApply={() => undefined}
           className="lg:hidden"
         >
-          <MobileDoctorFilters filters={filters} set={set} toggleConsult={toggleConsult} />
+          <MobileDoctorFilters filters={filters} set={set} toggleConsult={toggleConsult} specialities={specialities} />
         </FilterPanel>
       </PageHeader>
 
@@ -206,7 +207,7 @@ export function DoctorsPage() {
               onReset={reset}
               className="lg:hidden"
             >
-              <MobileDoctorFilters filters={filters} set={set} toggleConsult={toggleConsult} />
+              <MobileDoctorFilters filters={filters} set={set} toggleConsult={toggleConsult} specialities={specialities} />
             </FilterPanel>
           </div>
 
@@ -268,10 +269,12 @@ function MobileDoctorFilters({
   filters,
   set,
   toggleConsult,
+  specialities,
 }: {
   filters: Filters
   set: <K extends keyof Filters>(key: K, value: Filters[K]) => void
   toggleConsult: (c: ConsultationType) => void
+  specialities: string[]
 }) {
   const { t } = useApp()
   return (

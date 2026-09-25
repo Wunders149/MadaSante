@@ -16,7 +16,7 @@ import { EmptyState } from '../../components/ui/States'
 import { Avatar } from '../../components/Avatar'
 import { Button } from '../../components/ui/Button'
 import { useApp } from '../../stores/AppStore'
-import { doctors, hospitals, imagingCenters, laboratories, medicines, nurses } from '../../data/mock'
+import { useSearch } from '../../lib/hooks'
 import { formatAr } from '../../lib/format'
 import { cn } from '../../lib/cn'
 
@@ -31,8 +31,6 @@ const categories: { key: Category; label: string; icon: typeof Search }[] = [
   { key: 'imaging', label: 'Imagerie', icon: Scan },
   { key: 'nurses', label: 'Infirmières', icon: UserRound },
 ]
-
-const match = (needle: string) => (haystack: string) => haystack.toLowerCase().includes(needle.toLowerCase())
 
 export function SearchPage() {
   const { t } = useApp()
@@ -51,28 +49,19 @@ export function SearchPage() {
 
   const normalized = query.trim().toLowerCase()
 
-  const results = useMemo(() => {
-    if (!normalized) return null
-    const m = match(normalized)
-    const doctorHits = doctors.filter((d) => m(d.name) || m(d.specialty) || m(d.city))
-    const medicineHits = medicines
-      .map((med) => ({ med, hit: m(med.name) || m(med.genericName) }))
-      .filter((x) => x.hit)
-      .map((x) => x.med)
-    const facilityHits = hospitals.filter((h) => m(h.name) || m(h.city) || h.services.some(m))
-    const labHits = laboratories.filter((l) => m(l.name) || l.tests.some(m) || m(l.city))
-    const imagingHits = imagingCenters.filter((c) => m(c.name) || m(c.city) || c.exams.some((e) => m(e.type)))
-    const nurseHits = nurses.filter((n) => m(n.name) || m(n.city) || n.services.some(m))
+  const { data: searchData } = useSearch(normalized, category)
 
+  const results = useMemo(() => {
+    if (!searchData) return null
     return {
-      doctors: category === 'all' || category === 'doctors' ? doctorHits : [],
-      medicines: category === 'all' || category === 'medicines' ? medicineHits : [],
-      facilities: category === 'all' || category === 'facilities' ? facilityHits : [],
-      laboratories: category === 'all' || category === 'laboratories' ? labHits : [],
-      imaging: category === 'all' || category === 'imaging' ? imagingHits : [],
-      nurses: category === 'all' || category === 'nurses' ? nurseHits : [],
+      doctors: category === 'all' || category === 'doctors' ? searchData.doctors : [],
+      medicines: category === 'all' || category === 'medicines' ? searchData.medicines : [],
+      facilities: category === 'all' || category === 'facilities' ? searchData.facilities : [],
+      laboratories: category === 'all' || category === 'laboratories' ? searchData.laboratories : [],
+      imaging: category === 'all' || category === 'imaging' ? searchData.imaging : [],
+      nurses: category === 'all' || category === 'nurses' ? searchData.nurses : [],
     }
-  }, [normalized, category])
+  }, [category, searchData])
 
   const total = results ? [results.doctors, results.medicines, results.facilities, results.laboratories, results.imaging, results.nurses].reduce((a, x) => a + x.length, 0) : 0
 

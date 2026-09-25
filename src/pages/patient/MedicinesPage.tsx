@@ -7,12 +7,14 @@ import { MedicineCard } from '../../components/MedicineCard'
 import { OrientationBanner } from '../../components/OrientationBanner'
 import { EmptyState } from '../../components/ui/States'
 import { useApp } from '../../stores/AppStore'
-import { medicines, pharmacies } from '../../data/mock'
+import { useMedicines, usePharmacies } from '../../lib/hooks'
 import type { Medicine } from '../../types'
 import { formatAr } from '../../lib/format'
 
 export function MedicinesPage() {
   const { t } = useApp()
+  const { data: medicines = [] } = useMedicines()
+  const { data: pharmacies = [] } = usePharmacies()
   const [params] = useSearchParams()
   const [query, setQuery] = useState(params.get('pharmacy') ? '' : '')
   const pharmacyFilter = params.get('pharmacy') ?? ''
@@ -24,13 +26,13 @@ export function MedicinesPage() {
     if (pharmacyFilter) list = list.filter((m) => m.pharmacyId === pharmacyFilter)
     if (!needle) return list
     return list.filter((m) => m.name.toLowerCase().includes(needle) || m.genericName.toLowerCase().includes(needle))
-  }, [query, pharmacyFilter])
+  }, [medicines, query, pharmacyFilter])
 
   const knownMedicine = useMemo(() => {
     const needle = query.trim().toLowerCase()
     if (!needle) return false
     return medicines.some((m) => m.name.toLowerCase().includes(needle) || m.genericName.toLowerCase().includes(needle))
-  }, [query])
+  }, [medicines, query])
 
   const showUnavailable = query.trim().length > 1 && results.length === 0 && knownMedicine
 

@@ -5,13 +5,13 @@ import { SearchBar } from '../../components/SearchBar'
 import { NurseCard } from '../../components/NurseCard'
 import { EmptyState } from '../../components/ui/States'
 import { useApp } from '../../stores/AppStore'
-import { nurses } from '../../data/mock'
+import { useNurses } from '../../lib/hooks'
 
 export function NursesPage() {
-  const { t } = useApp()
+const { t } = useApp()
+  const { data: nurses = [] } = useNurses()
   const [query, setQuery] = useState('')
   const needle = query.trim().toLowerCase()
-
   const list = useMemo(
     () =>
       nurses.filter(
@@ -21,7 +21,7 @@ export function NursesPage() {
           n.city.toLowerCase().includes(needle) ||
           n.services.some((s) => s.toLowerCase().includes(needle)),
       ),
-    [needle],
+    [nurses, needle],
   )
 
   return (

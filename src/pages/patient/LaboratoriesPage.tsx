@@ -5,13 +5,13 @@ import { SearchBar } from '../../components/SearchBar'
 import { LaboratoryCard } from '../../components/LaboratoryCard'
 import { EmptyState } from '../../components/ui/States'
 import { useApp } from '../../stores/AppStore'
-import { laboratories } from '../../data/mock'
+import { useLaboratories } from '../../lib/hooks'
 
 export function LaboratoriesPage() {
-  const { t } = useApp()
+const { t } = useApp()
+  const { data: laboratories = [] } = useLaboratories()
   const [query, setQuery] = useState('')
   const needle = query.trim().toLowerCase()
-
   const list = useMemo(
     () =>
       laboratories.filter(
@@ -21,7 +21,7 @@ export function LaboratoriesPage() {
           l.city.toLowerCase().includes(needle) ||
           l.tests.some((x) => x.toLowerCase().includes(needle)),
       ),
-    [needle],
+    [laboratories, needle],
   )
 
   return (

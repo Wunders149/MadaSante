@@ -22,7 +22,8 @@ import { Badge } from '../../components/ui/Badge'
 import { Avatar } from '../../components/Avatar'
 import { useApp } from '../../stores/AppStore'
 import { useAuth } from '../../stores/AuthStore'
-import { doctors, nextDays } from '../../data/mock'
+import { useDoctor } from '../../lib/hooks'
+import { nextDays } from '../../lib/constants'
 import type { ConsultationType, PaymentMethod } from '../../types'
 import { formatAr, monthDay } from '../../lib/format'
 import { cn } from '../../lib/cn'
@@ -39,12 +40,12 @@ const consultMeta: Record<ConsultationType, { label: string; icon: typeof Stetho
 
 export function NewAppointmentPage() {
   const params = useParams<{ doctorId?: string }>()
-  const doctor = doctors.find((d) => d.id === params.doctorId)
+  const { data: doctor, isLoading } = useDoctor(params.doctorId)
   const { t, bookAppointment, pay, pushNotification, toast } = useApp()
   const { user } = useAuth()
   const navigate = useNavigate()
 
-  const [step, setStep] = useState<Step>(doctor ? 1 : 0)
+  const [step, setStep] = useState<Step>(params.doctorId ? 1 : 0)
   const [type, setType] = useState<ConsultationType | null>(null)
   const [date, setDate] = useState<string | null>(null)
   const [time, setTime] = useState<string | null>(null)
@@ -67,7 +68,9 @@ export function NewAppointmentPage() {
     return `${doctor.location.split(',')[0]}, ${doctor.city} — Hôpital partenaire`
   }, [doctor, type, user])
 
-  if (!doctor) {
+  const hasDoctorId = Boolean(params.doctorId)
+
+  if (!hasDoctorId) {
     return (
       <div className="page-container py-5 sm:py-7">
         <PageHeader title={t('apt.title')} subtitle="Choisissez d’abord un professionnel" />
@@ -76,6 +79,25 @@ export function NewAppointmentPage() {
           <HubRow icon={Phone} label={t('nav.laboratories')} sub="Prélever un échantillon" to="/patient/laboratories" />
           <HubRow icon={CalendarDays} label={t('nav.imaging')} sub="Radiographie, écho, scanner, IRM" to="/patient/imaging" />
         </div>
+      </div>
+    )
+  }
+
+  if (isLoading) {
+    return (
+      <div className="page-container py-10 text-center">
+        <p className="text-sm text-ink-soft">Chargement…</p>
+      </div>
+    )
+  }
+
+  if (!doctor) {
+    return (
+      <div className="page-container py-10 text-center">
+        <p className="text-sm text-ink-soft">Médecin introuvable.</p>
+        <Button to="/patient/doctors" variant="outline" className="mt-3">
+          Retour aux médecins
+        </Button>
       </div>
     )
   }
@@ -102,6 +124,7 @@ export function NewAppointmentPage() {
       await pay({
         service: `Consultation — ${doctor.name}`,
         providerName: doctor.name,
+        providerId: doctor.id,
         amount: total,
         method,
         breakdown: [

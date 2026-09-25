@@ -1,10 +1,11 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { CalendarDays, Check, MapPin } from 'lucide-react'
 import { PageHeader } from '../../components/ui/Headers'
 import { Button } from '../../components/ui/Button'
 import { useApp } from '../../stores/AppStore'
 import { useAuth } from '../../stores/AuthStore'
-import { providerUsers } from '../../data/mock'
+import { useAvailability, useProviderMe } from '../../lib/hooks'
+import { apiRoutes } from '../../lib/api'
 import { cn } from '../../lib/cn'
 
 const DAYS = ['lun', 'mar', 'mer', 'jeu', 'ven', 'sam', 'dim']
@@ -13,18 +14,46 @@ const SLOTS = ['08:00', '09:00', '10:00', '11:00', '12:00', '14:00', '15:00', '1
 export function ProviderAvailabilityPage() {
   const { t, toast } = useApp()
   const { user } = useAuth()
-  const me = providerUsers.find((p) => p.id === user?.id)
+  const { data: profile } = useProviderMe()
+  const { data: availabilityEntries } = useAvailability()
   const [on, setOn] = useState<Record<string, boolean>>(() => {
     const base: Record<string, boolean> = {}
     DAYS.forEach((d) => SLOTS.forEach((s) => (base[`${d}-${s}`] = true)))
     return base
   })
+  const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    if (!availabilityEntries || availabilityEntries.length === 0) return
+    const next: Record<string, boolean> = {}
+    DAYS.forEach((d) => SLOTS.forEach((s) => (next[`${d}-${s}`] = true)))
+    availabilityEntries.forEach((e) => {
+      const k = `${e.day}-${e.slot}`
+      if (next[k] !== undefined) next[k] = e.available
+    })
+    setOn(next)
+  }, [availabilityEntries])
 
   const toggle = (k: string) => setOn((p) => ({ ...p, [k]: !p[k] }))
 
+  const save = async () => {
+    setSaving(true)
+    try {
+      const entries = DAYS.flatMap((d) =>
+        SLOTS.map((s) => ({ day: d, slot: s, available: on[`${d}-${s}`] })),
+      )
+      await apiRoutes.saveAvailability(entries)
+      toast(t('prov.availabilitySaved'), t('apt.stepDone'), 'success')
+    } catch {
+      toast(t('common.error'), '', 'error')
+    } finally {
+      setSaving(false)
+    }
+  }
+
   return (
     <div className="page-container max-w-3xl py-5 sm:py-7">
-      <PageHeader title={t('prov.availability')} subtitle={me ? `${me.firstName} ${me.lastName}` : user?.firstName} />
+      <PageHeader title={t('prov.availability')} subtitle={profile?.provider?.name ?? `${user?.firstName ?? ''} ${user?.lastName ?? ''}`} />
 
       <div className="mt-4 overflow-hidden rounded-3xl border border-line bg-card">
         <div className="flex items-center gap-2 border-b border-line bg-surface-soft px-5 py-3">
@@ -59,9 +88,9 @@ export function ProviderAvailabilityPage() {
       <div className="mt-9 flex items-center justify-between">
         <div className="flex items-center gap-2 text-sm text-ink-soft">
           <MapPin className="h-4 w-4" />
-          {me?.location ?? t('common.location')}
+          {profile?.provider?.location ?? user?.location ?? t('common.location')}
         </div>
-        <Button onClick={() => toast(t('prov.availabilitySaved'), t('apt.stepDone'), 'success')}>
+        <Button onClick={save} loading={saving}>
           <Check className="h-4 w-4" /> {t('common.save')}
         </Button>
       </div>

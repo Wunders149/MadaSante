@@ -6,7 +6,7 @@ import { Button } from '../../components/ui/Button'
 import { Input, Select } from '../../components/ui/Field'
 import { useApp } from '../../stores/AppStore'
 import { useAuth } from '../../stores/AuthStore'
-import { CITIES } from '../../data/mock'
+import { CITIES } from '../../lib/constants'
 import type { Role } from '../../types'
 
 export function RegisterPage() {
@@ -41,6 +41,8 @@ export function RegisterPage() {
       const role: Role = tab === 'patient' ? 'patient' : 'doctor'
       await register({ ...form, role })
       navigate(role === 'patient' ? '/patient' : '/provider')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Inscription échouée.')
     } finally {
       setLoading(false)
     }

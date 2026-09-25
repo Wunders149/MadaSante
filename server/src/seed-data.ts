@@ -1,0 +1,335 @@
+export const CITIES = [
+  'Antananarivo',
+  'Mahajanga',
+  'Toamasina',
+  'Fianarantsoa',
+  'Toliara',
+  'Antsiranana',
+]
+
+export const currentPatient = {
+  id: 'u_patient_1',
+  firstName: 'Voahangy',
+  lastName: 'Andrianiaina',
+  phone: '+261 34 12 345 67',
+  email: 'voahangy.andrianiaina@demo.mg',
+  role: 'patient',
+  location: 'Antananarivo',
+}
+
+export const providerUsers = [
+  { id: 'u_dr_rakoto', firstName: 'Jean', lastName: 'Rakoto', phone: '+261 33 11 111 11', email: 'dr.rakoto@demo.mg', role: 'doctor', location: 'Antananarivo', providerId: 'd1' },
+  { id: 'u_edith', firstName: 'Edith', lastName: 'Raveloson', phone: '+261 34 22 222 22', email: 'edith.raveloson@demo.mg', role: 'nurse', location: 'Antananarivo', providerId: 'n1' },
+  { id: 'u_ph_amitie', firstName: 'Amitié', lastName: 'Pharmacie', phone: '+261 20 22 333 33', email: 'contact@pharmamitie.mg', role: 'pharmacy', location: 'Antananarivo', providerId: 'p1' },
+  { id: 'u_lab_lem', firstName: 'LEM', lastName: 'Laboratoire', phone: '+261 20 22 444 44', email: 'contact@labolem.mg', role: 'laboratory', location: 'Antananarivo', providerId: 'l1' },
+  { id: 'u_cima', firstName: 'CIMA', lastName: 'Imagerie', phone: '+261 20 22 555 55', email: 'contact@cima.mg', role: 'imaging_center', location: 'Antananarivo', providerId: 'c1' },
+  { id: 'u_hjra', firstName: 'HJRA', lastName: 'Hospital', phone: '+261 20 22 666 66', email: 'contact@hjra.mg', role: 'hospital', location: 'Antananarivo', providerId: 'h1' },
+  { id: 'u_samu_ana', firstName: 'SAMU', lastName: 'Antananarivo', phone: '+261 34 77 777 77', email: 'samu@demo.mg', role: 'ambulance_driver', location: 'Antananarivo', providerId: 'a2' },
+]
+
+export const doctors = [
+  {
+    id: 'd1',
+    name: 'Dr. Jean Rakoto',
+    specialty: 'Médecine générale',
+    type: 'generalist',
+    location: 'Analakely, Antananarivo 101',
+    city: 'Antananarivo',
+    consultationTypes: ['cabinet', 'home', 'hospital'],
+    price: 35000,
+    priceHome: 60000,
+    availability: ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'],
+    availabilitySlots: ['08:00', '09:00', '10:00', '11:00', '14:00', '15:00', '16:00', '17:00'],
+    photo: 'https://i.pravatar.cc/160?img=12',
+    rating: 4.8,
+    reviews: 124,
+    description:
+      'Médecin généraliste avec 12 ans d’expérience. Je prends en charge les adultes et les enfants pour les consultations courantes, le suivi des maladies chroniques (diabète, hypertension) et la prévention. Consultation en cabinet, à domicile ou à l’hôpital.',
+    languages: ['Français', 'Malagasy', 'Anglais'],
+  },
+  {
+    id: 'd2',
+    name: 'Dr. Hery Randrianarisoa',
+    specialty: 'Médecine générale',
+    type: 'generalist',
+    location: 'Bd. de la Libération, Mahajanga 401',
+    city: 'Mahajanga',
+    consultationTypes: ['cabinet', 'home'],
+    price: 25000,
+    priceHome: 45000,
+    availability: ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven'],
+    availabilitySlots: ['08:30', '09:30', '10:30', '15:00', '16:00'],
+    photo: 'https://i.pravatar.cc/160?img=32',
+    rating: 4.6,
+    reviews: 88,
+    description:
+      'Médecin généraliste à Mahajanga. Consultations de médecine générale, suivi de grossesse, prise en charge du paludisme et des diarrhées. Disponible pour les visites à domicile dans toute la ville.',
+    languages: ['Malagasy', 'Français'],
+  },
+  {
+    id: 'd3',
+    name: 'Dr. Miora Rasoanaivo',
+    specialty: 'Pédiatrie',
+    type: 'specialist',
+    location: 'Ankadifotsy, Antananarivo 101',
+    city: 'Antananarivo',
+    consultationTypes: ['cabinet', 'hospital'],
+    price: 45000,
+    availability: ['Lun', 'Mar', 'Jeu', 'Ven', 'Sam'],
+    availabilitySlots: ['09:00', '10:00', '11:00', '14:30', '15:30'],
+    photo: 'https://i.pravatar.cc/160?img=44',
+    rating: 4.9,
+    reviews: 156,
+    description:
+      'Pédiatre, ancienne interne des Hôpitaux d’Antananarivo. Suivi du nourrisson et de l’enfant, vaccination, nutrition et maladies infantiles courantes. Je consulte en clinique et à l’hôpital.',
+    languages: ['Français', 'Malagasy'],
+  },
+  {
+    id: 'd4',
+    name: 'Dr. Lala Andrianjafy',
+    specialty: 'Cardiologie',
+    type: 'specialist',
+    location: 'Avenue des Chutes du Roi, Toamasina 501',
+    city: 'Toamasina',
+    consultationTypes: ['cabinet', 'hospital'],
+    price: 75000,
+    availability: ['Mar', 'Mer', 'Jeu', 'Ven'],
+    availabilitySlots: ['08:00', '09:00', '11:00', '14:00', '16:00'],
+    photo: 'https://i.pravatar.cc/160?img=53',
+    rating: 4.9,
+    reviews: 201,
+    description:
+      'Cardiologue. Bilan cardiovasculaire complet, ECG, échocardiographie, suivi de l’hypertension et de l’insuffisance cardiaque. Prise de rendez-vous sur recommandation ou en consultation directe.',
+    languages: ['Français', 'Malagasy', 'Anglais'],
+  },
+  {
+    id: 'd5',
+    name: 'Dr. Fara Ratsimbazafy',
+    specialty: 'Dermatologie',
+    type: 'specialist',
+    location: 'Centre-ville, Fianarantsoa 301',
+    city: 'Fianarantsoa',
+    consultationTypes: ['cabinet', 'home'],
+    price: 40000,
+    priceHome: 65000,
+    availability: ['Lun', 'Mar', 'Mer', 'Jeu'],
+    availabilitySlots: ['09:00', '10:00', '11:00', '15:00'],
+    photo: 'https://i.pravatar.cc/160?img=68',
+    rating: 4.7,
+    reviews: 74,
+    description:
+      'Dermatologue. Traitement des affections cutanées (eczéma, mycoses, infections), diagnostic et suivi. Consultations à domicile possible pour les personnes à mobilité réduite.',
+    languages: ['Français', 'Malagasy'],
+  },
+  {
+    id: 'd6',
+    name: 'Dr. Njaka Ravelojaona',
+    specialty: 'Gynécologie-obstétrique',
+    type: 'specialist',
+    location: 'Antanimena, Antananarivo 101',
+    city: 'Antananarivo',
+    consultationTypes: ['cabinet', 'hospital'],
+    price: 70000,
+    availability: ['Lun', 'Mer', 'Ven', 'Sam'],
+    availabilitySlots: ['08:30', '09:30', '10:30', '14:00', '15:30'],
+    photo: 'https://i.pravatar.cc/160?img=61',
+    rating: 4.9,
+    reviews: 233,
+    description:
+      'Gynécologue-obstétricien. Suivi de grossesse, consultations gynécologiques, échographies obstétricales. Accouchements à la clinique partenaires d’Antananarivo.',
+    languages: ['Français', 'Malagasy'],
+  },
+  {
+    id: 'd7',
+    name: 'Dr. Sariaka Rakotomalala',
+    specialty: 'Chirurgie dentaire',
+    type: 'specialist',
+    location: 'Quartier de l’aéroport, Antsiranana 201',
+    city: 'Antsiranana',
+    consultationTypes: ['cabinet'],
+    price: 30000,
+    availability: ['Lun', 'Mar', 'Mer', 'Jeu', 'Sam'],
+    availabilitySlots: ['08:00', '09:00', '10:00', '14:00', '15:00', '16:00'],
+    photo: 'https://i.pravatar.cc/160?img=59',
+    rating: 4.5,
+    reviews: 59,
+    description:
+      'Chirurgien-dentiste. Soins dentaires, détartrage, extraction, pose de soins esthétiques. Cabinet moderne équipé à Antsiranana.',
+    languages: ['Malagasy', 'Français'],
+  },
+  {
+    id: 'd8',
+    name: 'Dr. Tolotra Razafindrakoto',
+    specialty: 'Ophtalmologie',
+    type: 'specialist',
+    location: 'Avenue de France, Toliara 601',
+    city: 'Toliara',
+    consultationTypes: ['cabinet'],
+    price: 50000,
+    availability: ['Lun', 'Mar', 'Jeu', 'Ven'],
+    availabilitySlots: ['09:00', '10:00', '11:00', '14:30'],
+    photo: 'https://i.pravatar.cc/160?img=14',
+    rating: 4.6,
+    reviews: 67,
+    description:
+      'Ophtalmologue. Bilan de la vue, prescription de lunettes, prise en charge des pathologies oculaires (conjonctivites, cataracte).',
+    languages: ['Français', 'Malagasy', 'Anglais'],
+  },
+  {
+    id: 'd9',
+    name: 'Dr. Hasina Andriamihaja',
+    specialty: 'Médecine générale',
+    type: 'generalist',
+    location: 'Ivandry, Antananarivo 101',
+    city: 'Antananarivo',
+    consultationTypes: ['cabinet', 'home'],
+    price: 30000,
+    priceHome: 55000,
+    availability: ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'],
+    availabilitySlots: ['07:30', '08:30', '09:30', '10:30', '15:30', '16:30'],
+    photo: 'https://i.pravatar.cc/160?img=17',
+    rating: 4.7,
+    reviews: 142,
+    description:
+      'Médecin généraliste, disponible 7j/7. Consultations générales, visite médicale du travail, vaccins. Déplacements à domicile dans les quartiers d’Antananarivo.',
+    languages: ['Malagasy', 'Français'],
+  },
+  {
+    id: 'd10',
+    name: 'Dr. Vola Ramanantsoa',
+    specialty: 'Pédiatrie',
+    type: 'specialist',
+    location: 'Ampitatafika, Mahajanga 401',
+    city: 'Mahajanga',
+    consultationTypes: ['cabinet', 'home', 'hospital'],
+    price: 40000,
+    priceHome: 65000,
+    availability: ['Lun', 'Mar', 'Mer', 'Ven', 'Sam'],
+    availabilitySlots: ['08:30', '09:30', '10:30', '14:30', '15:30'],
+    photo: 'https://i.pravatar.cc/160?img=45',
+    rating: 4.8,
+    reviews: 96,
+    description:
+      'Pédiatre à Mahajanga. Suivi médical de l’enfant, vaccinations, prise en charge du paludisme pédiatrique et des infections respiratoires. Consultations au cabinet, à domicile ou à l’hôpital.',
+    languages: ['Malagasy', 'Français'],
+  },
+  {
+    id: 'd11',
+    name: 'Dr. Mahery Ranaivoson',
+    specialty: 'Chirurgie générale',
+    type: 'specialist',
+    location: 'Ambohidratrimo, Antananarivo 103',
+    city: 'Antananarivo',
+    consultationTypes: ['hospital', 'cabinet'],
+    price: 100000,
+    availability: ['Lun', 'Mar', 'Jeu'],
+    availabilitySlots: ['08:00', '10:00', '14:00'],
+    photo: 'https://i.pravatar.cc/160?img=11',
+    rating: 4.8,
+    reviews: 118,
+    description:
+      'Chirurgien général. Consultations pré-opératoires et suivi post-opératoire. Interventions programmées au CHU Joseph Ravoahangy Andrianavalona.',
+    languages: ['Français', 'Malagasy'],
+  },
+]
+
+export const hospitals = [
+  { id: 'h1', name: 'CHU Joseph Ravoahangy Andrianavalona', type: 'hospital', sector: 'public', location: 'Ambohidempona, Antananarivo 101', city: 'Antananarivo', services: ['Urgences', 'Chirurgie', 'Médecine interne', 'Maternité', 'Pédiatrie', 'Radiologie'], openingHours: '24h/24, 7j/7', emergencyAvailable: true, phone: '+261 20 22 240 40', rating: 4.3, description: 'Centre Hospitalier Universitaire de référence d’Antananarivo. Plateau technique complet, service d’urgences actif 24h/24.' },
+  { id: 'h2', name: 'CHU de Mahajanga', type: 'hospital', sector: 'public', location: 'Avenue de la Libération, Mahajanga 401', city: 'Mahajanga', services: ['Urgences', 'Médecine', 'Maternité', 'Pédiatrie', 'Chirurgie'], openingHours: '24h/24, 7j/7', emergencyAvailable: true, phone: '+261 20 62 223 44', rating: 4.1, description: 'Centre hospitalier régional de la Boeny, avec service des urgences et maternité.' },
+  { id: 'h3', name: 'CHU Androva', type: 'hospital', sector: 'public', location: 'Androva, Toamasina 501', city: 'Toamasina', services: ['Urgences', 'Médecine', 'Maternité', 'Chirurgie'], openingHours: '24h/24, 7j/7', emergencyAvailable: true, phone: '+261 20 53 313 31', rating: 4.0, description: 'Hôpital universitaire de la côte Est, doté d’un service d’urgences.' },
+  { id: 'h4', name: 'Hôpital Befelatanana', type: 'hospital', sector: 'public', location: 'Isotry, Antananarivo 101', city: 'Antananarivo', services: ['Urgences', 'Maladies infectieuses', 'Médecine', 'Dermatologie'], openingHours: '24h/24, 7j/7', emergencyAvailable: true, phone: '+261 20 22 223 31', rating: 4.0, description: 'Hôpital de référence pour les maladies infectieuses à Antananarivo.' },
+  { id: 'h5', name: 'Clinique Ankadifotsy', type: 'clinic', sector: 'private', location: 'Ankadifotsy, Antananarivo 101', city: 'Antananarivo', services: ['Urgences', 'Consultations', 'Maternité', 'Pédiatrie', 'Chirurgie ambulatoire'], openingHours: '24h/24, 7j/7', emergencyAvailable: true, phone: '+261 20 22 415 15', rating: 4.7, description: 'Clinique privée réputée d’Antananarivo : urgences, consultations spécialisées et maternité.' },
+  { id: 'h6', name: 'Polyclinique d’Ivato', type: 'clinic', sector: 'private', location: 'Route de l’aéroport, Ivato 105', city: 'Antananarivo', services: ['Consultations', 'Imagerie', 'Laboratoire', 'Médecine du travail'], openingHours: 'Lun–Sam : 7h30–19h', emergencyAvailable: false, phone: '+261 20 22 911 00', rating: 4.6, description: 'Polyclinique moderne près de l’aéroport, proposant consultations et imagerie.' },
+  { id: 'h7', name: 'Clinique Saint Esprit', type: 'clinic', sector: 'private', location: 'Boulevard de l’Unité, Mahajanga 401', city: 'Mahajanga', services: ['Consultations', 'Maternité', 'Petites chirurgies', 'Laboratoire'], openingHours: 'Lun–Sam : 8h–18h', emergencyAvailable: true, phone: '+261 20 62 551 51', rating: 4.5, description: 'Clinique privée de Mahajanga avec urgences et maternité.' },
+  { id: 'h8', name: 'Clinique Soavina', type: 'clinic', sector: 'private', location: 'Tsiadana, Fianarantsoa 301', city: 'Fianarantsoa', services: ['Consultations', 'Maternité', 'Chirurgie'], openingHours: 'Lun–Sam : 8h–18h', emergencyAvailable: false, phone: '+261 20 75 501 00', rating: 4.4, description: 'Clinique privée des Hautes Terres, spécialisée dans la maternité et la chirurgie.' },
+  { id: 'h9', name: 'Centre Hospitalier de Toliara', type: 'hospital', sector: 'public', location: 'Avenida de France, Toliara 601', city: 'Toliara', services: ['Urgences', 'Médecine', 'Maternité'], openingHours: '24h/24, 7j/7', emergencyAvailable: true, phone: '+261 20 94 415 00', rating: 3.9, description: 'Hôpital régional du Sud-Ouest avec service d’urgences.' },
+  { id: 'h10', name: 'Clinique du Nord', type: 'clinic', sector: 'private', location: 'Antsiranana 201', city: 'Antsiranana', services: ['Consultations', 'Imagerie', 'Laboratoire', 'Maternité'], openingHours: 'Lun–Sam : 7h30–19h', emergencyAvailable: false, phone: '+261 20 82 222 20', rating: 4.2, description: 'Clinique privée de Diego-Suarez proposant consultations et plateau technique.' },
+]
+
+export const pharmacies = [
+  { id: 'p1', name: 'Pharmacie de l’Amitié', location: 'Avenue de l’Indépendance, Antananarivo 101', city: 'Antananarivo', phone: '+261 20 22 211 11', openingHours: 'Lun–Sam : 7h30–21h', deliveryAvailable: true, rating: 4.7 },
+  { id: 'p2', name: 'Pharmacie Antanimena', location: 'Antanimena, Antananarivo 101', city: 'Antananarivo', phone: '+261 20 22 293 93', openingHours: '24h/24', deliveryAvailable: true, rating: 4.6 },
+  { id: 'p3', name: 'Pharmacie Ankorondrano', location: 'Ankorondrano, Antananarivo 101', city: 'Antananarivo', phone: '+261 20 22 500 50', openingHours: 'Lun–Sam : 8h–20h', deliveryAvailable: true, rating: 4.5 },
+  { id: 'p4', name: 'Pharmacie du Rova', location: 'Avenue de la Libération, Mahajanga 401', city: 'Mahajanga', phone: '+261 20 62 224 22', openingHours: 'Lun–Sam : 7h30–20h', deliveryAvailable: false, rating: 4.4 },
+  { id: 'p5', name: 'Pharmacie Côte Est', location: 'Boulevard Ratsimilaho, Toamasina 501', city: 'Toamasina', phone: '+261 20 53 312 12', openingHours: 'Lun–Sam : 8h–19h30', deliveryAvailable: true, rating: 4.3 },
+  { id: 'p6', name: 'Pharmacie des Hautes Terres', location: 'Rue du Général Ramahatra, Fianarantsoa 301', city: 'Fianarantsoa', phone: '+261 20 75 502 02', openingHours: 'Lun–Sam : 8h–19h', deliveryAvailable: false, rating: 4.2 },
+  { id: 'p7', name: 'Pharmacie du Sud', location: 'Avenue de France, Toliara 601', city: 'Toliara', phone: '+261 20 94 416 16', openingHours: 'Lun–Sam : 8h–19h', deliveryAvailable: false, rating: 4.1 },
+  { id: 'p8', name: 'Pharmacie du Nord', location: 'Rue Colbert, Antsiranana 201', city: 'Antsiranana', phone: '+261 20 82 213 13', openingHours: 'Lun–Sam : 8h–19h', deliveryAvailable: false, rating: 4.2 },
+]
+
+export const medicines = [
+  { id: 'm1', name: 'Paracétamol 500 mg', genericName: 'Paracétamol', form: 'Comprimé', dose: '500 mg', price: 3500, pharmacyId: 'p1', pharmacyName: 'Pharmacie de l’Amitié', location: 'Antananarivo 101', city: 'Antananarivo', stock: 45, available: true, prescriptionRequired: false },
+  { id: 'm2', name: 'Paracétamol 500 mg', genericName: 'Paracétamol', form: 'Comprimé', dose: '500 mg', price: 4000, pharmacyId: 'p2', pharmacyName: 'Pharmacie Antanimena', location: 'Antananarivo 101', city: 'Antananarivo', stock: 12, available: true, prescriptionRequired: false },
+  { id: 'm3', name: 'Amoxicilline 500 mg', genericName: 'Amoxicilline', form: 'Gélule', dose: '500 mg', price: 8000, pharmacyId: 'p2', pharmacyName: 'Pharmacie Antanimena', location: 'Antananarivo 101', city: 'Antananarivo', stock: 30, available: true, prescriptionRequired: true },
+  { id: 'm4', name: 'Amoxicilline 500 mg', genericName: 'Amoxicilline', form: 'Gélule', dose: '500 mg', price: 9000, pharmacyId: 'p5', pharmacyName: 'Pharmacie Côte Est', location: 'Toamasina 501', city: 'Toamasina', stock: 0, available: false, prescriptionRequired: true },
+  { id: 'm5', name: 'Ibuprofène 400 mg', genericName: 'Ibuprofène', form: 'Comprimé', dose: '400 mg', price: 5000, pharmacyId: 'p1', pharmacyName: 'Pharmacie de l’Amitié', location: 'Antananarivo 101', city: 'Antananarivo', stock: 25, available: true, prescriptionRequired: false },
+  { id: 'm6', name: 'Coartem® (Artéméther/Luméfantrine)', genericName: 'Artéméther + Luméfantrine', form: 'Comprimé', dose: '20/120 mg', price: 12000, pharmacyId: 'p4', pharmacyName: 'Pharmacie du Rova', location: 'Mahajanga 401', city: 'Mahajanga', stock: 18, available: true, prescriptionRequired: true },
+  { id: 'm7', name: 'Cétirizine 10 mg', genericName: 'Cétirizine', form: 'Comprimé', dose: '10 mg', price: 4500, pharmacyId: 'p3', pharmacyName: 'Pharmacie Ankorondrano', location: 'Antananarivo 101', city: 'Antananarivo', stock: 40, available: true, prescriptionRequired: false },
+  { id: 'm8', name: 'Metformine 850 mg', genericName: 'Metformine', form: 'Comprimé', dose: '850 mg', price: 7000, pharmacyId: 'p2', pharmacyName: 'Pharmacie Antanimena', location: 'Antananarivo 101', city: 'Antananarivo', stock: 22, available: true, prescriptionRequired: true },
+  { id: 'm9', name: 'Vitamine C 1000 mg', genericName: 'Acide ascorbique', form: 'Comprimé effervescent', dose: '1000 mg', price: 6500, pharmacyId: 'p1', pharmacyName: 'Pharmacie de l’Amitié', location: 'Antananarivo 101', city: 'Antananarivo', stock: 50, available: true, prescriptionRequired: false },
+  { id: 'm10', name: 'Oméprazole 20 mg', genericName: 'Oméprazole', form: 'Gélule', dose: '20 mg', price: 9500, pharmacyId: 'p3', pharmacyName: 'Pharmacie Ankorondrano', location: 'Antananarivo 101', city: 'Antananarivo', stock: 0, available: false, prescriptionRequired: false },
+  { id: 'm11', name: 'Augmentin® 500/125 mg', genericName: 'Amoxicilline + Acide clavulanique', form: 'Gélule', dose: '500/125 mg', price: 15000, pharmacyId: 'p2', pharmacyName: 'Pharmacie Antanimena', location: 'Antananarivo 101', city: 'Antananarivo', stock: 15, available: true, prescriptionRequired: true },
+  { id: 'm12', name: 'Paracétamol sirop', genericName: 'Paracétamol', form: 'Sirop', dose: '2,4 % — 90 ml', price: 4000, pharmacyId: 'p4', pharmacyName: 'Pharmacie du Rova', location: 'Mahajanga 401', city: 'Mahajanga', stock: 20, available: true, prescriptionRequired: false },
+  { id: 'm13', name: 'Amlodipine 5 mg', genericName: 'Amlodipine', form: 'Comprimé', dose: '5 mg', price: 8500, pharmacyId: 'p5', pharmacyName: 'Pharmacie Côte Est', location: 'Toamasina 501', city: 'Toamasina', stock: 14, available: true, prescriptionRequired: true },
+  { id: 'm14', name: 'Sels de réhydratation orale', genericName: 'WHO-SRO', form: 'Poudre', dose: 'Sachet', price: 2000, pharmacyId: 'p6', pharmacyName: 'Pharmacie des Hautes Terres', location: 'Fianarantsoa 301', city: 'Fianarantsoa', stock: 60, available: true, prescriptionRequired: false },
+]
+
+export const laboratories = [
+  { id: 'l1', name: 'Laboratoire LEM', location: 'Analakely, Antananarivo 101', city: 'Antananarivo', tests: ['NFS', 'Glycémie', 'Analyse d’urine', 'TSH', 'Test paludisme', 'Sérologies', 'Bilan lipidique'], openingHours: 'Lun–Sam : 6h30–18h', phone: '+261 20 22 281 51', rating: 4.8 },
+  { id: 'l2', name: 'Laboratoire Poly-Analyse', location: 'Avenue de la Libération, Mahajanga 401', city: 'Mahajanga', tests: ['NFS', 'Glycémie', 'Test paludisme', 'Analyse d’urine', 'Coproculture'], openingHours: 'Lun–Sam : 7h–17h', phone: '+261 20 62 228 88', rating: 4.5 },
+  { id: 'l3', name: 'Laboratoire Côte Est', location: 'Boulevard Ratsimilaho, Toamasina 501', city: 'Toamasina', tests: ['NFS', 'Glycémie', 'Sérologies', 'Analyse d’urine', 'Bilan hépatique'], openingHours: 'Lun–Sam : 7h–17h30', phone: '+261 20 53 316 66', rating: 4.4 },
+  { id: 'l4', name: 'Labo Santé Plus', location: 'Tsiadana, Fianarantsoa 301', city: 'Fianarantsoa', tests: ['NFS', 'Glycémie', 'Analyse d’urine', 'Test paludisme', 'Sérologies'], openingHours: 'Lun–Sam : 7h–16h30', phone: '+261 20 75 505 05', rating: 4.3 },
+  { id: 'l5', name: 'Laboratoire du Sud', location: 'Avenue de France, Toliara 601', city: 'Toliara', tests: ['NFS', 'Glycémie', 'Test paludisme', 'Analyse d’urine'], openingHours: 'Lun–Sam : 7h–16h', phone: '+261 20 94 418 18', rating: 4.2 },
+  { id: 'l6', name: 'Labo Antsiranana', location: 'Rue Colbert, Antsiranana 201', city: 'Antsiranana', tests: ['NFS', 'Glycémie', 'Sérologies', 'Analyse d’urine', 'TSH'], openingHours: 'Lun–Sam : 7h–17h', phone: '+261 20 82 215 15', rating: 4.4 },
+]
+
+export const imagingCenters = [
+  { id: 'c1', name: 'Centre d’Imagerie Médicale Analakely', location: 'Analakely, Antananarivo 101', city: 'Antananarivo', exams: [{ type: 'Radiographie', price: 25000 }, { type: 'Échographie', price: 45000 }, { type: 'Scanner', price: 130000 }, { type: 'IRM', price: 280000 }], openingHours: 'Lun–Sam : 7h30–18h', phone: '+261 20 22 292 33', rating: 4.7 },
+  { id: 'c2', name: 'Imagerie Boeny', location: 'Avenue de l’Université, Mahajanga 401', city: 'Mahajanga', exams: [{ type: 'Radiographie', price: 22000 }, { type: 'Échographie', price: 40000 }, { type: 'Scanner', price: 120000 }], openingHours: 'Lun–Sam : 8h–17h', phone: '+261 20 62 229 99', rating: 4.4 },
+  { id: 'c3', name: 'Centre Est Imagerie', location: 'Androva, Toamasina 501', city: 'Toamasina', exams: [{ type: 'Radiographie', price: 22000 }, { type: 'Échographie', price: 40000 }], openingHours: 'Lun–Sam : 8h–17h', phone: '+261 20 53 318 18', rating: 4.3 },
+  { id: 'c4', name: 'Imagerie des Hautes Terres', location: 'Tsiadana, Fianarantsoa 301', city: 'Fianarantsoa', exams: [{ type: 'Radiographie', price: 20000 }, { type: 'Échographie', price: 38000 }, { type: 'Scanner', price: 115000 }], openingHours: 'Lun–Sam : 8h–16h30', phone: '+261 20 75 506 06', rating: 4.3 },
+  { id: 'c5', name: 'Imagerie du Sud', location: 'Avenue de France, Toliara 601', city: 'Toliara', exams: [{ type: 'Radiographie', price: 20000 }, { type: 'Échographie', price: 38000 }], openingHours: 'Lun–Sam : 8h–16h', phone: '+261 20 94 419 19', rating: 4.1 },
+  { id: 'c6', name: 'IRM Nord Imagerie', location: 'Antsiranana 201', city: 'Antsiranana', exams: [{ type: 'Radiographie', price: 22000 }, { type: 'Échographie', price: 40000 }, { type: 'Scanner', price: 125000 }, { type: 'IRM', price: 260000 }], openingHours: 'Lun–Sam : 7h30–17h30', phone: '+261 20 82 216 16', rating: 4.5 },
+]
+
+export const nurses = [
+  { id: 'n1', name: 'Edith Raveloson', qualification: 'Infirmière diplômée d’État', location: 'Ankadifotsy, Antananarivo 101', city: 'Antananarivo', services: ['Soins à domicile', 'Pansement', 'Injection', 'Suivi', 'Soins de base'], availability: ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'], price: 20000, photo: 'https://i.pravatar.cc/160?img=49', rating: 4.8 },
+  { id: 'n2', name: 'Claudine Razafy', qualification: 'Infirmière — puéricultrice', location: 'Ampitatafika, Mahajanga 401', city: 'Mahajanga', services: ['Soins à domicile', 'Pansement', 'Injection', 'Suivi'], availability: ['Lun', 'Mar', 'Mer', 'Jeu'], price: 18000, photo: 'https://i.pravatar.cc/160?img=47', rating: 4.6 },
+  { id: 'n3', name: 'Fidy Ratsitorahina', qualification: 'Infirmier diplômé d’État', location: 'Androva, Toamasina 501', city: 'Toamasina', services: ['Soins à domicile', 'Pansement', 'Injection', 'Soins de base'], availability: ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven'], price: 17000, photo: 'https://i.pravatar.cc/160?img=36', rating: 4.5 },
+  { id: 'n4', name: 'Sahondra Ramanantsoa', qualification: 'Infirmière diplômée — sage-femme', location: 'Tsiadana, Fianarantsoa 301', city: 'Fianarantsoa', services: ['Soins à domicile', 'Suivi', 'Soins maternels', 'Injection'], availability: ['Lun', 'Mer', 'Ven'], price: 19000, photo: 'https://i.pravatar.cc/160?img=40', rating: 4.7 },
+  { id: 'n5', name: 'Mialy Soavina', qualification: 'Infirmière diplômée d’État', location: 'Avenue de France, Toliara 601', city: 'Toliara', services: ['Soins à domicile', 'Pansement', 'Injection'], availability: ['Mar', 'Jeu', 'Sam'], price: 16000, photo: 'https://i.pravatar.cc/160?img=32', rating: 4.4 },
+  { id: 'n6', name: 'Rija Andriamampionona', qualification: 'Infirmier — anesthésiste', location: 'Antsiranana 201', city: 'Antsiranana', services: ['Soins à domicile', 'Pansement', 'Injection', 'Suivi', 'Soins de base'], availability: ['Lun', 'Mar', 'Jeu', 'Ven', 'Dim'], price: 21000, photo: 'https://i.pravatar.cc/160?img=13', rating: 4.7 },
+]
+
+export const ambulances = [
+  { id: 'a1', provider: 'Ambulance Anosy', location: 'Anosy, Antananarivo 101', city: 'Antananarivo', phone: '+261 34 01 000 01', vehicles: ['Ambulance médicalisée', 'VSAV'], available: true, responseTime: '15 min' },
+  { id: 'a2', provider: 'SAMU Antananarivo', location: 'Antananarivo 101', city: 'Antananarivo', phone: '+261 34 77 000 77', vehicles: ['Ambulance de réanimation'], available: true, responseTime: '10 min' },
+  { id: 'a3', provider: 'Ambulance Boeny', location: 'Mahajanga 401', city: 'Mahajanga', phone: '+261 34 01 000 02', vehicles: ['Ambulance médicalisée'], available: true, responseTime: '20 min' },
+  { id: 'a4', provider: 'Secours Côte Est', location: 'Toamasina 501', city: 'Toamasina', phone: '+261 34 01 000 03', vehicles: ['Ambulance médicalisée'], available: false, responseTime: '25 min' },
+  { id: 'a5', provider: 'Ambulance des Hautes Terres', location: 'Fianarantsoa 301', city: 'Fianarantsoa', phone: '+261 34 01 000 04', vehicles: ['VSAV'], available: true, responseTime: '25 min' },
+  { id: 'a6', provider: 'Secours du Sud', location: 'Toliara 601', city: 'Toliara', phone: '+261 34 01 000 05', vehicles: ['Ambulance médicalisée'], available: true, responseTime: '30 min' },
+]
+
+export const initialAppointments = [
+  { id: 'ap1', reference: 'MS-2026-0231', patientId: 'u_patient_1', providerId: 'd9', providerType: 'doctor', providerName: 'Dr. Hasina Andriamihaja', providerPhoto: 'https://i.pravatar.cc/160?img=17', type: 'Cabinet', date: '2026-09-25', time: '09:30', location: 'Ivandry, Antananarivo 101', status: 'confirmed', price: 30000, paymentStatus: 'paid' },
+  { id: 'ap2', reference: 'MS-2026-0249', patientId: 'u_patient_1', providerId: 'l1', providerType: 'laboratory', providerName: 'Laboratoire LEM', type: 'Prélèvement', date: '2026-09-28', time: '07:30', location: 'Analakely, Antananarivo 101', status: 'confirmed', price: 45000, paymentStatus: 'pending' },
+  { id: 'ap3', reference: 'MS-2026-0188', patientId: 'u_patient_1', providerId: 'd1', providerType: 'doctor', providerName: 'Dr. Jean Rakoto', providerPhoto: 'https://i.pravatar.cc/160?img=12', type: 'À domicile', date: '2026-09-10', time: '17:00', location: 'Antananarivo 101', status: 'completed', price: 60000, paymentStatus: 'paid' },
+]
+
+export const initialPayments = [
+  { id: 'pay1', reference: 'PAY-2026-00041', patientId: 'u_patient_1', providerId: 'd1', service: 'Consultation à domicile — Dr. Jean Rakoto', providerName: 'Dr. Jean Rakoto', date: '2026-09-10', amount: 60000, method: 'orange_money', status: 'success', breakdown: [{ label: 'Consultation à domicile', amount: 55000 }, { label: 'Frais de déplacement', amount: 5000 }] },
+  { id: 'pay2', reference: 'PAY-2026-00035', patientId: 'u_patient_1', providerId: 'c1', service: 'Radiographie — Centre d’Imagerie Médicale Analakely', providerName: 'CIMA Analakely', date: '2026-08-22', amount: 25000, method: 'mvola', status: 'success', breakdown: [{ label: 'Radiographie thorax', amount: 25000 }] },
+  { id: 'pay3', reference: 'PAY-2026-00012', patientId: 'u_patient_1', providerId: 'd2', service: 'Consultation — Dr. Hery Randrianarisoa', providerName: 'Dr. Hery Randrianarisoa', date: '2026-07-14', amount: 25000, method: 'orange_money', status: 'success', breakdown: [{ label: 'Consultation', amount: 25000 }] },
+]
+
+export const initialNotifications = [
+  { id: 'notif1', userId: 'u_patient_1', title: 'Votre rendez-vous est confirmé.', message: 'Rendez-vous le 25/09/2026 à 09:30 avec Dr. Hasina Andriamihaja. Réf. MS-2026-0231.', category: 'appointment', read: false, createdAt: '2026-09-23T09:00:00', link: '/patient/appointments' },
+  { id: 'notif2', userId: 'u_patient_1', title: 'Votre médecin sera disponible dans 30 minutes.', message: 'Dr. Hasina Andriamihaja vous attend dans 30 minutes.', category: 'appointment', read: false, createdAt: '2026-09-24T08:00:00', link: '/patient/appointments' },
+  { id: 'notif3', userId: 'u_patient_1', title: 'Votre paiement a été accepté.', message: 'Paiement de 60 000 Ar validé — consultation à domicile Dr. Jean Rakoto.', category: 'payment', read: true, createdAt: '2026-09-10T18:00:00', link: '/patient/payments' },
+  { id: 'notif4', userId: 'u_patient_1', title: 'Votre livraison est en route.', message: 'Votre commande de Paracétamol 500 mg est en cours de livraison.', category: 'delivery', read: false, createdAt: '2026-09-22T15:30:00', link: '/patient/delivery' },
+  { id: 'notif5', userId: 'u_patient_1', title: 'Bienvenue sur Mada Santé.', message: 'Votre espace patient est prêt. Bonne santé ! Voninahitra ho anao.', category: 'system', read: true, createdAt: '2026-09-01T08:00:00' },
+]
+
+export const initialDeliveries = [
+  { id: 'del1', reference: 'DEL-2026-0017', patientId: 'u_patient_1', medicineId: 'm1', medicineName: 'Paracétamol 500 mg', dose: '500 mg', quantity: 2, pharmacyId: 'p1', pharmacyName: 'Pharmacie de l’Amitié', deliveryAddress: 'Ivandry, Antananarivo 101', deliveryTimeSlot: 'Aujourd’hui, 14h–16h', deliveryFee: 3000, total: 10000, status: 'in_delivery', date: '2026-09-22' },
+]

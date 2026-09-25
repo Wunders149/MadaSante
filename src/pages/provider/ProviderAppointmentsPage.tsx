@@ -9,7 +9,6 @@ import { Modal } from '../../components/ui/Modal'
 import { Badge } from '../../components/ui/Badge'
 import { useApp } from '../../stores/AppStore'
 import { useAuth } from '../../stores/AuthStore'
-import { providerUsers } from '../../data/mock'
 import { monthDay } from '../../lib/format'
 
 type Tab = 'all' | 'pending' | 'upcoming' | 'past'
@@ -28,15 +27,15 @@ export function ProviderAppointmentsPage() {
   const [query, setQuery] = useState('')
   const [openId, setOpenId] = useState<string | undefined>()
 
-  const me = useMemo(() => providerUsers.find((p) => p.id === user?.id), [user])
+  const providerId = user?.providerId
   const list = useMemo(() => {
     const today = new Date().toISOString().slice(0, 10)
     const needle = query.trim().toLowerCase()
     return appointments
-      .filter((a) => a.providerId === me?.id)
+      .filter((a) => a.providerId === providerId)
       .filter((a) => (tab === 'all' ? true : tab === 'pending' ? a.status === 'pending' : tab === 'past' ? a.date < today : a.date >= today))
       .filter((a) => !needle || a.reference.toLowerCase().includes(needle))
-  }, [appointments, me, tab, query])
+  }, [appointments, providerId, tab, query])
   const open = list.find((a) => a.id === openId)
 
   return (

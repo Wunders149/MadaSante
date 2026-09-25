@@ -6,18 +6,17 @@ import { EmptyState } from '../../components/ui/States'
 import { Button } from '../../components/ui/Button'
 import { useApp } from '../../stores/AppStore'
 import { useAuth } from '../../stores/AuthStore'
-import { providerUsers } from '../../data/mock'
 import { formatAr } from '../../lib/format'
 
 export function ProviderDashboardPage() {
   const { t, appointments, payments } = useApp()
   const { user } = useAuth()
 
-  const me = useMemo(() => providerUsers.find((p) => p.id === user?.id), [user])
-  const mine = useMemo(() => appointments.filter((a) => a.providerId === me?.id), [appointments, me])
+  const providerId = user?.providerId
+  const mine = useMemo(() => appointments.filter((a) => a.providerId === providerId), [appointments, providerId])
   const today = mine.filter((a) => a.date === new Date().toISOString().slice(0, 10))
   const upcoming = mine.filter((a) => a.date >= new Date().toISOString().slice(0, 10))
-  const minePayments = useMemo(() => payments.filter((p) => p.providerName === `${me?.firstName} ${me?.lastName}`), [payments, me])
+  const minePayments = useMemo(() => payments.filter((p) => p.providerId === providerId), [payments, providerId])
   const revenue = minePayments.filter((p) => p.status === 'success')
   const total = revenue.reduce((s, p) => s + p.amount, 0)
   const pendingRequests = mine.filter((a) => a.status === 'pending').length

@@ -6,17 +6,18 @@ import { AppointmentCard } from '../../components/AppointmentCard'
 import { EmptyState } from '../../components/ui/States'
 import { useApp } from '../../stores/AppStore'
 import { useAuth } from '../../stores/AuthStore'
-import { providerUsers, ambulances } from '../../data/mock'
+import { useAmbulances } from '../../lib/hooks'
 
 type Tab = 'appointments' | 'requests'
 
 export function ProviderRequestsPage() {
   const { t, appointments, toast } = useApp()
   const { user } = useAuth()
+  const { data: ambulances = [] } = useAmbulances()
   const [tab, setTab] = useState<Tab>('appointments')
 
-  const me = useMemo(() => providerUsers.find((p) => p.id === user?.id), [user])
-  const mine = useMemo(() => appointments.filter((a) => a.providerId === me?.id), [appointments, me])
+  const providerId = user?.providerId
+  const mine = useMemo(() => appointments.filter((a) => a.providerId === providerId), [appointments, providerId])
   const pending = mine.filter((a) => a.status === 'pending')
 
   const tabs: { key: Tab; label: string }[] = [

@@ -7,20 +7,19 @@ import { Button } from '../../components/ui/Button'
 import { Badge } from '../../components/ui/Badge'
 import { useApp } from '../../stores/AppStore'
 import { useAuth } from '../../stores/AuthStore'
-import { providerUsers } from '../../data/mock'
 import { formatAr } from '../../lib/format'
 
 export function ProviderPaymentsPage() {
   const { t, payments, toast } = useApp()
   const { user } = useAuth()
-  const me = useMemo(() => providerUsers.find((p) => p.id === user?.id), [user])
-  const mine = useMemo(() => payments.filter((p) => p.providerName === `${me?.firstName} ${me?.lastName}`), [payments, me])
+  const providerId = user?.providerId
+  const mine = useMemo(() => payments.filter((p) => p.providerId === providerId), [payments, providerId])
   const accepted = mine.filter((p) => p.status === 'success')
   const total = accepted.reduce((s, p) => s + p.amount, 0)
 
   return (
     <div className="page-container max-w-3xl py-5 sm:py-7">
-      <PageHeader title={t('prov.payments')} subtitle={me ? `${me.firstName} ${me.lastName}` : ''}>
+      <PageHeader title={t('prov.payments')} subtitle={user ? `${user.firstName} ${user.lastName}` : ''}>
         <Button size="sm" variant="ghost" onClick={() => toast(t('prov.export'), t('apt.stepDone'), 'success')}>
           <Download className="h-4 w-4" /> {t('common.export')}
         </Button>

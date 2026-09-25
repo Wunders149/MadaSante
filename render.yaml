@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: madasante
+    runtime: node
+    plan: free
+    buildCommand: npm install && npm run build && npm --prefix server install && npm --prefix server run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        generateValue: true
+      - key: PORT
+        value: 10000
+    # SQLite DB lives under server/data (ephemeral on Render) and is
+    # re-seeded with deterministic demo data on each boot via DB seed.

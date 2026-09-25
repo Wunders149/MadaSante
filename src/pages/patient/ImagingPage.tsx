@@ -5,13 +5,13 @@ import { SearchBar } from '../../components/SearchBar'
 import { ImagingCard } from '../../components/ImagingCard'
 import { EmptyState } from '../../components/ui/States'
 import { useApp } from '../../stores/AppStore'
-import { imagingCenters } from '../../data/mock'
+import { useImagingCenters } from '../../lib/hooks'
 
 export function ImagingPage() {
-  const { t } = useApp()
+const { t } = useApp()
+  const { data: imagingCenters = [] } = useImagingCenters()
   const [query, setQuery] = useState('')
   const needle = query.trim().toLowerCase()
-
   const list = useMemo(
     () =>
       imagingCenters.filter(
@@ -21,7 +21,7 @@ export function ImagingPage() {
           c.city.toLowerCase().includes(needle) ||
           c.exams.some((e) => e.type.toLowerCase().includes(needle)),
       ),
-    [needle],
+    [imagingCenters, needle],
   )
 
   return (

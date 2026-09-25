@@ -1,7 +1,7 @@
-import { createContext, useCallback, useContext, useMemo, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
+import { apiRoutes } from '../lib/api'
 import type { Role, User } from '../types'
-import { providerUsers } from '../data/mock'
 
 interface Session {
   token: string
@@ -23,6 +23,19 @@ const AuthContext = createContext<AuthContextValue | null>(null)
 
 const SESSION_KEY = 'ms_session'
 
+const PATIENT_EMAIL = 'voahangy.andrianiaina@demo.mg'
+const DEMO_PASSWORD = 'demo'
+
+const DEMO_PROVIDER_EMAILS: Partial<Record<Role, string>> = {
+  doctor: 'dr.rakoto@demo.mg',
+  nurse: 'edith.raveloson@demo.mg',
+  pharmacy: 'contact@pharmamitie.mg',
+  laboratory: 'contact@labolem.mg',
+  imaging_center: 'contact@cima.mg',
+  hospital: 'contact@hjra.mg',
+  ambulance_driver: 'samu@demo.mg',
+}
+
 function readSession(): Session | null {
   try {
     const raw = localStorage.getItem(SESSION_KEY)
@@ -39,79 +52,78 @@ function writeSession(session: Session) {
   localStorage.setItem(SESSION_KEY, JSON.stringify(session))
 }
 
-const PATIENT = {
-  id: 'u_patient_1',
-  firstName: 'Voahangy',
-  lastName: 'Andrianiaina',
-  phone: '+261 34 12 345 67',
-  email: 'voahangy.andrianiaina@demo.mg',
-  role: 'patient' as Role,
-  location: 'Antananarivo',
-}
-
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(() => readSession())
 
-  const loginAsPatient = useCallback(async (): Promise<User> => {
-    const sessionData: Session = {
-      token: `demo-jwt.${Math.random().toString(36).slice(2)}.${Date.now()}`,
-      user: PATIENT,
+  useEffect(() => {
+    if (!session) return
+    let cancelled = false
+    apiRoutes
+      .me()
+      .then(({ user }) => {
+        if (cancelled) return
+        const next = { ...session, user }
+        setSession(next)
+        writeSession(next)
+      })
+      .catch(() => {
+        if (cancelled) return
+      })
+    return () => {
+      cancelled = true
     }
-    writeSession(sessionData)
-    setSession(sessionData)
-    return PATIENT
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const loginAsProvider = useCallback(async (role: Role): Promise<User> => {
-    const user = providerUsers.find((u) => u.role === role) ?? providerUsers[0]
-    if (!user) throw new Error('unknown provider')
-    const sessionData: Session = {
-      token: `demo-jwt.${Math.random().toString(36).slice(2)}.${Date.now()}`,
-      user,
-    }
+  const apply = useCallback((token: string, user: User) => {
+    const sessionData: Session = { token, user }
     writeSession(sessionData)
     setSession(sessionData)
-    return user
   }, [])
 
   const login = useCallback(
-    async (_email: string, _password: string, role: Role): Promise<User> => {
-      await new Promise((r) => setTimeout(r, 700))
-      if (role === 'patient') return loginAsPatient()
-      return loginAsProvider(role)
+    async (email: string, password: string, _role: Role): Promise<User> => {
+      const { token, user } = await apiRoutes.login({ email, password })
+      apply(token, user)
+      return user
     },
-    [loginAsPatient, loginAsProvider],
+    [apply],
   )
+
+  const loginAsPatient = useCallback(async (): Promise<User> => {
+    const { token, user } = await apiRoutes.login({ email: PATIENT_EMAIL, password: DEMO_PASSWORD })
+    apply(token, user)
+    return user
+  }, [apply])
+
+  const loginAsProvider = useCallback(async (role: Role): Promise<User> => {
+    const email = DEMO_PROVIDER_EMAILS[role]
+    if (!email) throw new Error('unknown provider role')
+    const { token, user } = await apiRoutes.login({ email, password: DEMO_PASSWORD })
+    apply(token, user)
+    return user
+  }, [apply])
 
   const register = useCallback(
-    async (data: Partial<User> & { role: Role; password?: string }): Promise<User> => {
-      await new Promise((r) => setTimeout(r, 800))
-      if (data.role === 'patient') {
-        const user: User = {
-          id: `u_${Date.now()}`,
-          firstName: data.firstName || 'Nouveau',
-          lastName: data.lastName || 'Patient',
-          phone: data.phone || '+261 34 00 000 00',
-          email: data.email || 'patient@demo.mg',
-          role: 'patient',
-          location: data.location || 'Antananarivo',
-        }
-        const sessionData: Session = { token: `demo-jwt.${Date.now()}`, user }
-        writeSession(sessionData)
-        setSession(sessionData)
-        return user
-      }
-      return loginAsProvider(data.role)
+    async (data: Partial<User> & { role: Role; password: string }): Promise<User> => {
+      const { token, user } = await apiRoutes.register({ ...data })
+      apply(token, user)
+      return user
     },
-    [loginAsProvider],
+    [apply],
   )
 
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
+    try {
+      await apiRoutes.logout()
+    } catch {
+      // ignore network errors during logout
+    }
     localStorage.removeItem(SESSION_KEY)
     setSession(null)
   }, [])
 
-  const isProvider = useMemo(() => session?.user.role !== 'patient', [session])
+  const isProvider = useMemo(() => (session?.user.role ?? 'patient') !== 'patient', [session])
 
   const value: AuthContextValue = {
     user: session?.user ?? null,

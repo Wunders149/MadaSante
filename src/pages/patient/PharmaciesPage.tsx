@@ -4,11 +4,12 @@ import { PharmacyCard } from '../../components/PharmacyCard'
 import { EmptyState } from '../../components/ui/States'
 import { SearchBar } from '../../components/SearchBar'
 import { useApp } from '../../stores/AppStore'
-import { pharmacies } from '../../data/mock'
+import { usePharmacies } from '../../lib/hooks'
 import { useState } from 'react'
 
 export function PharmaciesPage() {
   const { t } = useApp()
+  const { data: pharmacies = [] } = usePharmacies()
   const [query, setQuery] = useState('')
   const needle = query.trim().toLowerCase()
   const list = pharmacies.filter(

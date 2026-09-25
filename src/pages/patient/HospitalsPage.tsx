@@ -5,10 +5,11 @@ import { HospitalCard } from '../../components/HospitalCard'
 import { EmptyState } from '../../components/ui/States'
 import { SearchBar } from '../../components/SearchBar'
 import { useApp } from '../../stores/AppStore'
-import { hospitals } from '../../data/mock'
+import { useHospitals } from '../../lib/hooks'
 
 export function HospitalsPage() {
   const { t } = useApp()
+  const { data: hospitals = [] } = useHospitals()
   const [query, setQuery] = useState('')
   const needle = query.trim().toLowerCase()
   const list = useMemo(
@@ -20,7 +21,7 @@ export function HospitalsPage() {
           h.city.toLowerCase().includes(needle) ||
           h.services.some((s) => s.toLowerCase().includes(needle)),
       ),
-    [needle],
+    [hospitals, needle],
   )
 
   return (

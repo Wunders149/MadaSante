@@ -7,41 +7,51 @@ import { Label, Input, Textarea } from '../../components/ui/Field'
 import { Avatar } from '../../components/Avatar'
 import { useApp } from '../../stores/AppStore'
 import { useAuth } from '../../stores/AuthStore'
-import { providerUsers } from '../../data/mock'
+import { apiRoutes } from '../../lib/api'
 import { cn } from '../../lib/cn'
 
 export function ProviderProfilePage() {
   const { t, toast } = useApp()
   const { user, logout } = useAuth()
-  const me = providerUsers.find((p) => p.id === user?.id)
 
   const [form, setForm] = useState({
-    firstName: me?.firstName ?? user?.firstName ?? '',
-    lastName: me?.lastName ?? user?.lastName ?? '',
-    role: me?.role ?? user?.role ?? '',
-    location: me?.location ?? user?.location ?? '',
-    phone: me?.phone ?? user?.phone ?? '',
-    email: me?.email ?? user?.email ?? '',
+    firstName: user?.firstName ?? '',
+    lastName: user?.lastName ?? '',
+    role: user?.role ?? '',
+    location: user?.location ?? '',
+    phone: user?.phone ?? '',
+    email: user?.email ?? '',
   })
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
-    if (!me) return
+    if (!user) return
     setForm({
-      firstName: me.firstName,
-      lastName: me.lastName,
-      role: me.role,
-      location: me.location ?? '',
-      phone: me.phone,
-      email: me.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      role: user.role,
+      location: user.location ?? '',
+      phone: user.phone,
+      email: user.email,
     })
-  }, [me])
+  }, [user])
 
   const save = async () => {
     setSaving(true)
-    await new Promise((r) => setTimeout(r, 800))
-    setSaving(false)
-    toast(t('prov.saved'), t('prov.profileSavedDesc'), 'success')
+    try {
+      await apiRoutes.updateProviderMe({
+        firstName: form.firstName,
+        lastName: form.lastName,
+        phone: form.phone,
+        email: form.email,
+        location: form.location,
+      })
+      toast(t('prov.saved'), t('prov.profileSavedDesc'), 'success')
+    } catch {
+      toast(t('common.error'), '', 'error')
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
@@ -49,7 +59,7 @@ export function ProviderProfilePage() {
       <PageHeader title={t('prov.profile')} subtitle={t('prov.profileDesc')} />
 
       <div className="mt-5 flex items-center gap-4">
-        <Avatar src={me?.photo ?? user?.photo} name={`${form.firstName[0] ?? 'P'}${form.lastName[0] ?? ''}`} size="xl" />
+        <Avatar src={user?.photo} name={`${form.firstName[0] ?? 'P'}${form.lastName[0] ?? ''}`} size="xl" />
         <div className="min-w-0">
           <p className="text-lg font-bold text-ink">{form.firstName} {form.lastName}</p>
           <div className="mt-1 flex flex-wrap items-center gap-2">

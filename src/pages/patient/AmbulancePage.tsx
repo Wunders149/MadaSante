@@ -5,13 +5,13 @@ import { SearchBar } from '../../components/SearchBar'
 import { AmbulanceCard } from '../../components/AmbulanceCard'
 import { EmptyState } from '../../components/ui/States'
 import { useApp } from '../../stores/AppStore'
-import { ambulances } from '../../data/mock'
+import { useAmbulances } from '../../lib/hooks'
 
 export function AmbulancePage() {
-  const { t } = useApp()
+const { t } = useApp()
+  const { data: ambulances = [] } = useAmbulances()
   const [query, setQuery] = useState('')
   const needle = query.trim().toLowerCase()
-
   const list = useMemo(
     () =>
       ambulances.filter(
@@ -21,7 +21,7 @@ export function AmbulancePage() {
           a.city.toLowerCase().includes(needle) ||
           a.vehicles.some((v) => v.toLowerCase().includes(needle)),
       ),
-    [needle],
+    [ambulances, needle],
   )
 
   return (
