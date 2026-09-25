@@ -6,13 +6,14 @@ import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Field'
 import { useApp } from '../../stores/AppStore'
 import { useAuth } from '../../stores/AuthStore'
+import { roleLabelKey } from '../../lib/roles'
 import type { Role } from '../../types'
 
 const providerRoles: Role[] = ['doctor', 'nurse', 'pharmacy', 'laboratory', 'imaging_center', 'hospital', 'ambulance_driver']
 
 export function LoginPage() {
   const { t, toast } = useApp()
-  const { login, loginAsPatient, loginAsProvider } = useAuth()
+  const { login, loginAsPatient, loginAsProvider, loginAsAdmin } = useAuth()
   const navigate = useNavigate()
   const [tab, setTab] = useState<'patient' | 'provider'>('patient')
   const [providerRole, setProviderRole] = useState<Role>('doctor')
@@ -60,6 +61,18 @@ export function LoginPage() {
     }
   }
 
+  const quickAdmin = async () => {
+    setLoading(true)
+    try {
+      await loginAsAdmin()
+      navigate('/admin')
+    } catch (err) {
+      toast('Connexion impossible', err instanceof Error ? err.message : 'Erreur inattendue', 'error')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <AuthShell title={t('auth.loginTitle')} subtitle={t('auth.loginSub')}>
       <RoleTabs value={tab} onChange={setTab} />
@@ -95,7 +108,7 @@ export function LoginPage() {
                       : 'border-line bg-card text-ink-soft'
                   }`}
                 >
-                  {t(`auth.${r}Role`)}
+                  {t(roleLabelKey(r))}
                 </button>
               ))}
             </div>
@@ -139,13 +152,28 @@ export function LoginPage() {
                 key={r}
                 disabled={loading}
                 onClick={() => quickProvider(r)}
-                className="rounded-xl border border-line bg-card px-1 py-2 text-xs font-semibold text-ink-soft transition hover:border-brand-300 hover:text-brand-700"
+className="rounded-xl border border-line bg-card px-1 py-2 text-xs font-semibold text-ink-soft transition hover:border-brand-300 hover:text-brand-700"
               >
-                {t(`auth.${r}Role`)}
+                {t(roleLabelKey(r))}
               </button>
             ))}
           </div>
         </div>
+
+        <button
+          onClick={quickAdmin}
+          disabled={loading}
+          className="card touch-target flex w-full items-center gap-3 p-4 text-left transition hover:border-brand-300"
+        >
+          <span className="grid h-10 w-10 place-items-center rounded-xl bg-brand-50 text-brand-700">
+            <ShieldCheck className="h-5 w-5" />
+          </span>
+          <span className="flex-1">
+            <span className="block text-sm font-bold text-ink">{t('auth.demoAdmin')}</span>
+            <span className="block text-xs text-ink-soft">{t('auth.demoAdminDesc')}</span>
+          </span>
+          <span className="text-brand-700">→</span>
+        </button>
       </div>
 
       <p className="mt-6 text-center text-sm text-ink-soft">

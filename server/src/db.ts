@@ -213,5 +213,34 @@ export function migrate() {
       available INTEGER NOT NULL DEFAULT 1,
       PRIMARY KEY (provider_id, day, slot)
     );
+
+    CREATE TABLE IF NOT EXISTS provider_applications (
+      id TEXT PRIMARY KEY,
+      reference TEXT NOT NULL UNIQUE,
+      role TEXT NOT NULL,
+      org_name TEXT NOT NULL,
+      first_name TEXT NOT NULL,
+      last_name TEXT NOT NULL,
+      phone TEXT NOT NULL,
+      email TEXT NOT NULL UNIQUE,
+      location TEXT NOT NULL,
+      city TEXT NOT NULL,
+      license_number TEXT NOT NULL,
+      password_hash TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'pending',
+      review_note TEXT,
+      reviewed_at TEXT,
+      created_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS provider_documents (
+      id TEXT PRIMARY KEY,
+      application_id TEXT NOT NULL,
+      doc_type TEXT NOT NULL,
+      file_name TEXT NOT NULL,
+      mime TEXT NOT NULL,
+      data TEXT NOT NULL,
+      FOREIGN KEY (application_id) REFERENCES provider_applications(id) ON DELETE CASCADE
+    );
   `)
 }

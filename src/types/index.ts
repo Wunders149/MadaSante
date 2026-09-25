@@ -7,6 +7,7 @@ export type Role =
   | 'imaging_center'
   | 'hospital'
   | 'ambulance_driver'
+  | 'admin'
 
 export type Lang = 'fr' | 'mg' | 'en'
 
@@ -219,4 +220,34 @@ export interface NotificationItem {
   read: boolean
   createdAt: string
   link?: string
+}
+
+export type ProviderApplicationStatus = 'pending' | 'approved' | 'rejected'
+
+export interface ProviderDocument {
+  id: string
+  docType: string
+  fileName: string
+  mime: string
+  data: string
+}
+
+export interface ProviderApplication {
+  id: string
+  reference: string
+  role: Role
+  orgName: string
+  firstName: string
+  lastName: string
+  phone: string
+  email: string
+  location: string
+  city: string
+  licenseNumber: string
+  status: ProviderApplicationStatus
+  reviewNote?: string
+  reviewedAt?: string
+  createdAt: string
+  documentCount?: number
+  documents?: ProviderDocument[]
 }

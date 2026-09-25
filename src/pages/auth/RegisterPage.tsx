@@ -1,13 +1,12 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { ShieldCheck, UserPlus } from 'lucide-react'
+import { Building2, ShieldCheck, UserPlus } from 'lucide-react'
 import { AuthShell, RoleTabs } from './shared'
 import { Button } from '../../components/ui/Button'
 import { Input, Select } from '../../components/ui/Field'
 import { useApp } from '../../stores/AppStore'
 import { useAuth } from '../../stores/AuthStore'
 import { CITIES } from '../../lib/constants'
-import type { Role } from '../../types'
 
 export function RegisterPage() {
   const { t } = useApp()
@@ -38,9 +37,8 @@ export function RegisterPage() {
     }
     setLoading(true)
     try {
-      const role: Role = tab === 'patient' ? 'patient' : 'doctor'
-      await register({ ...form, role })
-      navigate(role === 'patient' ? '/patient' : '/provider')
+      await register({ ...form, role: 'patient' })
+      navigate('/patient')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Inscription échouée.')
     } finally {
@@ -52,35 +50,50 @@ export function RegisterPage() {
     <AuthShell title={t('auth.registerTitle')} subtitle={t('auth.registerSub')}>
       <RoleTabs value={tab} onChange={setTab} />
 
-      <form onSubmit={handleSubmit} className="mt-5 space-y-3">
-        <div className="grid grid-cols-2 gap-3">
-          <Input label={t('auth.firstName')} value={form.firstName} onChange={set('firstName')} required />
-          <Input label={t('auth.lastName')} value={form.lastName} onChange={set('lastName')} required />
+      {tab === 'provider' ? (
+        <div className="mt-5 space-y-3">
+          <div className="card flex flex-col items-center gap-3 p-6 text-center">
+            <span className="grid h-14 w-14 place-items-center rounded-full bg-brand-50 text-brand-700">
+              <Building2 className="h-7 w-7" />
+            </span>
+            <h2 className="text-base font-extrabold text-ink">{t('reg.applyAsProvider')}</h2>
+            <p className="text-sm text-ink-soft">{t('reg.applyDesc')}</p>
+          </div>
+          <Button to="/register/provider" size="lg" fullWidth>
+            <UserPlus className="h-4 w-4" /> {t('reg.applyAsProvider')}
+          </Button>
         </div>
-        <Input label={t('auth.phone')} type="tel" value={form.phone} onChange={set('phone')} placeholder="+261 34 …" required />
-        <Input label={t('auth.email')} type="email" value={form.email} onChange={set('email')} required />
-        <Select label={t('auth.location')} value={form.location} onChange={set('location')}>
-          {CITIES.map((c) => (
-            <option key={c} value={c}>{c}</option>
-          ))}
-        </Select>
-        <div className="grid grid-cols-2 gap-3">
-          <Input label={t('auth.password')} type="password" value={form.password} onChange={set('password')} required />
-          <Input
-            label={t('auth.passwordConfirm')}
-            type="password"
-            value={form.passwordConfirm}
-            onChange={set('passwordConfirm')}
-            required
-          />
-        </div>
+      ) : (
+        <form onSubmit={handleSubmit} className="mt-5 space-y-3">
+          <div className="grid grid-cols-2 gap-3">
+            <Input label={t('auth.firstName')} value={form.firstName} onChange={set('firstName')} required />
+            <Input label={t('auth.lastName')} value={form.lastName} onChange={set('lastName')} required />
+          </div>
+          <Input label={t('auth.phone')} type="tel" value={form.phone} onChange={set('phone')} placeholder="+261 34 …" required />
+          <Input label={t('auth.email')} type="email" value={form.email} onChange={set('email')} required />
+          <Select label={t('auth.location')} value={form.location} onChange={set('location')}>
+            {CITIES.map((c) => (
+              <option key={c} value={c}>{c}</option>
+            ))}
+          </Select>
+          <div className="grid grid-cols-2 gap-3">
+            <Input label={t('auth.password')} type="password" value={form.password} onChange={set('password')} required />
+            <Input
+              label={t('auth.passwordConfirm')}
+              type="password"
+              value={form.passwordConfirm}
+              onChange={set('passwordConfirm')}
+              required
+            />
+          </div>
 
-        {error && <p className="rounded-xl bg-red-50 px-3 py-2 text-sm font-semibold text-red-600">{error}</p>}
+          {error && <p className="rounded-xl bg-red-50 px-3 py-2 text-sm font-semibold text-red-600">{error}</p>}
 
-        <Button type="submit" size="lg" fullWidth loading={loading}>
-          <UserPlus className="h-4 w-4" /> {t('auth.createAccount')}
-        </Button>
-      </form>
+          <Button type="submit" size="lg" fullWidth loading={loading}>
+            <UserPlus className="h-4 w-4" /> {t('auth.createAccount')}
+          </Button>
+        </form>
+      )}
 
       <p className="mt-6 text-center text-sm text-ink-soft">
         {t('auth.haveAccount')}{' '}

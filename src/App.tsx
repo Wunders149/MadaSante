@@ -6,7 +6,7 @@ import { AuthProvider, useAuth } from './stores/AuthStore'
 import { PatientLayout } from './layouts/PatientLayout'
 import { ProviderLayout } from './layouts/ProviderLayout'
 
-import { LoginPage, RegisterPage, NotFoundPage } from './pages/auth'
+import { LoginPage, RegisterPage, ProviderRegisterPage, NotFoundPage } from './pages/auth'
 import {
   HomePage,
   SearchPage,
@@ -35,8 +35,10 @@ import {
   ProviderPaymentsPage,
   ProviderProfilePage,
 } from './pages/provider'
+import { AdminLayout } from './layouts/AdminLayout'
+import { AdminApplicationsPage, AdminApplicationDetailPage } from './pages/admin'
 
-type GuardRole = 'patient' | 'provider'
+type GuardRole = 'patient' | 'provider' | 'admin'
 
 function RequireAuth({ role, children }: { role: GuardRole; children: ReactNode }) {
   const { user } = useAuth()
@@ -46,7 +48,16 @@ function RequireAuth({ role, children }: { role: GuardRole; children: ReactNode 
     return <Navigate to="/login" replace state={{ from: location.pathname }} />
   }
 
-  const isProvider = user.role !== 'patient'
+  const isProvider = user.role !== 'patient' && user.role !== 'admin'
+  const isAdmin = user.role === 'admin'
+
+  if (role === 'admin') {
+    if (!isAdmin) return <Navigate to={isProvider ? '/provider' : '/patient'} replace />
+    return <>{children}</>
+  }
+  if (isAdmin) {
+    return <Navigate to="/admin" replace />
+  }
   if (role === 'patient' && isProvider) {
     return <Navigate to="/provider" replace />
   }
@@ -59,6 +70,7 @@ function RequireAuth({ role, children }: { role: GuardRole; children: ReactNode 
 function RootRedirect() {
   const { user } = useAuth()
   if (!user) return <Navigate to="/login" replace />
+  if (user.role === 'admin') return <Navigate to="/admin" replace />
   return <Navigate to={user.role === 'patient' ? '/patient' : '/provider'} replace />
 }
 
@@ -78,6 +90,7 @@ export function App() {
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+          <Route path="/register/provider" element={<ProviderRegisterPage />} />
 
           <Route
             path="/patient"
@@ -122,6 +135,19 @@ export function App() {
             <Route path="requests" element={<ProviderRequestsPage />} />
             <Route path="payments" element={<ProviderPaymentsPage />} />
             <Route path="profile" element={<ProviderProfilePage />} />
+          </Route>
+
+          <Route
+            path="/admin"
+            element={
+              <RequireAuth role="admin">
+                <AdminLayout />
+              </RequireAuth>
+            }
+          >
+            <Route index element={<AdminApplicationsPage />} />
+            <Route path="applications" element={<AdminApplicationsPage />} />
+            <Route path="applications/:id" element={<AdminApplicationDetailPage />} />
           </Route>
 
           <Route path="/" element={<RootRedirect />} />

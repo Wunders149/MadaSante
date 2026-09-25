@@ -333,3 +333,83 @@ export const initialNotifications = [
 export const initialDeliveries = [
   { id: 'del1', reference: 'DEL-2026-0017', patientId: 'u_patient_1', medicineId: 'm1', medicineName: 'Paracétamol 500 mg', dose: '500 mg', quantity: 2, pharmacyId: 'p1', pharmacyName: 'Pharmacie de l’Amitié', deliveryAddress: 'Ivandry, Antananarivo 101', deliveryTimeSlot: 'Aujourd’hui, 14h–16h', deliveryFee: 3000, total: 10000, status: 'in_delivery', date: '2026-09-22' },
 ]
+
+export const adminUser = {
+  id: 'u_admin',
+  firstName: 'Super',
+  lastName: 'Admin',
+  phone: '+261 34 99 999 99',
+  email: 'admin@demo.mg',
+  role: 'admin',
+  location: 'Antananarivo',
+  providerId: null,
+}
+
+const demoPdf = (text: string) =>
+  Buffer.from(`%PDF-1.4\n1 0 obj\n<< /Type /Catalog >>\nendobj\n%%EOF\n${text}`, 'utf8').toString('base64')
+
+export const pendingApplications = [
+  {
+    id: 'app_a1',
+    reference: 'PA-2026-0041',
+    role: 'doctor',
+    orgName: 'Cabinet Lala Faniriana',
+    firstName: 'Lala',
+    lastName: 'Faniriana',
+    phone: '+261 33 99 000 01',
+    email: 'lala.faniriana@demo.mg',
+    location: 'Analamanga, Antananarivo 101',
+    city: 'Antananarivo',
+    licenseNumber: 'MED-2024-88213',
+    status: 'pending',
+    reviewNote: null,
+    reviewedAt: null,
+    createdAt: '2026-09-22T10:15:00',
+    documents: [
+      { docType: 'license', fileName: 'diplome_med_generale.pdf', mime: 'application/pdf', data: demoPdf('Licence médicale MED-2024-88213 — Dr. Lala Faniriana') },
+      { docType: 'id', fileName: 'cni_faniriana.png', mime: 'image/png', data: demoPdf('CIN — Lala Faniriana') },
+    ],
+  },
+  {
+    id: 'app_a2',
+    reference: 'PA-2026-0042',
+    role: 'pharmacy',
+    orgName: 'SARL Pharma Nord',
+    firstName: 'Mialy',
+    lastName: 'Razafy',
+    phone: '+261 34 88 000 02',
+    email: 'contact@pharmanord.mg',
+    location: 'Ampasamadinika, Antananarivo 101',
+    city: 'Antananarivo',
+    licenseNumber: 'PHARMA-2023-12007',
+    status: 'pending',
+    reviewNote: null,
+    reviewedAt: null,
+    createdAt: '2026-09-24T08:45:00',
+    documents: [
+      { docType: 'license', fileName: 'licence_pharmacie.pdf', mime: 'application/pdf', data: demoPdf('Licence d’exploitation PHARMA-2023-12007 — Pharma Nord') },
+      { docType: 'certificate', fileName: 'agreement_ministere.pdf', mime: 'application/pdf', data: demoPdf('Agrément Ministère de la Santé — Pharma Nord') },
+      { docType: 'id', fileName: 'cni_razafy.png', mime: 'image/png', data: demoPdf('CIN — Mialy Razafy') },
+    ],
+  },
+  {
+    id: 'app_a3',
+    reference: 'PA-2026-0037',
+    role: 'hospital',
+    orgName: 'Clinique Manarapenitra',
+    firstName: 'Rivo',
+    lastName: 'Rabe',
+    phone: '+261 32 77 000 03',
+    email: 'contact@cliniquemanara.mg',
+    location: 'Ambohidratrimo, Antananarivo 105',
+    city: 'Antananarivo',
+    licenseNumber: 'HOSP-2021-00418',
+    status: 'rejected',
+    reviewNote: 'Document d’agrément illisible, veuillez renvoyer une copie claire.',
+    reviewedAt: '2026-09-18T14:20:00',
+    createdAt: '2026-09-15T09:00:00',
+    documents: [
+      { docType: 'certificate', fileName: 'agrement_clinique.pdf', mime: 'application/pdf', data: demoPdf('Agrément Clinique Manarapenitra') },
+    ],
+  },
+]

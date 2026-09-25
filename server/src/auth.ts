@@ -1,6 +1,7 @@
 import type { NextFunction, Request, Response } from 'express'
 import jwt from 'jsonwebtoken'
 import { config } from './config.js'
+import { isProviderRole } from './helpers.js'
 
 export interface AuthUser {
   id: string
@@ -37,7 +38,15 @@ export function requireAuth(req: Request, res: Response, next: NextFunction) {
 }
 
 export function requireProvider(req: Request, res: Response, next: NextFunction) {
-  if (!req.auth || req.auth.role === 'patient') {
+  if (!req.auth || !isProviderRole(req.auth.role)) {
+    res.status(403).json({ error: 'Forbidden' })
+    return
+  }
+  next()
+}
+
+export function requireAdmin(req: Request, res: Response, next: NextFunction) {
+  if (!req.auth || req.auth.role !== 'admin') {
     res.status(403).json({ error: 'Forbidden' })
     return
   }

@@ -12,6 +12,7 @@ import type {
   Nurse,
   Payment,
   Pharmacy,
+  ProviderApplication,
   User,
 } from '../types'
 
@@ -81,6 +82,21 @@ export const apiRoutes = {
   updateMe: (body: Record<string, unknown>) =>
     api<{ user: User }>('/auth/me', { method: 'PUT', body: JSON.stringify(body) }),
   logout: () => api<{ ok: boolean }>('/auth/logout', { method: 'POST' }),
+  providerRegister: (body: Record<string, unknown>) =>
+    api<{ applicationId: string; reference: string; status: 'pending' }>('/auth/provider-register', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+
+  adminApplications: (status?: string) =>
+    api<ProviderApplication[]>(`/admin/applications${status ? qs({ status }) : ''}`),
+  adminApplication: (id: string) =>
+    api<{ application: ProviderApplication }>(`/admin/applications/${id}`),
+  adminReviewApplication: (id: string, body: { status: 'approved' | 'rejected'; note?: string }) =>
+    api<{ application: ProviderApplication }>(`/admin/applications/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(body),
+    }),
 
   doctors: (query?: string) => api<Doctor[]>(`/doctors${query ?? ''}`),
   doctor: (id: string) => api<Doctor>(`/doctors/${id}`),

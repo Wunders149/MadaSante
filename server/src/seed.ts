@@ -2,7 +2,9 @@ import bcrypt from 'bcryptjs'
 import { db } from './db.js'
 import {
   currentPatient,
+  adminUser,
   providerUsers,
+  pendingApplications,
   doctors,
   hospitals,
   pharmacies,
@@ -54,6 +56,19 @@ function insertUsers() {
       providerId: p.providerId,
     })
   }
+
+  stmt.run({
+    id: adminUser.id,
+    firstName: adminUser.firstName,
+    lastName: adminUser.lastName,
+    phone: adminUser.phone,
+    email: adminUser.email,
+    passwordHash: hash,
+    role: 'admin',
+    location: adminUser.location,
+    photo: null,
+    providerId: null,
+  })
 }
 
 function insertCatalog() {
@@ -188,13 +203,125 @@ function insertAccord() {
   for (const d of initialDeliveries) deliveryStmt.run(d)
 }
 
+function insertApplications() {
+  const appStmt = db.prepare(`
+    INSERT INTO provider_applications (id, reference, role, org_name, first_name, last_name, phone, email, location, city, license_number, password_hash, status, review_note, reviewed_at, created_at)
+    VALUES (@id, @reference, @role, @orgName, @firstName, @lastName, @phone, @email, @location, @city, @licenseNumber, @passwordHash, @status, @reviewNote, @reviewedAt, @createdAt)
+  `)
+  const docStmt = db.prepare(`
+    INSERT INTO provider_documents (id, application_id, doc_type, file_name, mime, data)
+    VALUES (@id, @applicationId, @docType, @fileName, @mime, @data)
+  `)
+  const appHash = bcrypt.hashSync('demo', 10)
+  for (const a of pendingApplications) {
+    appStmt.run({
+      id: a.id,
+      reference: a.reference,
+      role: a.role,
+      orgName: a.orgName,
+      firstName: a.firstName,
+      lastName: a.lastName,
+      phone: a.phone,
+      email: a.email,
+      location: a.location,
+      city: a.city,
+      licenseNumber: a.licenseNumber,
+      passwordHash: appHash,
+      status: a.status,
+      reviewNote: a.reviewNote ?? null,
+      reviewedAt: a.reviewedAt ?? null,
+      createdAt: a.createdAt,
+    })
+    for (let i = 0; i < a.documents.length; i++) {
+      const d = a.documents[i]
+      docStmt.run({
+        id: `${a.id}_doc_${i + 1}`,
+        applicationId: a.id,
+        docType: d.docType,
+        fileName: d.fileName,
+        mime: d.mime,
+        data: d.data,
+      })
+    }
+  }
+}
+
+function insertAdminIfMissing() {
+  const existing = db.prepare('SELECT id FROM users WHERE email = ?').get(adminUser.email)
+  if (existing) return
+  db.prepare(`
+    INSERT INTO users (id, first_name, last_name, phone, email, password_hash, role, location, photo, provider_id)
+    VALUES (?, ?, ?, ?, ?, ?, 'admin', ?, NULL, NULL)
+  `).run(
+    adminUser.id,
+    adminUser.firstName,
+    adminUser.lastName,
+    adminUser.phone,
+    adminUser.email,
+    bcrypt.hashSync('demo', 10),
+    adminUser.location,
+  )
+}
+
+function insertApplicationsIfEmpty() {
+  const count = db.prepare('SELECT COUNT(*) AS n FROM provider_applications').get() as { n: number }
+  if (count.n > 0) return
+  const appStmt = db.prepare(`
+    INSERT INTO provider_applications (id, reference, role, org_name, first_name, last_name, phone, email, location, city, license_number, password_hash, status, review_note, reviewed_at, created_at)
+    VALUES (@id, @reference, @role, @orgName, @firstName, @lastName, @phone, @email, @location, @city, @licenseNumber, @passwordHash, @status, @reviewNote, @reviewedAt, @createdAt)
+  `)
+  const docStmt = db.prepare(`
+    INSERT INTO provider_documents (id, application_id, doc_type, file_name, mime, data)
+    VALUES (@id, @applicationId, @docType, @fileName, @mime, @data)
+  `)
+  const appHash = bcrypt.hashSync('demo', 10)
+  for (const a of pendingApplications) {
+    appStmt.run({
+      id: a.id,
+      reference: a.reference,
+      role: a.role,
+      orgName: a.orgName,
+      firstName: a.firstName,
+      lastName: a.lastName,
+      phone: a.phone,
+      email: a.email,
+      location: a.location,
+      city: a.city,
+      licenseNumber: a.licenseNumber,
+      passwordHash: appHash,
+      status: a.status,
+      reviewNote: a.reviewNote ?? null,
+      reviewedAt: a.reviewedAt ?? null,
+      createdAt: a.createdAt,
+    })
+    for (let i = 0; i < a.documents.length; i++) {
+      const d = a.documents[i]
+      docStmt.run({
+        id: `${a.id}_doc_${i + 1}`,
+        applicationId: a.id,
+        docType: d.docType,
+        fileName: d.fileName,
+        mime: d.mime,
+        data: d.data,
+      })
+    }
+  }
+}
+
 export function seed() {
   const count = db.prepare('SELECT COUNT(*) AS n FROM users').get() as { n: number }
-  if (count.n > 0) return
-  const run = db.transaction(() => {
-    insertUsers()
-    insertCatalog()
-    insertAccord()
+  if (count.n === 0) {
+    const run = db.transaction(() => {
+      insertUsers()
+      insertCatalog()
+      insertAccord()
+      insertApplications()
+    })
+    run()
+  }
+  const extra = db.transaction(() => {
+    insertAdminIfMissing()
+    insertApplicationsIfEmpty()
   })
-  run()
+  extra()
 }

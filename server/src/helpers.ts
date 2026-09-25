@@ -35,6 +35,16 @@ export function todayIso(): string {
   return new Date().toISOString().slice(0, 10)
 }
 
+export const PROVIDER_ROLES = [
+  'doctor',
+  'nurse',
+  'pharmacy',
+  'laboratory',
+  'imaging_center',
+  'hospital',
+  'ambulance_driver',
+] as const
+
 export function isProviderRole(role: string): boolean {
-  return role !== 'patient'
+  return (PROVIDER_ROLES as readonly string[]).includes(role)
 }

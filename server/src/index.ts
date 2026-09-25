@@ -15,6 +15,7 @@ import { notificationsRouter } from './routes/notifications.js'
 import { providersRouter } from './routes/providers.js'
 import { deliveriesRouter } from './routes/deliveries.js'
 import { emergencyRouter } from './routes/emergency.js'
+import { adminRouter } from './routes/admin.js'
 
 migrate()
 seed()
@@ -22,7 +23,7 @@ seed()
 const app = express()
 
 app.use(cors())
-app.use(express.json({ limit: '1mb' }))
+app.use(express.json({ limit: '6mb' }))
 
 app.get('/api/health', (_req, res) => {
   res.json({ ok: true })
@@ -37,6 +38,7 @@ app.use('/api/notifications', notificationsRouter)
 app.use('/api/providers', providersRouter)
 app.use('/api/deliveries', deliveriesRouter)
 app.use('/api/emergency-requests', emergencyRouter)
+app.use('/api/admin', adminRouter)
 
 app.use('/api', (_req, res) => {
   res.status(404).json({ error: 'Not found' })

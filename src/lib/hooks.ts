@@ -89,4 +89,19 @@ export function useAvailability() {
   })
 }
 
+export function useAdminApplications(status?: string) {
+  return useQuery({
+    queryKey: ['admin', 'applications', status ?? 'all'],
+    queryFn: () => apiRoutes.adminApplications(status),
+  })
+}
+
+export function useAdminApplication(id?: string) {
+  return useQuery({
+    queryKey: ['admin', 'applications', id],
+    queryFn: () => apiRoutes.adminApplication(id as string),
+    enabled: Boolean(id),
+  })
+}
+
 export type { Ambulance, Doctor, Hospital, ImagingCenter, Laboratory, Medicine, Nurse, Pharmacy, User }

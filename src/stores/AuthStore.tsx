@@ -12,8 +12,10 @@ interface AuthContextValue {
   user: User | null
   accessToken: string | null
   isProvider: boolean
+  isAdmin: boolean
   loginAsPatient: () => Promise<User>
   loginAsProvider: (role: Role) => Promise<User>
+  loginAsAdmin: () => Promise<User>
   login: (email: string, password: string, role: Role) => Promise<User>
   register: (data: Partial<User> & { role: Role; password: string }) => Promise<User>
   updateUser: (user: User) => void
@@ -25,6 +27,7 @@ const AuthContext = createContext<AuthContextValue | null>(null)
 const SESSION_KEY = 'ms_session'
 
 const PATIENT_EMAIL = 'voahangy.andrianiaina@demo.mg'
+const ADMIN_EMAIL = 'admin@demo.mg'
 const DEMO_PASSWORD = 'demo'
 
 const DEMO_PROVIDER_EMAILS: Partial<Record<Role, string>> = {
@@ -109,6 +112,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return user
   }, [apply])
 
+  const loginAsAdmin = useCallback(async (): Promise<User> => {
+    const { token, user } = await apiRoutes.login({ email: ADMIN_EMAIL, password: DEMO_PASSWORD })
+    apply(token, user)
+    return user
+  }, [apply])
+
   const register = useCallback(
     async (data: Partial<User> & { role: Role; password: string }): Promise<User> => {
       const { token, user } = await apiRoutes.register({ ...data })
@@ -135,14 +144,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     })
   }, [])
 
-  const isProvider = useMemo(() => (session?.user.role ?? 'patient') !== 'patient', [session])
+  const isProvider = useMemo(() => {
+    const role = session?.user.role ?? 'patient'
+    return role !== 'patient' && role !== 'admin'
+  }, [session])
+
+  const isAdmin = useMemo(() => session?.user.role === 'admin', [session])
 
   const value: AuthContextValue = {
     user: session?.user ?? null,
     accessToken: session?.token ?? null,
     isProvider,
+    isAdmin,
     loginAsPatient,
     loginAsProvider,
+    loginAsAdmin,
     login,
     register,
     updateUser,
