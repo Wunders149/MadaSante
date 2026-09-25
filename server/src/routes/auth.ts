@@ -4,7 +4,6 @@ import { z } from 'zod'
 import { db } from '../db.js'
 import { requireAuth, signToken } from '../auth.js'
 import { isProviderRole, PROVIDER_ROLES, publicUser, type UserRow } from '../helpers.js'
-import { providerUsers } from '../seed-data.js'
 
 export const authRouter = Router()
 
@@ -31,13 +30,13 @@ authRouter.post('/login', (req, res) => {
 })
 
 const registerSchema = z.object({
-  firstName: z.string().optional(),
-  lastName: z.string().optional(),
-  phone: z.string().optional(),
-  email: z.string().email().optional(),
-  password: z.string().min(4).optional(),
+  firstName: z.string().min(1),
+  lastName: z.string().min(1),
+  phone: z.string().min(5),
+  email: z.string().email(),
+  password: z.string().min(4),
   role: z.string(),
-  location: z.string().optional(),
+  location: z.string().min(1),
 })
 
 authRouter.post('/register', (req, res) => {
@@ -49,10 +48,7 @@ authRouter.post('/register', (req, res) => {
   const data = parsed.data
 
   if (isProviderRole(data.role)) {
-    const seed = providerUsers.find((p) => p.role === data.role) ?? providerUsers[0]
-    const row = db.prepare('SELECT * FROM users WHERE id = ?').get(seed.id) as UserRow
-    const user = publicUser(row)
-    res.json({ token: signToken({ id: user.id, role: user.role, providerId: user.providerId ?? null }), user })
+    res.status(400).json({ error: 'Les professionnels doivent soumettre une demande via le formulaire dédié' })
     return
   }
 
@@ -63,19 +59,11 @@ authRouter.post('/register', (req, res) => {
   }
 
   const id = `u_${Date.now()}`
-  const hash = bcrypt.hashSync(data.password ?? 'demo', 10)
+  const hash = bcrypt.hashSync(data.password, 10)
   db.prepare(`
     INSERT INTO users (id, first_name, last_name, phone, email, password_hash, role, location, provider_id)
     VALUES (?, ?, ?, ?, ?, ?, 'patient', ?, NULL)
-  `).run(
-    id,
-    data.firstName ?? 'Nouveau',
-    data.lastName ?? 'Patient',
-    data.phone ?? '+261 34 00 000 00',
-    data.email ?? 'patient@demo.mg',
-    hash,
-    data.location ?? 'Antananarivo',
-  )
+  `).run(id, data.firstName, data.lastName, data.phone, data.email, hash, data.location)
   const row = db.prepare('SELECT * FROM users WHERE id = ?').get(id) as UserRow
   const user = publicUser(row)
   res.json({ token: signToken({ id: user.id, role: 'patient', providerId: null }), user })

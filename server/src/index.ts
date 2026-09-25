@@ -5,7 +5,7 @@ import cors from 'cors'
 import type { NextFunction, Request, Response } from 'express'
 import { config } from './config.js'
 import { db, migrate } from './db.js'
-import { seed } from './seed.js'
+import { ensureAdmin } from './seed.js'
 import { authRouter } from './routes/auth.js'
 import { catalogRouter } from './routes/catalog.js'
 import { searchRouter } from './routes/search.js'
@@ -18,7 +18,7 @@ import { emergencyRouter } from './routes/emergency.js'
 import { adminRouter } from './routes/admin.js'
 
 migrate()
-seed()
+ensureAdmin()
 
 const app = express()
 

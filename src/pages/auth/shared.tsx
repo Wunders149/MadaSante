@@ -14,6 +14,7 @@ export function AuthShell({
   subtitle: string
   children: ReactNode
 }) {
+  const { t } = useApp()
   return (
     <div className="flex min-h-screen">
       <div className="hidden w-[44%] flex-col justify-between overflow-hidden bg-brand-700 p-10 lg:flex">
@@ -29,7 +30,7 @@ export function AuthShell({
         <div className="flex items-center gap-3 rounded-2xl bg-white/10 p-4 text-brand-50">
           <ShieldCheck className="h-6 w-6 shrink-0" />
           <p className="text-sm">
-            Prototypes démo — données réalistes. L’API sécurisée (JWT) sera connectée au backend.
+            {t('auth.secureBadge')} — {t('auth.privacyNote')}
           </p>
         </div>
       </div>
@@ -68,7 +69,7 @@ export function RoleTabs({ value, onChange }: { value: 'patient' | 'provider'; o
           )}
           aria-pressed={value === role}
         >
-          {t(role === 'patient' ? 'auth.demoPatient' : 'auth.demoProvider')}
+          {t(role === 'patient' ? 'auth.tabPatient' : 'auth.tabProvider')}
         </button>
       ))}
     </div>

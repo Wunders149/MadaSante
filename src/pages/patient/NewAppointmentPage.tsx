@@ -348,11 +348,7 @@ export function NewAppointmentPage() {
             </div>
           </div>
 
-          <p className="flex items-center gap-1.5 text-xs text-ink-faint">
-            <Smartphone className="h-3.5 w-3.5" /> {t('pay.demoNote')}
-          </p>
-
-          <div className="flex gap-3">
+          <div className="mt-3 flex gap-3">
             <Button variant="outline" size="lg" onClick={prevStep} className="flex-1">
               {t('common.back')}
             </Button>

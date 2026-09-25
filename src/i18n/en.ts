@@ -4,7 +4,6 @@ export const en: Record<string, string> = {
   'brand.slogan': 'We guide you to the right professional or service for your needs.',
   'brand.motto': 'Your health, our commitment.',
   'brand.welcomeBack': 'Hello',
-  'brand.demoBadge': 'Products demo',
 
   'auth.loginTitle': 'Sign in',
   'auth.loginSub': 'Access your patient or professional space.',
@@ -23,11 +22,8 @@ export const en: Record<string, string> = {
   'auth.haveAccount': 'Already have an account?',
   'auth.asPatient': 'Are you a patient?',
   'auth.asProvider': 'Are you a healthcare professional?',
-  'auth.demoLabel': 'Demo — choose a space',
-  'auth.demoPatient': 'Patient space',
-  'auth.demoProvider': 'Professional space',
-  'auth.demoPatientDesc': 'Browse healthcare services',
-  'auth.demoProviderDesc': 'Open the professional dashboard',
+  'auth.tabPatient': 'Patient space',
+  'auth.tabProvider': 'Provider space',
   'auth.docRole': 'Doctor',
   'auth.nurseRole': 'Nurse',
   'auth.pharmacyRole': 'Pharmacy',
@@ -35,7 +31,7 @@ export const en: Record<string, string> = {
   'auth.imagingRole': 'Imaging',
   'auth.hospitalRole': 'Hospital',
   'auth.ambulanceRole': 'Ambulance',
-  'auth.invalidCredentials': 'Invalid credentials. The demo does not require a password.',
+  'auth.invalidCredentials': 'Invalid credentials. Check your email and password.',
   'auth.privacyNote': 'Your data is encrypted and used only for your care.',
   'auth.secureBadge': 'Secure JWT session',
 
@@ -375,7 +371,6 @@ export const en: Record<string, string> = {
   'pay.platformFee': 'Platform fee',
   'pay.deliveryFee': 'Delivery fee',
   'pay.balance': 'New balance',
-  'pay.demoNote': 'Simulated payment — the real API integration will be added with the backend.',
 
   'notif.title': 'Notifications',
   'notif.subtitle': 'Stay updated on your appointments and requests.',
@@ -434,8 +429,6 @@ export const en: Record<string, string> = {
   'prov.lastPayments': 'Recent payments',
   'prov.noData': 'No data',
 
-  'auth.demoAdmin': 'Admin space',
-  'auth.demoAdminDesc': 'Validate healthcare provider registrations',
   'reg.applyAsProvider': 'Healthcare provider',
   'reg.applyDesc': 'Submit a verified application: your license and diplomas are reviewed by a super admin before your account is activated.',
   'reg.title': 'Become a partner provider',
@@ -495,5 +488,4 @@ export const en: Record<string, string> = {
   'misc.today': 'Today',
   'misc.tomorrow': 'Tomorrow',
   'misc.emergencyIndicator': 'Emergency service',
-  'misc.offlineNote': 'Demo data',
 }

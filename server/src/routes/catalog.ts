@@ -1,7 +1,7 @@
 import { Router } from 'express'
 import type { Request, Response } from 'express'
 import { db } from '../db.js'
-import { CITIES } from '../seed-data.js'
+import { CITIES } from '../cities.js'
 
 export const catalogRouter = Router()
 
@@ -258,6 +258,7 @@ catalogRouter.get('/summary', (_req: Request, res: Response) => {
   res.json({
     doctors: count('doctors'),
     medicines: count('medicines'),
+    pharmacies: count('pharmacies'),
     labs: count('laboratories'),
     imaging: count('imaging_centers'),
     nurses: count('nurses'),

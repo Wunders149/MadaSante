@@ -5,7 +5,6 @@ export const fr: Record<string, string> = {
   'brand.slogan': 'Nous vous orientons vers le professionnel ou service adapté à votre besoin.',
   'brand.motto': 'Votre santé, notre engagement.',
   'brand.welcomeBack': 'Bonjour',
-  'brand.demoBadge': 'Démo produits',
 
   // Auth
   'auth.loginTitle': 'Connexion',
@@ -25,11 +24,8 @@ export const fr: Record<string, string> = {
   'auth.haveAccount': 'Déjà un compte ?',
   'auth.asPatient': 'Vous êtes patient ?',
   'auth.asProvider': 'Vous êtes un professionnel de santé ?',
-  'auth.demoLabel': 'Démo — choisissez un espace',
-  'auth.demoPatient': 'Espace patient',
-  'auth.demoProvider': 'Espace professionnel',
-  'auth.demoPatientDesc': 'Tout Parcourir les services de santé',
-  'auth.demoProviderDesc': 'Accéder au tableau de bord professionnel',
+  'auth.tabPatient': 'Espace patient',
+  'auth.tabProvider': 'Espace professionnel',
   'auth.docRole': 'Médecin',
   'auth.nurseRole': 'Infirmière',
   'auth.pharmacyRole': 'Pharmacie',
@@ -37,7 +33,7 @@ export const fr: Record<string, string> = {
   'auth.imagingRole': 'Imagerie',
   'auth.hospitalRole': 'Hôpital',
   'auth.ambulanceRole': 'Ambulance',
-  'auth.invalidCredentials': 'Identifiants invalides. La démo n’exige pas de mot de passe.',
+  'auth.invalidCredentials': 'Identifiants invalides. Vérifiez votre adresse e-mail et votre mot de passe.',
   'auth.privacyNote': 'Vos données sont chiffrées et utilisées uniquement pour votre prise en charge.',
   'auth.secureBadge': 'Connexion sécurisée JWT',
 
@@ -395,8 +391,6 @@ export const fr: Record<string, string> = {
   'pay.platformFee': 'Frais de plateforme',
   'pay.deliveryFee': 'Frais de livraison',
   'pay.balance': 'Nouveau solde',
-  'pay.demoNote': 'Paiement simulé — l’intégration API réelle sera ajoutée avec le backend.',
-
   // Notifications
   'notif.title': 'Notifications',
   'notif.subtitle': 'Restez informé de vos rendez-vous et de vos demandes.',
@@ -458,8 +452,6 @@ export const fr: Record<string, string> = {
   'prov.noData': 'Aucune donnée',
 
   // Inscription professionnelle
-  'auth.demoAdmin': 'Espace super admin',
-  'auth.demoAdminDesc': 'Validez les inscriptions des professionnels',
   'reg.applyAsProvider': 'Professionnel de santé',
   'reg.applyDesc': 'Soumettre un dossier de candidature vérifié : votre licence et vos diplômes sont examinés par un super admin avant activation de votre compte.',
   'reg.title': 'Devenir professionnel partenaire',
@@ -522,5 +514,4 @@ export const fr: Record<string, string> = {
   'misc.today': 'Aujourd’hui',
   'misc.tomorrow': 'Demain',
   'misc.emergencyIndicator': 'Service d’urgence',
-  'misc.offlineNote': 'Données de démonstration',
 }

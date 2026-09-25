@@ -153,7 +153,7 @@ export function HomePage() {
         {[
           { icon: Stethoscope, label: t('nav.doctors'), value: summary.doctors },
           { icon: Building2, label: t('nav.hospitals'), value: summary.facilities },
-          { icon: Pill, label: t('nav.pharmacies'), value: 8 },
+          { icon: Pill, label: t('nav.pharmacies'), value: summary.pharmacies },
           { icon: FlaskConical, label: t('nav.laboratories'), value: summary.labs },
           { icon: Scan, label: t('nav.imaging'), value: summary.imaging },
           { icon: HeartPulse, label: t('nav.nurses'), value: summary.nurses },
@@ -171,7 +171,7 @@ export function HomePage() {
       </section>
 
       <p className="pb-2 text-center text-xs text-ink-faint flex items-center justify-center gap-1.5">
-        Mada Santé · manampy anao — {t('misc.offlineNote')}
+        Mada Santé · manampy anao
       </p>
     </div>
   )

@@ -12,5 +12,9 @@ services:
         generateValue: true
       - key: PORT
         value: 10000
-    # SQLite DB lives under server/data (ephemeral on Render) and is
-    # re-seeded with deterministic demo data on each boot via DB seed.
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+    # SQLite DB lives under server/data (ephemeral on Render).
+    # A super admin is bootstrapped on start from ADMIN_EMAIL / ADMIN_PASSWORD.

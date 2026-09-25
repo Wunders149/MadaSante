@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Building2, KeyRound, ShieldCheck, UserRound } from 'lucide-react'
+import { KeyRound, ShieldCheck } from 'lucide-react'
 import { AuthShell, RoleTabs } from './shared'
 import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Field'
@@ -13,12 +13,12 @@ const providerRoles: Role[] = ['doctor', 'nurse', 'pharmacy', 'laboratory', 'ima
 
 export function LoginPage() {
   const { t, toast } = useApp()
-  const { login, loginAsPatient, loginAsProvider, loginAsAdmin } = useAuth()
+  const { login } = useAuth()
   const navigate = useNavigate()
   const [tab, setTab] = useState<'patient' | 'provider'>('patient')
   const [providerRole, setProviderRole] = useState<Role>('doctor')
-  const [email, setEmail] = useState('voahangy.andrianiaina@demo.mg')
-  const [password, setPassword] = useState('demo')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
 
   const go = (role: Role) => navigate(role === 'patient' ? '/patient' : '/provider')
@@ -30,42 +30,6 @@ export function LoginPage() {
       const role = tab === 'patient' ? 'patient' : providerRole
       await login(email, password, role as Role)
       go(role as Role)
-    } catch (err) {
-      toast('Connexion impossible', err instanceof Error ? err.message : 'Erreur inattendue', 'error')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const quickPatient = async () => {
-    setLoading(true)
-    try {
-      await loginAsPatient()
-      navigate('/patient')
-    } catch (err) {
-      toast('Connexion impossible', err instanceof Error ? err.message : 'Erreur inattendue', 'error')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const quickProvider = async (role: Role) => {
-    setLoading(true)
-    try {
-      await loginAsProvider(role)
-      navigate('/provider')
-    } catch (err) {
-      toast('Connexion impossible', err instanceof Error ? err.message : 'Erreur inattendue', 'error')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const quickAdmin = async () => {
-    setLoading(true)
-    try {
-      await loginAsAdmin()
-      navigate('/admin')
     } catch (err) {
       toast('Connexion impossible', err instanceof Error ? err.message : 'Erreur inattendue', 'error')
     } finally {
@@ -119,62 +83,6 @@ export function LoginPage() {
           <KeyRound className="h-4 w-4" /> {t('auth.signIn')}
         </Button>
       </form>
-
-      <div className="my-5 flex items-center gap-3 text-xs font-semibold uppercase tracking-wider text-ink-faint">
-        <span className="h-px flex-1 bg-line" />
-        {t('auth.demoLabel')}
-        <span className="h-px flex-1 bg-line" />
-      </div>
-
-      <div className="space-y-2">
-        <button
-          onClick={quickPatient}
-          disabled={loading}
-          className="card touch-target flex w-full items-center gap-3 p-4 text-left transition hover:border-brand-300"
-        >
-          <span className="grid h-10 w-10 place-items-center rounded-xl bg-brand-50 text-brand-700">
-            <UserRound className="h-5 w-5" />
-          </span>
-          <span className="flex-1">
-            <span className="block text-sm font-bold text-ink">{t('auth.demoPatient')}</span>
-            <span className="block text-xs text-ink-soft">{t('auth.demoPatientDesc')}</span>
-          </span>
-          <span className="text-brand-700">→</span>
-        </button>
-
-        <div className="card p-3">
-          <span className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-ink-faint">
-            <Building2 className="h-3.5 w-3.5" /> {t('auth.demoProvider')}
-          </span>
-          <div className="grid grid-cols-3 gap-1.5">
-            {providerRoles.slice(0, 6).map((r) => (
-              <button
-                key={r}
-                disabled={loading}
-                onClick={() => quickProvider(r)}
-className="rounded-xl border border-line bg-card px-1 py-2 text-xs font-semibold text-ink-soft transition hover:border-brand-300 hover:text-brand-700"
-              >
-                {t(roleLabelKey(r))}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <button
-          onClick={quickAdmin}
-          disabled={loading}
-          className="card touch-target flex w-full items-center gap-3 p-4 text-left transition hover:border-brand-300"
-        >
-          <span className="grid h-10 w-10 place-items-center rounded-xl bg-brand-50 text-brand-700">
-            <ShieldCheck className="h-5 w-5" />
-          </span>
-          <span className="flex-1">
-            <span className="block text-sm font-bold text-ink">{t('auth.demoAdmin')}</span>
-            <span className="block text-xs text-ink-soft">{t('auth.demoAdminDesc')}</span>
-          </span>
-          <span className="text-brand-700">→</span>
-        </button>
-      </div>
 
       <p className="mt-6 text-center text-sm text-ink-soft">
         {t('auth.noAccount')}{' '}

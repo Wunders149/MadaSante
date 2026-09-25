@@ -98,8 +98,6 @@ export const mg: Record<string, string> = {
   'prov.saved': 'Voatahiry ny fanovana',
   'prov.profileSavedDesc': 'Voatahiry soa aman-tsara ny mombamomba anao.',
 
-  'auth.demoAdmin': 'Faritry admin',
-  'auth.demoAdminDesc': 'Hamarino ny fisoratana anarana ho matihanina ara-pahasalamana',
   'reg.applyAsProvider': 'Matihanina ara-pahasalamana',
   'reg.title': 'Hivady olana ho mpiara-miasa ara-pahasalamana',
   'reg.subtitle': 'Atefy ny kitaponao mba hiditra amin’i Mada Santé ho matihanina voamarina.',

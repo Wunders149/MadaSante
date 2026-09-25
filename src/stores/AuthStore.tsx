@@ -13,9 +13,6 @@ interface AuthContextValue {
   accessToken: string | null
   isProvider: boolean
   isAdmin: boolean
-  loginAsPatient: () => Promise<User>
-  loginAsProvider: (role: Role) => Promise<User>
-  loginAsAdmin: () => Promise<User>
   login: (email: string, password: string, role: Role) => Promise<User>
   register: (data: Partial<User> & { role: Role; password: string }) => Promise<User>
   updateUser: (user: User) => void
@@ -25,20 +22,6 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | null>(null)
 
 const SESSION_KEY = 'ms_session'
-
-const PATIENT_EMAIL = 'voahangy.andrianiaina@demo.mg'
-const ADMIN_EMAIL = 'admin@demo.mg'
-const DEMO_PASSWORD = 'demo'
-
-const DEMO_PROVIDER_EMAILS: Partial<Record<Role, string>> = {
-  doctor: 'dr.rakoto@demo.mg',
-  nurse: 'edith.raveloson@demo.mg',
-  pharmacy: 'contact@pharmamitie.mg',
-  laboratory: 'contact@labolem.mg',
-  imaging_center: 'contact@cima.mg',
-  hospital: 'contact@hjra.mg',
-  ambulance_driver: 'samu@demo.mg',
-}
 
 function readSession(): Session | null {
   try {
@@ -98,26 +81,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [apply],
   )
 
-  const loginAsPatient = useCallback(async (): Promise<User> => {
-    const { token, user } = await apiRoutes.login({ email: PATIENT_EMAIL, password: DEMO_PASSWORD })
-    apply(token, user)
-    return user
-  }, [apply])
-
-  const loginAsProvider = useCallback(async (role: Role): Promise<User> => {
-    const email = DEMO_PROVIDER_EMAILS[role]
-    if (!email) throw new Error('unknown provider role')
-    const { token, user } = await apiRoutes.login({ email, password: DEMO_PASSWORD })
-    apply(token, user)
-    return user
-  }, [apply])
-
-  const loginAsAdmin = useCallback(async (): Promise<User> => {
-    const { token, user } = await apiRoutes.login({ email: ADMIN_EMAIL, password: DEMO_PASSWORD })
-    apply(token, user)
-    return user
-  }, [apply])
-
   const register = useCallback(
     async (data: Partial<User> & { role: Role; password: string }): Promise<User> => {
       const { token, user } = await apiRoutes.register({ ...data })
@@ -156,9 +119,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     accessToken: session?.token ?? null,
     isProvider,
     isAdmin,
-    loginAsPatient,
-    loginAsProvider,
-    loginAsAdmin,
     login,
     register,
     updateUser,
