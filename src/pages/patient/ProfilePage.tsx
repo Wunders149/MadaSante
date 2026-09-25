@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { CalendarDays, ChevronRight, Lock, Phone, Save, Wallet } from 'lucide-react'
+import { CalendarDays, ChevronRight, Phone, Save, Wallet } from 'lucide-react'
 import { PageHeader } from '../../components/ui/Headers'
-import { Avatar } from '../../components/Avatar'
+import { AvatarUploader } from '../../components/AvatarUploader'
 import { Button } from '../../components/ui/Button'
 import { Badge } from '../../components/ui/Badge'
 import { Input } from '../../components/ui/Field'
+import { PasswordChange } from '../../components/PasswordChange'
 import { useAuth } from '../../stores/AuthStore'
 import { useApp } from '../../stores/AppStore'
 import { apiRoutes } from '../../lib/api'
@@ -43,7 +44,6 @@ export function ProfilePage() {
   }, [user])
 
   if (!user) return null
-  const initials = `${form.firstName[0] ?? ''}${form.lastName[0] ?? ''}`.toUpperCase()
 
   const save = async () => {
     setSaving(true)
@@ -58,12 +58,17 @@ export function ProfilePage() {
     }
   }
 
+  const savePhoto = async (photo: string | null) => {
+    const { user: updated } = await apiRoutes.updateMe({ ...form, photo: photo ?? '' })
+    updateUser(updated)
+  }
+
   return (
     <div className="page-container max-w-2xl py-5 sm:py-7">
       <PageHeader title={t('nav.profile')} subtitle={t('profile.subtitle')} />
 
       <div className="mt-4 flex items-center gap-4 rounded-3xl border border-line bg-card p-5">
-        <Avatar name={initials} src={user.photo} size="xl" />
+        <AvatarUploader src={user.photo} name={`${form.firstName} ${form.lastName}`} onChange={savePhoto} />
         <div className="min-w-0">
           <h2 className="text-lg font-bold text-ink">
             {form.firstName} {form.lastName}
@@ -150,18 +155,7 @@ export function ProfilePage() {
           <Badge tone="green">{langLabel[lang]}</Badge>
         </div>
 
-        <div className="flex items-center justify-between gap-3 rounded-3xl border border-line bg-card px-5 py-4">
-          <div className="flex items-center gap-3">
-            <div className="grid h-10 w-10 place-items-center rounded-xl bg-brand-50 text-brand-700">
-              <Lock className="h-5 w-5" />
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-ink">Confidentialité</p>
-              <p className="text-xs text-ink-soft">Vos données restent privées et sécurisées</p>
-            </div>
-          </div>
-          <Badge tone="green">Sécurisé</Badge>
-        </div>
+        <PasswordChange />
       </div>
 
       <div className="mt-8">

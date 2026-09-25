@@ -423,6 +423,17 @@ export const fr: Record<string, string> = {
   'profile.theme.v2': 'V2 — Bleu',
   'profile.settings.connected': 'Connecté',
   'profile.settings.phoneVerified': 'Téléphone vérifié',
+  'profile.changePhoto': 'Changer la photo',
+  'profile.removePhoto': 'Supprimer la photo',
+  'profile.photoUpdated': 'Photo de profil mise à jour',
+  'profile.passwordSection': 'Changer le mot de passe',
+  'profile.currentPassword': 'Mot de passe actuel',
+  'profile.newPassword': 'Nouveau mot de passe',
+  'profile.passwordConfirm': 'Confirmer le nouveau mot de passe',
+  'profile.passwordChanged': 'Mot de passe mis à jour',
+  'profile.passwordChangedDesc': 'Votre mot de passe a été modifié avec succès.',
+  'profile.passwordMismatch': 'Les mots de passe ne correspondent pas.',
+  'profile.passwordTooShort': 'Le nouveau mot de passe doit contenir au moins 6 caractères.',
 
   // Provider
   'prov.title': 'Espace professionnel',

@@ -81,6 +81,8 @@ export const apiRoutes = {
   me: () => api<{ user: User }>('/auth/me'),
   updateMe: (body: Record<string, unknown>) =>
     api<{ user: User }>('/auth/me', { method: 'PUT', body: JSON.stringify(body) }),
+  changePassword: (body: { currentPassword: string; newPassword: string }) =>
+    api<{ ok: boolean }>('/auth/me/password', { method: 'PUT', body: JSON.stringify(body) }),
   logout: () => api<{ ok: boolean }>('/auth/logout', { method: 'POST' }),
   providerRegister: (body: Record<string, unknown>) =>
     api<{ applicationId: string; reference: string; status: 'pending' }>('/auth/provider-register', {

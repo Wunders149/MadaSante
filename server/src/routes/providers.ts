@@ -41,7 +41,11 @@ const updateSchema = z.object({
   phone: z.string().optional(),
   email: z.string().email().optional(),
   location: z.string().optional(),
+  photo: z.string().optional(),
 })
+
+const photoPattern = /^data:image\/(png|jpe?g|webp|gif);base64,/
+const MAX_PHOTO_LENGTH = 3_000_000
 
 providersRouter.put('/me', (req: Request, res: Response) => {
   const parsed = updateSchema.safeParse(req.body)
@@ -50,6 +54,14 @@ providersRouter.put('/me', (req: Request, res: Response) => {
     return
   }
   const data = parsed.data
+  if (data.photo && data.photo.length > MAX_PHOTO_LENGTH) {
+    res.status(400).json({ error: 'Photo trop volumineuse' })
+    return
+  }
+  if (data.photo && !photoPattern.test(data.photo)) {
+    res.status(400).json({ error: 'Format de photo invalide' })
+    return
+  }
   const existing = db.prepare('SELECT * FROM users WHERE id = ?').get(req.auth!.id) as UserRow
   const next = {
     firstName: data.firstName ?? existing.first_name,
@@ -57,6 +69,7 @@ providersRouter.put('/me', (req: Request, res: Response) => {
     phone: data.phone ?? existing.phone,
     email: data.email ?? existing.email,
     location: data.location ?? existing.location ?? '',
+    photo: data.photo === undefined ? existing.photo : data.photo || null,
   }
   if (next.email !== existing.email) {
     const clash = db.prepare('SELECT id FROM users WHERE email = ? AND id != ?').get(next.email, req.auth!.id)
@@ -66,9 +79,9 @@ providersRouter.put('/me', (req: Request, res: Response) => {
     }
   }
   db.prepare(`
-    UPDATE users SET first_name = ?, last_name = ?, phone = ?, email = ?, location = ?
+    UPDATE users SET first_name = ?, last_name = ?, phone = ?, email = ?, location = ?, photo = ?
     WHERE id = ?
-  `).run(next.firstName, next.lastName, next.phone, next.email, next.location, req.auth!.id)
+  `).run(next.firstName, next.lastName, next.phone, next.email, next.location, next.photo, req.auth!.id)
   const updated = db.prepare('SELECT * FROM users WHERE id = ?').get(req.auth!.id) as UserRow
   const user = publicUser(updated)
   res.json({ user, provider: fetchProfile(user.role, user.providerId ?? null) })

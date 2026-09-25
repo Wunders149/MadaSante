@@ -4,7 +4,8 @@ import { PageHeader } from '../../components/ui/Headers'
 import { Badge } from '../../components/ui/Badge'
 import { Button } from '../../components/ui/Button'
 import { Label, Input, Textarea } from '../../components/ui/Field'
-import { Avatar } from '../../components/Avatar'
+import { AvatarUploader } from '../../components/AvatarUploader'
+import { PasswordChange } from '../../components/PasswordChange'
 import { useApp } from '../../stores/AppStore'
 import { useAuth } from '../../stores/AuthStore'
 import { apiRoutes } from '../../lib/api'
@@ -55,12 +56,24 @@ export function ProviderProfilePage() {
     }
   }
 
+  const savePhoto = async (photo: string | null) => {
+    const { user: updated } = await apiRoutes.updateProviderMe({
+      firstName: form.firstName,
+      lastName: form.lastName,
+      phone: form.phone,
+      email: form.email,
+      location: form.location,
+      photo: photo ?? '',
+    })
+    updateUser(updated)
+  }
+
   return (
     <div className="page-container max-w-2xl py-5 sm:py-7">
       <PageHeader title={t('prov.profile')} subtitle={t('prov.profileDesc')} />
 
       <div className="mt-5 flex items-center gap-4">
-        <Avatar src={user?.photo} name={`${form.firstName[0] ?? 'P'}${form.lastName[0] ?? ''}`} size="xl" />
+        <AvatarUploader src={user?.photo} name={`${form.firstName[0] ?? 'P'}${form.lastName[0] ?? ''}`} onChange={savePhoto} />
         <div className="min-w-0">
           <p className="text-lg font-bold text-ink">{form.firstName} {form.lastName}</p>
           <div className="mt-1 flex flex-wrap items-center gap-2">
@@ -135,6 +148,10 @@ export function ProviderProfilePage() {
             className="resize-none"
           />
         </div>
+      </div>
+
+      <div className="mt-6">
+        <PasswordChange />
       </div>
 
       <div className="mt-8 flex flex-col gap-3 sm:flex-row">
