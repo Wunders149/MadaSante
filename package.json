@@ -7,7 +7,7 @@
     "dev": "concurrently -n api,web -c yellow,cyan \"npm run dev:server\" \"npm run dev:web\"",
     "dev:server": "npm --prefix server run dev",
     "dev:web": "vite",
-    "build": "tsc && vite build",
+    "build": "tsc && vite build && npm --prefix server install && npm --prefix server run build",
     "build:server": "npm --prefix server run build",
     "preview": "vite preview",
     "start": "node server/dist/index.js"
