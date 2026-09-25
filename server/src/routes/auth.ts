@@ -93,3 +93,45 @@ authRouter.get('/me', requireAuth, (req, res) => {
   }
   res.json({ user: publicUser(row) })
 })
+
+const updateMeSchema = z.object({
+  firstName: z.string().optional(),
+  lastName: z.string().optional(),
+  phone: z.string().optional(),
+  email: z.string().email().optional(),
+  location: z.string().optional(),
+})
+
+authRouter.put('/me', requireAuth, (req, res) => {
+  const parsed = updateMeSchema.safeParse(req.body)
+  if (!parsed.success) {
+    res.status(400).json({ error: 'Payload invalide' })
+    return
+  }
+  const data = parsed.data
+  const existing = db.prepare('SELECT * FROM users WHERE id = ?').get(req.auth!.id) as UserRow | undefined
+  if (!existing) {
+    res.status(401).json({ error: 'Session invalide' })
+    return
+  }
+  const next = {
+    firstName: data.firstName ?? existing.first_name,
+    lastName: data.lastName ?? existing.last_name,
+    phone: data.phone ?? existing.phone,
+    email: data.email ?? existing.email,
+    location: data.location ?? existing.location ?? '',
+  }
+  if (next.email !== existing.email) {
+    const clash = db.prepare('SELECT id FROM users WHERE email = ? AND id != ?').get(next.email, req.auth!.id)
+    if (clash) {
+      res.status(409).json({ error: 'Email déjà utilisé' })
+      return
+    }
+  }
+  db.prepare(`
+    UPDATE users SET first_name = ?, last_name = ?, phone = ?, email = ?, location = ?
+    WHERE id = ?
+  `).run(next.firstName, next.lastName, next.phone, next.email, next.location, req.auth!.id)
+  const updated = db.prepare('SELECT * FROM users WHERE id = ?').get(req.auth!.id) as UserRow
+  res.json({ user: publicUser(updated) })
+})

@@ -9,7 +9,6 @@ export type Role =
   | 'ambulance_driver'
 
 export type Lang = 'fr' | 'mg' | 'en'
-export type Theme = 'v1' | 'v2'
 
 export interface User {
   id: string

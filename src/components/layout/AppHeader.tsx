@@ -6,30 +6,8 @@ import { Avatar } from '../Avatar'
 import { NotificationBell } from '../NotificationCard'
 import { useApp } from '../../stores/AppStore'
 import { useAuth } from '../../stores/AuthStore'
-import { cn } from '../../lib/cn'
 
 const langLabel = { fr: 'FR', en: 'EN', mg: 'MG' } as const
-
-function ThemeToggle() {
-  const { theme, setTheme } = useApp()
-  return (
-    <div className="flex items-center rounded-full border border-line bg-card p-0.5" role="group" aria-label="Identité visuelle">
-      {(['v1', 'v2'] as const).map((x) => (
-        <button
-          key={x}
-          onClick={() => setTheme(x)}
-          className={cn(
-            'rounded-full px-2.5 py-1 text-[11px] font-bold transition',
-            theme === x ? 'bg-brand-600 text-white' : 'text-ink-soft hover:text-ink',
-          )}
-          aria-pressed={theme === x}
-        >
-          {x === 'v1' ? 'V1' : 'V2'}
-        </button>
-      ))}
-    </div>
-  )
-}
 
 export function AppHeader() {
   const { user } = useAuth()
@@ -47,7 +25,6 @@ export function AppHeader() {
       <div className="flex items-center justify-between px-4 py-3 lg:hidden">
         <Logo compact />
         <div className="flex items-center gap-2">
-          <ThemeToggle />
           <NotificationBell onClick={() => navigate('/patient/notifications')} />
           <button
             onClick={() => navigate('/patient/profile')}
@@ -87,7 +64,6 @@ export function AppHeader() {
             <Languages className="h-4 w-4" />
             <span>{langLabel[lang]}</span>
           </button>
-          <ThemeToggle />
           <NotificationBell onClick={() => navigate('/patient/notifications')} />
           <button
             onClick={() => navigate('/patient/profile')}

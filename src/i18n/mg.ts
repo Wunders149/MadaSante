@@ -50,6 +50,8 @@ export const mg: Record<string, string> = {
   'common.available': 'Misongadina',
   'common.unavailable': 'Tsy misy',
   'common.phone': 'Telefaonina',
+  'common.email': 'Mailaka',
+  'common.save': 'Tehirizina',
   'common.location': 'Toerana',
   'common.price': 'Vidiny',
   'common.status': 'Toerana',
@@ -87,5 +89,12 @@ export const mg: Record<string, string> = {
   'notif.empty': 'Tsy misy fanambarana',
 
   'profile.title': 'Kaonty',
+  'profile.bio': 'Bio / Fampisehoana',
+  'profile.role': 'Lahasa',
   'profile.section.logout': 'Rivo',
+
+  'prov.profile': 'Kaonty',
+  'prov.profileDesc': 'Tantano ny mombamomba anao sy ny toeram-piasana.',
+  'prov.saved': 'Voatahiry ny fanovana',
+  'prov.profileSavedDesc': 'Voatahiry soa aman-tsara ny mombamomba anao.',
 }

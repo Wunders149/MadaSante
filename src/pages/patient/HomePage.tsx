@@ -60,7 +60,7 @@ const v2Services: V2Service[] = [
 ]
 
 export function HomePage() {
-  const { t, theme } = useApp()
+  const { t } = useApp()
   const navigate = useNavigate()
   const [query, setQuery] = useState('')
 
@@ -122,17 +122,15 @@ export function HomePage() {
         actionTo="/patient/orientation"
       />
 
-      {/* V2 services grid */}
-      {theme === 'v2' && (
-        <section>
-          <SectionHeader title={t('home.v2Title')} subtitle={t('home.v2Sub')} />
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-            {v2Services.map((s) => (
-              <ServiceCard key={s.label} to={s.to} icon={s.icon} title={s.label} tone={s.tone} compact />
-            ))}
-          </div>
-        </section>
-      )}
+      {/* Services grid */}
+      <section>
+        <SectionHeader title={t('home.v2Title')} subtitle={t('home.v2Sub')} />
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          {v2Services.map((s) => (
+            <ServiceCard key={s.label} to={s.to} icon={s.icon} title={s.label} tone={s.tone} compact />
+          ))}
+        </div>
+      </section>
 
       {/* Emergency */}
       <section className="flex flex-col gap-3 rounded-3xl border border-red-200 bg-red-50 p-5 sm:flex-row sm:items-center sm:justify-between">

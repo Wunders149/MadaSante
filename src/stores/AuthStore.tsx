@@ -16,6 +16,7 @@ interface AuthContextValue {
   loginAsProvider: (role: Role) => Promise<User>
   login: (email: string, password: string, role: Role) => Promise<User>
   register: (data: Partial<User> & { role: Role; password: string }) => Promise<User>
+  updateUser: (user: User) => void
   logout: () => void
 }
 
@@ -54,6 +55,10 @@ function writeSession(session: Session) {
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(() => readSession())
+
+  useEffect(() => {
+    if (session) writeSession(session)
+  }, [session])
 
   useEffect(() => {
     if (!session) return
@@ -123,6 +128,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setSession(null)
   }, [])
 
+  const updateUser = useCallback((nextUser: User) => {
+    setSession((prev) => {
+      if (!prev) return prev
+      return { ...prev, user: nextUser }
+    })
+  }, [])
+
   const isProvider = useMemo(() => (session?.user.role ?? 'patient') !== 'patient', [session])
 
   const value: AuthContextValue = {
@@ -133,6 +145,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     loginAsProvider,
     login,
     register,
+    updateUser,
     logout,
   }
 

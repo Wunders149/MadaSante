@@ -8,7 +8,6 @@ import type {
   NotificationItem,
   Payment,
   PaymentMethod,
-  Theme,
 } from '../types'
 import { apiRoutes } from '../lib/api'
 import { useAuth } from './AuthStore'
@@ -66,8 +65,6 @@ interface EmergencyInput {
 interface AppContextValue {
   lang: Lang
   setLang: (l: Lang) => void
-  theme: Theme
-  setTheme: (t: Theme) => void
   t: (key: string, params?: Record<string, string | number>) => string
 
   toasts: Toast[]
@@ -108,18 +105,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const saved = localStorage.getItem('ms_lang')
     return saved === 'mg' || saved === 'en' ? saved : 'fr'
   })
-  const [theme, setThemeState] = useState<Theme>(() => {
-    const saved = localStorage.getItem('ms_theme')
-    return saved === 'v2' ? 'v2' : 'v1'
-  })
   const [toasts, setToasts] = useState<Toast[]>([])
   const [data, setData] = useState(EMPTY)
   const timers = useRef<number[]>([])
-
-  useEffect(() => {
-    document.documentElement.dataset.theme = theme === 'v2' ? 'v2' : ''
-    localStorage.setItem('ms_theme', theme)
-  }, [theme])
 
   useEffect(() => {
     localStorage.setItem('ms_lang', lang)
@@ -233,13 +221,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const setLang = useCallback((l: Lang) => setLangState(l), [])
-  const setTheme = useCallback((x: Theme) => setThemeState(x), [])
 
   const value: AppContextValue = {
     lang,
     setLang,
-    theme,
-    setTheme,
     t,
     toasts,
     toast,

@@ -12,7 +12,7 @@ import { cn } from '../../lib/cn'
 
 export function ProviderProfilePage() {
   const { t, toast } = useApp()
-  const { user, logout } = useAuth()
+  const { user, logout, updateUser } = useAuth()
 
   const [form, setForm] = useState({
     firstName: user?.firstName ?? '',
@@ -39,13 +39,14 @@ export function ProviderProfilePage() {
   const save = async () => {
     setSaving(true)
     try {
-      await apiRoutes.updateProviderMe({
+      const { user: updated } = await apiRoutes.updateProviderMe({
         firstName: form.firstName,
         lastName: form.lastName,
         phone: form.phone,
         email: form.email,
         location: form.location,
       })
+      updateUser(updated)
       toast(t('prov.saved'), t('prov.profileSavedDesc'), 'success')
     } catch {
       toast(t('common.error'), '', 'error')
@@ -86,9 +87,9 @@ export function ProviderProfilePage() {
         </div>
 
         <Input
-          label={t('apt.service')}
+          label={t('profile.role')}
           value={form.role}
-          onChange={(e) => setForm({ ...form, role: e.target.value })}
+          disabled
         />
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

@@ -78,6 +78,8 @@ export const apiRoutes = {
   register: (body: Record<string, unknown>) =>
     api<{ token: string; user: User }>('/auth/register', { method: 'POST', body: JSON.stringify(body) }),
   me: () => api<{ user: User }>('/auth/me'),
+  updateMe: (body: Record<string, unknown>) =>
+    api<{ user: User }>('/auth/me', { method: 'PUT', body: JSON.stringify(body) }),
   logout: () => api<{ ok: boolean }>('/auth/logout', { method: 'POST' }),
 
   doctors: (query?: string) => api<Doctor[]>(`/doctors${query ?? ''}`),

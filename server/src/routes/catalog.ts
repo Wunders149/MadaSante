@@ -160,10 +160,10 @@ const collectFilters = (req: Request) => {
   return out
 }
 
-const list = (table: string, mapper: (r: Row) => unknown) => (req: Request, res: Response) => {
+const list = (table: string, mapper: (r: Row) => unknown, orderBy = 'name') => (req: Request, res: Response) => {
   const { where, params } = collectFilters(req)
   const rows = db
-    .prepare(`SELECT * FROM ${table}${where.length ? ` WHERE ${where.join(' AND ')}` : ''} ORDER BY name`)
+    .prepare(`SELECT * FROM ${table}${where.length ? ` WHERE ${where.join(' AND ')}` : ''} ORDER BY ${orderBy}`)
     .all(...params) as Row[]
   res.json(rows.map(mapper))
 }
@@ -250,7 +250,7 @@ catalogRouter.get('/nurses', (req: Request, res: Response) => {
   res.json(rows.map(mapNurse))
 })
 
-catalogRouter.get('/ambulances', list('ambulances', mapAmbulance))
+catalogRouter.get('/ambulances', list('ambulances', mapAmbulance, 'provider'))
 
 catalogRouter.get('/summary', (_req: Request, res: Response) => {
   const count = (table: string) =>
