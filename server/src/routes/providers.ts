@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { db } from '../db.js'
 import { requireAuth, requireProvider } from '../auth.js'
 import { publicUser, type UserRow } from '../helpers.js'
+import { PROVIDER_TABLE, loadProviderRecord } from '../catalog.js'
 
 export const providersRouter = Router()
 // Public, unauthenticated route: catalog of providers for patients to browse.
@@ -14,25 +15,33 @@ export const providersRouterPublic = Router()
 // matched in order, and without this `req.auth` is undefined in the handlers.
 providersRouter.use(requireAuth, requireProvider)
 
-const TABLE_BY_ROLE: Record<string, { table: string; nameCol: string }> = {
-  doctor: { table: 'doctors', nameCol: 'name' },
-  nurse: { table: 'nurses', nameCol: 'name' },
-  pharmacy: { table: 'pharmacies', nameCol: 'name' },
-  laboratory: { table: 'laboratories', nameCol: 'name' },
-  imaging_center: { table: 'imaging_centers', nameCol: 'name' },
-  hospital: { table: 'hospitals', nameCol: 'name' },
-  ambulance_driver: { table: 'ambulances', nameCol: 'provider' },
-}
-
 type Row = Record<string, unknown>
 
+/**
+ * The provider's own catalog record, plus whether it still needs attention.
+ *
+ * `needsSetup` is true while the record carries a 0 price: approval creates the
+ * record with placeholders, and the booking endpoint refuses to take a
+ * provider who has not declared what they charge.
+ */
 async function fetchProfile(role: string, providerId: string | null) {
-  if (!providerId) return undefined
-  const mapping = TABLE_BY_ROLE[role]
-  if (!mapping) return undefined
-  const row = (await db.query(`SELECT * FROM ${mapping.table} WHERE id = $1`, [providerId])).rows[0] as Row | undefined
+  const row = await loadProviderRecord(role, providerId)
   if (!row) return undefined
-  return { id: row.id, name: row[mapping.nameCol], location: row.location, city: row.city }
+  const mapping = PROVIDER_TABLE[role]
+  const price = row.price == null ? undefined : Number(row.price)
+  const priceHome = row.price_home == null ? undefined : Number(row.price_home)
+  return {
+    id: row.id,
+    name: row[mapping!.nameCol],
+    location: row.location,
+    city: row.city,
+    role,
+    price,
+    priceHome,
+    specialty: row.specialty ?? undefined,
+    description: row.description ?? undefined,
+    needsSetup: price === 0,
+  }
 }
 
 providersRouter.get('/me', async (req: Request, res: Response) => {
@@ -115,7 +124,7 @@ providersRouterPublic.get('/', async (req: Request, res: Response) => {
   const offset = (page - 1) * limit
   const where: string[] = []
   const params: unknown[] = []
-  if (role && role in TABLE_BY_ROLE) {
+  if (role && role in PROVIDER_TABLE) {
     where.push('role = ?')
     params.push(role)
   }
@@ -169,13 +178,38 @@ const availabilitySchema = z.object({
   entries: z.array(z.object({ day: z.string(), slot: z.string(), available: z.boolean() })).max(200),
 })
 
+/**
+ * Availability is keyed on `provider_id`, so an account without one cannot
+ * read or write it. Answering 409 here (rather than writing rows keyed on
+ * NULL) is what keeps the endpoint honest instead of silently persisting to a
+ * shared NULL bucket.
+ */
+function requireProviderId(req: Request, res: Response): string | null {
+  const providerId = req.auth!.providerId
+  if (!providerId) {
+    res.status(409).json({ error: "Votre profil professionnel n'est pas encore initialisé" })
+    return null
+  }
+  return providerId
+}
+
+providersRouter.get('/me/availability', async (req: Request, res: Response) => {
+  const providerId = requireProviderId(req, res)
+  if (!providerId) return
+  const rows = (
+    await db.query('SELECT day, slot, available FROM availability WHERE provider_id = ? ORDER BY day, slot', [providerId])
+  ).rows as Array<{ day: string; slot: string; available: number }>
+  res.json(rows.map((r) => ({ day: r.day, slot: r.slot, available: r.available === 1 })))
+})
+
 providersRouter.put('/me/availability', async (req: Request, res: Response) => {
   const parsed = availabilitySchema.safeParse(req.body)
   if (!parsed.success) {
     res.status(400).json({ error: 'Payload invalide' })
     return
   }
-  const providerId = req.auth!.providerId
+  const providerId = requireProviderId(req, res)
+  if (!providerId) return
   const client = await db.connect()
   try {
     await client.query('BEGIN')
@@ -194,4 +228,87 @@ providersRouter.put('/me/availability', async (req: Request, res: Response) => {
     client.release()
   }
   res.json({ ok: true })
+})
+
+/**
+ * Catalog fields the provider owns. Prices live here because they are the basis
+ * for every booking total — the booking endpoint reads them from the record
+ * rather than from the request body, so this is the only place they change.
+ */
+const catalogDetailsSchema = z.object({
+  name: z.string().min(2).optional(),
+  city: z.string().min(1).optional(),
+  location: z.string().min(2).optional(),
+  price: z.number().int().nonnegative().optional(),
+  priceHome: z.number().int().nonnegative().nullable().optional(),
+  specialty: z.string().min(2).max(80).optional(),
+  description: z.string().max(600).optional(),
+  consultationTypes: z.array(z.enum(['cabinet', 'home', 'hospital'])).min(1).optional(),
+  phone: z.string().min(5).optional(),
+})
+
+providersRouter.put('/me/catalog', async (req: Request, res: Response) => {
+  const parsed = catalogDetailsSchema.safeParse(req.body)
+  if (!parsed.success) {
+    res.status(400).json({ error: 'Payload invalide' })
+    return
+  }
+  const data = parsed.data
+  const providerId = requireProviderId(req, res)
+  if (!providerId) return
+  const role = req.auth!.role
+  const mapping = PROVIDER_TABLE[role]
+  if (!mapping) {
+    res.status(400).json({ error: 'Rôle professionnel inconnu' })
+    return
+  }
+
+  const record = await loadProviderRecord(role, providerId)
+  if (!record) {
+    res.status(404).json({ error: 'Profil professionnel introuvable' })
+    return
+  }
+
+  const sets: string[] = []
+  const params: unknown[] = []
+  const set = (column: string, value: unknown) => {
+    params.push(value)
+    sets.push(`${column} = $${params.length}`)
+  }
+
+  const nameCol = mapping.nameCol
+  if (data.name !== undefined) set(nameCol, data.name)
+  if (data.location !== undefined) set('location', data.location)
+  if (data.city !== undefined) set('city', data.city)
+  if (data.description !== undefined) set('description', data.description)
+  if (data.phone !== undefined && 'phone' in record) set('phone', data.phone)
+
+  // Price and specialty only exist on the roles that bill for consultations.
+  if (data.price !== undefined && 'price' in record) set('price', data.price)
+  if (data.specialty !== undefined && 'specialty' in record) set('specialty', data.specialty)
+  if (data.consultationTypes !== undefined && 'consultation_types' in record) {
+    set('consultation_types', JSON.stringify(data.consultationTypes))
+  }
+  if ('price_home' in record) {
+    // Offering a home visit without a price for it would silently book at 0,
+    // so default it to the cabinet price rather than accept a null.
+    const offersHome = data.consultationTypes?.includes('home') ?? false
+    if (data.priceHome !== undefined) {
+      set('price_home', data.priceHome)
+    } else if (offersHome && record.price_home == null) {
+      set('price_home', data.price ?? Number(record.price ?? 0))
+    }
+  }
+
+  if (sets.length === 0) {
+    res.status(400).json({ error: 'Aucun champ à modifier' })
+    return
+  }
+
+  params.push(providerId)
+  await db.query(`UPDATE ${mapping.table} SET ${sets.join(', ')} WHERE id = $${params.length}`, params)
+
+  const updated = await db.query(`SELECT * FROM ${mapping.table} WHERE id = $1`, [providerId])
+  const userRow = (await db.query('SELECT * FROM users WHERE id = $1', [req.auth!.id])).rows[0] as UserRow
+  res.json({ user: publicUser(userRow), provider: await fetchProfile(userRow.role, providerId), record: updated.rows[0] })
 })

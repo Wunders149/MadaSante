@@ -39,7 +39,7 @@ export const db = {
 }
 
 export async function migrate() {
-  return db.query(`
+  await db.query(`
     CREATE TABLE IF NOT EXISTS users (
       id TEXT PRIMARY KEY,
       first_name TEXT NOT NULL,
@@ -50,7 +50,8 @@ export async function migrate() {
       role TEXT NOT NULL,
       location TEXT,
       photo TEXT,
-      provider_id TEXT
+      provider_id TEXT,
+      created_at TEXT DEFAULT (now() AT TIME ZONE 'UTC')::text
     );
 
     CREATE TABLE IF NOT EXISTS doctors (
@@ -169,11 +170,13 @@ export async function migrate() {
       provider_name TEXT NOT NULL,
       provider_photo TEXT,
       type TEXT NOT NULL,
+      consultation_type TEXT,
       date TEXT NOT NULL,
       time TEXT NOT NULL,
       location TEXT NOT NULL,
       status TEXT NOT NULL,
       price INT NOT NULL,
+      base_price INT,
       payment_status TEXT NOT NULL
     );
 
@@ -182,6 +185,7 @@ export async function migrate() {
       reference TEXT NOT NULL UNIQUE,
       patient_id TEXT NOT NULL,
       provider_id TEXT,
+      appointment_id TEXT,
       service TEXT NOT NULL,
       provider_name TEXT NOT NULL,
       date TEXT NOT NULL,
@@ -271,4 +275,67 @@ export async function migrate() {
       FOREIGN KEY (application_id) REFERENCES provider_applications(id) ON DELETE CASCADE
     );
   `)
+
+  await applyAdditiveMigrations()
+}
+
+/**
+ * Columns added after the tables were first created.
+ *
+ * `CREATE TABLE IF NOT EXISTS` is a no-op on a table that already exists, so
+ * new columns have to be applied separately. Every statement uses
+ * `IF NOT EXISTS` / a guarded `UPDATE`, which makes the whole list idempotent
+ * and safe to replay on each boot. `users.created_at` in particular was
+ * referenced by the admin user list but never existed on already-deployed
+ * databases, which made `GET /api/admin/users` fail with a 500.
+ */
+const ADDITIVE_MIGRATIONS: { name: string; sql: string }[] = [
+  {
+    name: 'users.created_at',
+    sql: `
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS created_at TEXT;
+      UPDATE users SET created_at = (now() AT TIME ZONE 'UTC')::text WHERE created_at IS NULL;
+      ALTER TABLE users ALTER COLUMN created_at SET DEFAULT (now() AT TIME ZONE 'UTC')::text;
+    `,
+  },
+  {
+    // Machine-readable consultation key, so booking price can be derived
+    // server-side instead of trusting the label the client sends.
+    name: 'appointments.consultation_type',
+    sql: 'ALTER TABLE appointments ADD COLUMN IF NOT EXISTS consultation_type TEXT;',
+  },
+  {
+    // Consultation price before the platform fee. `price` is the total the
+    // patient pays; keeping the base lets the payment record and its
+    // breakdown be reconstructed without trusting the client.
+    name: 'appointments.base_price',
+    sql: `
+      ALTER TABLE appointments ADD COLUMN IF NOT EXISTS base_price INT;
+      UPDATE appointments SET base_price = price WHERE base_price IS NULL;
+    `,
+  },
+  {
+    // Ties a payment to the appointment it settles, so paying actually flips
+    // the appointment to 'paid' instead of leaving it 'unpaid' forever.
+    name: 'payments.appointment_id',
+    sql: `
+      ALTER TABLE payments ADD COLUMN IF NOT EXISTS appointment_id TEXT;
+      CREATE INDEX IF NOT EXISTS payments_appointment_id_idx ON payments (appointment_id);
+      CREATE INDEX IF NOT EXISTS appointments_patient_id_idx ON appointments (patient_id);
+      CREATE INDEX IF NOT EXISTS appointments_provider_id_idx ON appointments (provider_id);
+    `,
+  },
+]
+
+async function applyAdditiveMigrations() {
+  for (const migration of ADDITIVE_MIGRATIONS) {
+    try {
+      await db.query(migration.sql)
+    } catch (err) {
+      // A failed additive migration must not stop the server from booting:
+      // the app is still usable on the pre-migration schema, and the error is
+      // loud in the logs rather than silently swallowed.
+      console.error(`[migrate] ${migration.name} failed:`, err)
+    }
+  }
 }

@@ -2,6 +2,8 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import type { ReactNode } from 'react'
 import type {
   Appointment,
+  AppointmentStatus,
+  ConsultationType,
   DeliveryOrder,
   EmergencyRequest,
   Lang,
@@ -20,38 +22,36 @@ export interface Toast {
   tone: 'success' | 'error' | 'info'
 }
 
+/**
+ * What the client sends when booking. Note there is no `price`: the server
+ * derives the total from the provider's catalog record, so a client cannot
+ * name its own price. `providerName` / `location` are sent only so the UI can
+ * render optimistically — the stored values come from the record.
+ */
 interface BookAppointmentInput {
   providerId: string
   providerType: Appointment['providerType']
   providerName: string
   providerPhoto?: string
   type: string
+  consultationType?: ConsultationType
   date: string
   time: string
   location: string
-  price: number
 }
 
+/** Settles an appointment; amount and provider are read from it server-side. */
 interface PayInput {
-  service: string
-  providerName: string
-  providerId?: string
-  amount: number
+  appointmentId: string
   method: PaymentMethod
-  breakdown: { label: string; amount: number }[]
 }
 
 interface DeliveryInput {
   medicineId: string
-  medicineName: string
-  dose: string
   quantity: number
-  pharmacyId: string
-  pharmacyName: string
   deliveryAddress: string
   deliveryTimeSlot: string
-  deliveryFee: number
-  total: number
+  prescriptionConfirmed?: boolean
 }
 
 interface EmergencyInput {
@@ -83,6 +83,7 @@ interface AppContextValue {
   emergencyRequests: EmergencyRequest[]
 
   bookAppointment: (input: BookAppointmentInput) => Promise<Appointment>
+  setAppointmentStatus: (id: string, status: AppointmentStatus) => Promise<Appointment>
   pay: (input: PayInput) => Promise<Payment>
   placeDeliveryOrder: (input: DeliveryInput) => Promise<DeliveryOrder>
   requestAmbulance: (input: EmergencyInput) => Promise<EmergencyRequest>
@@ -196,9 +197,34 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return appointment
   }, [])
 
+  /**
+   * Provider accept / decline. The server validates the transition and returns
+   * the stored row, so local state is replaced rather than patched — otherwise
+   * the list would show a status the database rejected.
+   */
+  const setAppointmentStatus = useCallback(
+    async (id: string, status: AppointmentStatus): Promise<Appointment> => {
+      const updated = await apiRoutes.updateAppointmentStatus(id, status)
+      setData((prev) => ({
+        ...prev,
+        appointments: prev.appointments.map((a) => (a.id === id ? updated : a)),
+      }))
+      return updated
+    },
+    [],
+  )
+
   const pay = useCallback(async (input: PayInput): Promise<Payment> => {
     const payment = await apiRoutes.createPayment(input)
-    setData((prev) => ({ ...prev, payments: [payment, ...prev.payments] }))
+    setData((prev) => ({
+      ...prev,
+      payments: [payment, ...prev.payments],
+      // Paying flips the appointment to 'paid' server-side; mirror it here so
+      // the appointment list does not keep showing 'unpaid'.
+      appointments: prev.appointments.map((a) =>
+        a.id === input.appointmentId ? { ...a, paymentStatus: 'paid' as const } : a,
+      ),
+    }))
     return payment
   }, [])
 
@@ -215,7 +241,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const requestNurse = useCallback(async (input: BookAppointmentInput): Promise<Appointment> => {
-    const appointment = await apiRoutes.createAppointment({ ...input, status: 'pending', paymentStatus: 'pending' })
+    // A nurse visit is a request, not a confirmed booking: it starts pending
+    // and stays unpaid until the nurse accepts.
+    const appointment = await apiRoutes.createAppointment({ ...input, status: 'pending' })
     setData((prev) => ({ ...prev, appointments: [appointment, ...prev.appointments] }))
     return appointment
   }, [])
@@ -239,6 +267,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     deliveries: data.deliveries,
     emergencyRequests: data.emergencyRequests,
     bookAppointment,
+    setAppointmentStatus,
     pay,
     placeDeliveryOrder,
     requestAmbulance,

@@ -8,7 +8,7 @@ import { useApp } from '../../stores/AppStore'
 import { useAmbulances } from '../../lib/hooks'
 
 export function AmbulancePage() {
-const { t } = useApp()
+  const { t } = useApp()
   const { data: ambulances = [] } = useAmbulances()
   const [query, setQuery] = useState('')
   const needle = query.trim().toLowerCase()

@@ -3,9 +3,10 @@ import { MapPin, Phone, Stethoscope, Save, LogOut } from 'lucide-react'
 import { PageHeader } from '../../components/ui/Headers'
 import { Badge } from '../../components/ui/Badge'
 import { Button } from '../../components/ui/Button'
-import { Label, Input, Textarea } from '../../components/ui/Field'
+import { Label, Input } from '../../components/ui/Field'
 import { AvatarUploader } from '../../components/AvatarUploader'
 import { PasswordChange } from '../../components/PasswordChange'
+import { ProviderCatalogForm } from '../../components/ProviderCatalogForm'
 import { useApp } from '../../stores/AppStore'
 import { useAuth } from '../../stores/AuthStore'
 import { apiRoutes } from '../../lib/api'
@@ -142,16 +143,12 @@ export function ProviderProfilePage() {
           </div>
         </div>
 
-        <div>
-          <Label>{t('profile.bio')}</Label>
-          <Textarea
-            rows={4}
-            value={`${form.firstName} ${form.lastName} — ${form.role}`}
-            onChange={() => undefined}
-            className="resize-none"
-          />
-        </div>
       </div>
+
+      {/* Catalog details (practice name, city, price) live on the provider's
+          catalog record, not the users table, because the server prices every
+          booking from it. */}
+      <ProviderCatalogForm />
 
       <div className="mt-6">
         <PasswordChange />

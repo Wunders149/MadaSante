@@ -3,7 +3,7 @@ import type { Request, Response } from 'express'
 import { z } from 'zod'
 import { db } from '../db.js'
 import { requireAuth } from '../auth.js'
-import { generateReference, todayIso } from '../helpers.js'
+import { generateReference, todayIso, uniqueId } from '../helpers.js'
 
 export const paymentsRouter = Router()
 paymentsRouter.use(requireAuth)
@@ -15,6 +15,7 @@ const mapPayment = (r: Row) => ({
   reference: r.reference,
   patientId: r.patient_id,
   providerId: r.provider_id ?? undefined,
+  appointmentId: r.appointment_id ?? undefined,
   service: r.service,
   providerName: r.provider_name,
   date: r.date,
@@ -24,13 +25,15 @@ const mapPayment = (r: Row) => ({
   breakdown: JSON.parse(r.breakdown as string) as { label: string; amount: number }[],
 })
 
+/**
+ * A payment settles a specific appointment. The amount, service and provider
+ * are all read from that appointment rather than the body, so a client cannot
+ * invent a price — and so paying actually reconciles the appointment, which
+ * previously stayed 'unpaid' forever because nothing ever updated it.
+ */
 const createSchema = z.object({
-  service: z.string(),
-  providerName: z.string(),
-  providerId: z.string().optional(),
-  amount: z.number(),
+  appointmentId: z.string().min(1),
   method: z.enum(['orange_money', 'mvola']),
-  breakdown: z.array(z.object({ label: z.string(), amount: z.number() })),
 })
 
 paymentsRouter.get('/', async (req: Request, res: Response) => {
@@ -64,38 +67,86 @@ paymentsRouter.post('/', async (req: Request, res: Response) => {
     res.status(400).json({ error: 'Payload invalide' })
     return
   }
-  const input = parsed.data
+  const { appointmentId, method } = parsed.data
+
+  const appointment = (await db.query('SELECT * FROM appointments WHERE id = ?', [appointmentId])).rows[0] as
+    | Row
+    | undefined
+  if (!appointment) {
+    res.status(404).json({ error: 'Rendez-vous introuvable' })
+    return
+  }
+  if (appointment.patient_id !== req.auth!.id) {
+    res.status(403).json({ error: 'Forbidden' })
+    return
+  }
+  if (appointment.status === 'cancelled') {
+    res.status(409).json({ error: 'Ce rendez-vous a été annulé' })
+    return
+  }
+  if (appointment.payment_status === 'paid') {
+    res.status(409).json({ error: 'Ce rendez-vous est déjà payé' })
+    return
+  }
+
+  const amount = Number(appointment.price)
+  const basePrice = Number(appointment.base_price ?? amount)
+  const fee = amount - basePrice
+  const breakdown = [
+    { label: String(appointment.type), amount: basePrice },
+    ...(fee > 0 ? [{ label: 'Frais de plateforme', amount: fee }] : []),
+  ]
+
   const payment = {
-    id: `pay-${Date.now()}`,
+    id: uniqueId('pay'),
     reference: generateReference('PAY'),
     patientId: req.auth!.id,
-    providerId: input.providerId ?? null,
-    service: input.service,
-    providerName: input.providerName,
+    providerId: appointment.provider_id ?? null,
+    appointmentId,
+    service: String(appointment.type),
+    providerName: String(appointment.provider_name),
     date: todayIso(),
-    amount: input.amount,
-    method: input.method,
+    amount,
+    method,
     status: 'success',
-    breakdown: input.breakdown,
+    breakdown,
   }
-  await db.query(
-    `INSERT INTO payments (id, reference, patient_id, provider_id, service, provider_name, date, amount, method, status, breakdown)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    [
-      payment.id,
-      payment.reference,
-      payment.patientId,
-      payment.providerId,
-      payment.service,
-      payment.providerName,
-      payment.date,
-      payment.amount,
-      payment.method,
-      payment.status,
-      JSON.stringify(payment.breakdown),
-    ],
+
+  // Insert the payment and flip the appointment in one transaction so a
+  // successful charge can never leave the appointment marked unpaid.
+  const client = await db.connect()
+  try {
+    await client.query('BEGIN')
+    await client.query(
+      `INSERT INTO payments (id, reference, patient_id, provider_id, appointment_id, service, provider_name, date, amount, method, status, breakdown)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        payment.id,
+        payment.reference,
+        payment.patientId,
+        payment.providerId,
+        payment.appointmentId,
+        payment.service,
+        payment.providerName,
+        payment.date,
+        payment.amount,
+        payment.method,
+        payment.status,
+        JSON.stringify(payment.breakdown),
+      ],
+    )
+    await client.query('UPDATE appointments SET payment_status = ? WHERE id = ?', ['paid', appointmentId])
+    await client.query('COMMIT')
+  } catch (err) {
+    await client.query('ROLLBACK')
+    throw err
+  } finally {
+    client.release()
+  }
+
+  res.status(201).json(
+    mapPayment({ ...payment, provider_id: payment.providerId, breakdown: JSON.stringify(payment.breakdown) }),
   )
-  res.status(201).json(mapPayment({ ...payment, provider_id: payment.providerId, breakdown: JSON.stringify(payment.breakdown) }))
 })
 
 paymentsRouter.get('/summary', async (req: Request, res: Response) => {

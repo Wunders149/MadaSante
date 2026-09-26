@@ -4,6 +4,15 @@ export function generateReference(prefix: string): string {
   return `${prefix}-${year}-${random}`
 }
 
+/**
+ * Collision-resistant primary key. `Date.now()` alone collides when two
+ * requests land in the same millisecond, so the random suffix widens the
+ * space well past the point where a clash is realistic.
+ */
+export function uniqueId(prefix: string): string {
+  return `${prefix}_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`
+}
+
 export type UserRow = {
   id: string
   first_name: string

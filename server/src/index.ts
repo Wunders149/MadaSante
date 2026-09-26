@@ -3,9 +3,10 @@ import path from 'node:path'
 import express from 'express'
 import cors from 'cors'
 import type { NextFunction, Request, Response } from 'express'
-import { config } from './config.js'
+import { assertProductionConfig, config } from './config.js'
 import { migrate } from './db.js'
 import { ensureAdmin } from './seed.js'
+import { backfillProviderRecords } from './catalog.js'
 import { authRouter } from './routes/auth.js'
 import { catalogRouter } from './routes/catalog.js'
 import { searchRouter } from './routes/search.js'
@@ -17,12 +18,21 @@ import { deliveriesRouter } from './routes/deliveries.js'
 import { emergencyRouter } from './routes/emergency.js'
 import { adminRouter } from './routes/admin.js'
 
+assertProductionConfig()
 await migrate()
 await ensureAdmin()
+await backfillProviderRecords()
 
 const app = express()
 
-app.use(cors())
+// In production the API also serves the SPA, so traffic is same-origin and no
+// CORS grant is needed. Grant cross-origin access only to explicitly configured
+// origins; in development keep the permissive default for local tooling.
+if (config.isProduction) {
+  app.use(cors(config.corsOrigins.length > 0 ? { origin: config.corsOrigins } : { origin: false }))
+} else {
+  app.use(cors())
+}
 app.use(express.json({ limit: '6mb' }))
 
 app.get('/api/health', (_req, res) => {
@@ -58,11 +68,15 @@ if (fs.existsSync(indexFile)) {
 }
 
 /**
- * Error message that is safe to hand back to the client: the real reason the
- * request failed (so the UI can show it), minus anything credential-shaped,
- * truncated to keep responses bounded. The full stack stays in the logs.
+ * Error message that is safe to hand back to the client.
+ *
+ * In development the real reason is returned so the UI can surface it, with
+ * anything credential-shaped scrubbed. In production a raw driver message
+ * still names tables, columns and constraint names, so only a generic string
+ * is returned and the detail stays in the logs.
  */
 function publicErrorMessage(err: Error): string {
+  if (config.isProduction) return 'Erreur serveur'
   const message = (err.message || '').trim() || 'Erreur serveur'
   return message
     .replace(/postgres(?:ql)?:\/\/\S+/gi, 'postgres://***')

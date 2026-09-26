@@ -1,6 +1,8 @@
 import type {
   Ambulance,
   Appointment,
+  AppointmentStatus,
+  ConsultationType,
   DeliveryOrder,
   Doctor,
   EmergencyRequest,
@@ -11,9 +13,11 @@ import type {
   NotificationItem,
   Nurse,
   Payment,
+  PaymentMethod,
   Pharmacy,
   Provider,
   ProviderApplication,
+  ProviderProfile,
   User,
 } from '../types'
 
@@ -118,11 +122,15 @@ export const apiRoutes = {
   appointments: (query?: string) => api<Appointment[]>(`/appointments${query ?? ''}`),
   createAppointment: (body: unknown) =>
     api<Appointment>('/appointments', { method: 'POST', body: JSON.stringify(body) }),
-  updateAppointmentStatus: (id: string, status: string) =>
+  updateAppointmentStatus: (id: string, status: AppointmentStatus) =>
     api<Appointment>(`/appointments/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) }),
 
   payments: (query?: string) => api<Payment[]>(`/payments${query ?? ''}`),
-  createPayment: (body: unknown) =>
+  /**
+   * Settles an appointment. The amount, service and provider come from the
+   * appointment, so only the appointment and the method are sent.
+   */
+  createPayment: (body: { appointmentId: string; method: PaymentMethod }) =>
     api<Payment>('/payments', { method: 'POST', body: JSON.stringify(body) }),
   paymentsSummary: () => api<{ total: number; count: number }>('/payments/summary'),
 
@@ -133,9 +141,28 @@ export const apiRoutes = {
     api<{ ok: boolean }>(`/notifications/${id}/read`, { method: 'PATCH' }),
   markAllNotificationsRead: () => api<{ ok: boolean }>('/notifications/read-all', { method: 'PATCH' }),
 
-  providerMe: () => api<{ user: User; provider?: { id: string; name: string; location: string; city: string } }>('/providers/me'),
+  providerMe: () => api<{ user: User; provider?: ProviderProfile }>('/providers/me'),
   updateProviderMe: (body: unknown) =>
-    api<{ user: User; provider?: { id: string; name: string; location: string; city: string } }>('/providers/me', {
+    api<{ user: User; provider?: ProviderProfile }>('/providers/me', {
+      method: 'PUT',
+      body: JSON.stringify(body),
+    }),
+  /**
+   * Catalog fields the provider owns. Prices set here are the basis for every
+   * booking total the server computes.
+   */
+  updateProviderCatalog: (body: {
+    name?: string
+    city?: string
+    location?: string
+    price?: number
+    priceHome?: number | null
+    specialty?: string
+    description?: string
+    consultationTypes?: ConsultationType[]
+    phone?: string
+  }) =>
+    api<{ user: User; provider?: ProviderProfile }>('/providers/me/catalog', {
       method: 'PUT',
       body: JSON.stringify(body),
     }),
@@ -158,8 +185,18 @@ export const apiRoutes = {
     api<{ users: User[]; page: number; limit: number; total: number; totalPages: number }>(`/admin/users${qs(params ?? {})}`),
 
   deliveries: () => api<DeliveryOrder[]>('/deliveries'),
-  createDelivery: (body: unknown) =>
-    api<DeliveryOrder>('/deliveries', { method: 'POST', body: JSON.stringify(body) }),
+  /**
+   * Orders a medicine. Name, dose, pharmacy, unit price, delivery fee and
+   * total are all resolved server-side from the medicine record, so only the
+   * address, slot and quantity travel.
+   */
+  createDelivery: (body: {
+    medicineId: string
+    quantity: number
+    deliveryAddress: string
+    deliveryTimeSlot: string
+    prescriptionConfirmed?: boolean
+  }) => api<DeliveryOrder>('/deliveries', { method: 'POST', body: JSON.stringify(body) }),
 
   emergencyRequests: () => api<EmergencyRequest[]>('/emergency-requests'),
   createEmergencyRequest: (body: unknown) =>

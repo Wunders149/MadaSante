@@ -38,6 +38,25 @@ export interface Provider {
   description?: string
 }
 
+/**
+ * The signed-in provider's own catalog record. `needsSetup` is true while the
+ * record still carries placeholder values (notably a 0 price), which is the
+ * server's signal that the provider has to finish their profile before they can
+ * take bookings.
+ */
+export interface ProviderProfile {
+  id: string
+  name: string
+  location: string
+  city: string
+  role: Role
+  price?: number
+  priceHome?: number
+  specialty?: string
+  description?: string
+  needsSetup: boolean
+}
+
 export type ConsultationType = 'cabinet' | 'home' | 'hospital'
 
 export interface Doctor {
@@ -166,11 +185,16 @@ export interface Appointment {
   providerName: string
   providerPhoto?: string
   type: string
+  /** Machine-readable consultation key; the server prices from this. */
+  consultationType?: ConsultationType
   date: string
   time: string
   location: string
   status: AppointmentStatus
+  /** Total charged, including the platform fee. Derived server-side. */
   price: number
+  /** Consultation price before the platform fee. */
+  basePrice?: number
   paymentStatus: 'paid' | 'pending' | 'unpaid'
 }
 
@@ -182,6 +206,7 @@ export interface Payment {
   reference: string
   patientId: string
   providerId?: string
+  appointmentId?: string
   service: string
   providerName: string
   date: string

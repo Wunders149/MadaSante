@@ -9,6 +9,8 @@ import { useApp } from '../../stores/AppStore'
 import { useAuth } from '../../stores/AuthStore'
 import { formatAr } from '../../lib/format'
 
+const todayIsoForFile = () => new Date().toISOString().slice(0, 10)
+
 export function ProviderPaymentsPage() {
   const { t, payments, toast } = useApp()
   const { user } = useAuth()
@@ -17,10 +19,56 @@ export function ProviderPaymentsPage() {
   const accepted = mine.filter((p) => p.status === 'success')
   const total = accepted.reduce((s, p) => s + p.amount, 0)
 
+  /** Quotes a CSV cell, doubling embedded quotes per RFC 4180. */
+  const csvCell = (value: string | number) => {
+    const text = String(value)
+    return /[",\n;]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text
+  }
+
+  const exportCsv = () => {
+    if (mine.length === 0) {
+      toast(t('common.error'), t('prov.nothingToExport'), 'error')
+      return
+    }
+    const header = [
+      t('pay.col.reference'),
+      t('pay.col.date'),
+      t('pay.col.patient'),
+      t('pay.col.service'),
+      t('pay.col.method'),
+      t('pay.col.amount'),
+      t('pay.col.status'),
+    ]
+    const rows = mine.map((p) =>
+      [
+        p.reference,
+        p.date,
+        p.patientId,
+        p.service,
+        p.method,
+        p.amount,
+        p.status,
+      ]
+        .map(csvCell)
+        .join(','),
+    )
+    // BOM so Excel opens accented text correctly.
+    const csv = `﻿${[header.map(csvCell).join(','), ...rows].join('\r\n')}`
+    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }))
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `madasante-paiements-${todayIsoForFile()}.csv`
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    URL.revokeObjectURL(url)
+    toast(t('prov.exportDone'), `${mine.length}`, 'success')
+  }
+
   return (
     <div className="page-container max-w-3xl py-5 sm:py-7">
       <PageHeader title={t('prov.payments')} subtitle={user ? `${user.firstName} ${user.lastName}` : ''}>
-        <Button size="sm" variant="ghost" onClick={() => toast(t('prov.export'), t('apt.stepDone'), 'success')}>
+        <Button size="sm" variant="ghost" onClick={exportCsv} disabled={mine.length === 0}>
           <Download className="h-4 w-4" /> {t('common.export')}
         </Button>
       </PageHeader>

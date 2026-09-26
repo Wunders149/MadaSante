@@ -36,6 +36,11 @@ export function ProviderAvailabilityPage() {
 
   const toggle = (k: string) => setOn((p) => ({ ...p, [k]: !p[k] }))
 
+  const openCount = DAYS.reduce(
+    (sum, d) => sum + SLOTS.filter((s) => on[`${d}-${s}`]).length,
+    0,
+  )
+
   const save = async () => {
     setSaving(true)
     try {
@@ -56,10 +61,10 @@ export function ProviderAvailabilityPage() {
       <PageHeader title={t('prov.availability')} subtitle={profile?.provider?.name ?? `${user?.firstName ?? ''} ${user?.lastName ?? ''}`} />
 
       <div className="mt-4 overflow-hidden rounded-3xl border border-line bg-card">
-        <div className="flex items-center gap-2 border-b border-line bg-surface-soft px-5 py-3">
+        <div className="flex items-center gap-2 border-b border-line bg-brand-softer px-5 py-3">
           <CalendarDays className="h-4 w-4 text-brand-600" />
           <span className="text-xs font-semibold text-ink-soft">
-            {on['lun-08:00'] ? t('prov.available') : t('prov.unavailable')}
+            {t('prov.slotsOpen', { n: openCount, total: DAYS.length * SLOTS.length })}
           </span>
         </div>
         <div className="grid gap-px bg-line sm:grid-cols-2 lg:grid-cols-3">

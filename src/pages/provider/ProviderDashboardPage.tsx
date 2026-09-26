@@ -6,11 +6,14 @@ import { EmptyState } from '../../components/ui/States'
 import { Button } from '../../components/ui/Button'
 import { useApp } from '../../stores/AppStore'
 import { useAuth } from '../../stores/AuthStore'
+import { useProviderMe } from '../../lib/hooks'
 import { formatAr } from '../../lib/format'
 
 export function ProviderDashboardPage() {
   const { t, appointments, payments } = useApp()
   const { user } = useAuth()
+  const { data: providerMe } = useProviderMe()
+  const profile = providerMe?.provider
 
   const providerId = user?.providerId
   const mine = useMemo(() => appointments.filter((a) => a.providerId === providerId), [appointments, providerId])
@@ -20,6 +23,10 @@ export function ProviderDashboardPage() {
   const revenue = minePayments.filter((p) => p.status === 'success')
   const total = revenue.reduce((s, p) => s + p.amount, 0)
   const pendingRequests = mine.filter((a) => a.status === 'pending').length
+
+  // Appointments arrive newest-first from the API, so the five to show are the
+  // first five — slicing from the end showed the *oldest*.
+  const recent = mine.slice(0, 5)
 
   const stats = [
     { icon: CalendarCheck2, label: t('prov.today'), value: String(today.length), cls: 'text-brand-600 bg-brand-50' },
@@ -31,6 +38,17 @@ export function ProviderDashboardPage() {
   return (
     <div className="page-container max-w-4xl py-5 sm:py-7">
       <PageHeader title={t('prov.dashboard')} subtitle={`${user?.firstName ?? ''} ${user?.lastName ?? ''}`} />
+
+      {/* A provider whose catalog record still has placeholders cannot take
+          bookings, so point them at the one thing standing in the way. */}
+      {profile?.needsSetup && (
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
+          <p className="text-sm font-medium text-amber-900">{t('prov.setupWarning')}</p>
+          <Button size="sm" to="/provider/profile">
+            {t('prov.completeProfile')}
+          </Button>
+        </div>
+      )}
 
       <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
         {stats.map(({ icon: Icon, label, value, cls }) => (
@@ -53,11 +71,11 @@ export function ProviderDashboardPage() {
         </Button>
       </div>
 
-      {mine.length === 0 ? (
+      {recent.length === 0 ? (
         <EmptyState title={t('prov.noAppointments')} description={t('prov.noAppointmentsDesc')} />
       ) : (
         <div className="mt-3 grid grid-cols-1 gap-3">
-          {mine.slice(-5).map((a) => (
+          {recent.map((a) => (
             <AppointmentCard key={a.id} appointment={a} />
           ))}
         </div>

@@ -8,6 +8,7 @@ import { EmptyState } from '../../components/ui/States'
 import { Button } from '../../components/ui/Button'
 import { useApp } from '../../stores/AppStore'
 import { useMedicines } from '../../lib/hooks'
+import { ApiError } from '../../lib/api'
 import type { Medicine } from '../../types'
 import { formatAr } from '../../lib/format'
 
@@ -21,6 +22,9 @@ export function DeliveryPage() {
   const [selected, setSelected] = useState<Medicine>()
   const [address, setAddress] = useState('')
   const [slot, setSlot] = useState<'now' | 'evening' | 'tomorrow'>('now')
+  const [quantity, setQuantity] = useState(1)
+  const [prescriptionAccepted, setPrescriptionAccepted] = useState(false)
+  const [lastTotal, setLastTotal] = useState<number | null>(null)
   const [placing, setPlacing] = useState(false)
 
   const { deliveries, placeDeliveryOrder } = useApp()
@@ -38,8 +42,11 @@ export function DeliveryPage() {
     [medicines, needle],
   )
 
-  const fee = selected ? (selected.price * selected.stock >= FREE_ABOVE ? 0 : DELIVERY_FEE) : 0
-  const total = selected ? selected.price + fee : 0
+  // Mirrors the server's fee rule so the summary matches what will be
+  // charged. The authoritative total comes back from POST /deliveries.
+  const subtotal = selected ? selected.price * quantity : 0
+  const fee = selected ? (subtotal >= FREE_ABOVE ? 0 : DELIVERY_FEE) : 0
+  const total = subtotal + fee
 
   const slotText = {
     now: t('del.asap'),
@@ -49,27 +56,32 @@ export function DeliveryPage() {
 
   function handleOrder() {
     if (!selected || !address.trim()) {
-      toast(t('common.error'), t('del.addressPlaceholder') === '' ? undefined : t('common.error'), 'error')
+      toast(t('common.error'), t('del.addressRequired'), 'error')
       return
     }
     setPlacing(true)
     void placeDeliveryOrder({
       medicineId: selected.id,
-      medicineName: selected.name,
-      dose: selected.form,
-      quantity: 1,
-      pharmacyId: selected.pharmacyId,
-      pharmacyName: selected.pharmacyName,
+      quantity,
       deliveryAddress: address,
       deliveryTimeSlot: slotText,
-      deliveryFee: fee,
-      total: total + 500,
-    }).then(() => {
-      setPlacing(false)
-      toast(t('del.confirmed'), t('del.confirmedSub'))
-      setSelected(undefined)
-      setAddress('')
+      prescriptionConfirmed: prescriptionAccepted,
     })
+      .then((order) => {
+        setPlacing(false)
+        toast(t('del.confirmed'), t('del.confirmedSub'))
+        setSelected(undefined)
+        setAddress('')
+        setPrescriptionAccepted(false)
+        setQuantity(1)
+        // Show what was actually charged, in case the price moved since load.
+        setLastTotal(order.total)
+      })
+      .catch((err: unknown) => {
+        setPlacing(false)
+        const message = err instanceof ApiError ? err.message : t('common.error')
+        toast(t('common.error'), message, 'error')
+      })
   }
 
   return (
@@ -83,8 +95,12 @@ export function DeliveryPage() {
             {list.map((m) => (
               <div
                 key={m.id}
-                className={`cursor-pointer rounded-2xl transition ${selected?.id === m.id ? 'ring-2 ring-brand-500' : ''}`}
-                onClick={() => setSelected(m)}
+                // Unavailable medicines cannot be ordered, so they are not
+                // selectable — the server rejects them anyway.
+                className={`rounded-2xl transition ${
+                  m.available ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'
+                } ${selected?.id === m.id ? 'ring-2 ring-brand-500' : ''}`}
+                onClick={() => m.available && setSelected(m)}
               >
                 <MedicineCard medicine={m} />
               </div>
@@ -98,8 +114,8 @@ export function DeliveryPage() {
         </div>
 
         <aside className="h-fit rounded-3xl border border-line bg-card p-5 sm:p-6">
-          <h2 className="text-base font-bold text-ink">Commande</h2>
-          <p className="mt-0.5 text-sm text-ink-soft">Choisissez un médicament, puis confirmez votre livraison.</p>
+          <h2 className="text-base font-bold text-ink">{t('del.orderTitle')}</h2>
+          <p className="mt-0.5 text-sm text-ink-soft">{t('del.orderSubtitle')}</p>
 
           {selected ? (
             <>
@@ -134,16 +150,50 @@ export function DeliveryPage() {
                 ))}
               </div>
 
+              <label className="mt-4 block text-sm font-medium text-ink">{t('common.quantity')}</label>
+              <div className="mt-1.5 flex items-center gap-2">
+                <button
+                  onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                  disabled={quantity <= 1}
+                  aria-label="-1"
+                  className="grid h-9 w-9 place-items-center rounded-xl border border-line bg-surface text-base font-bold text-ink-soft disabled:opacity-40"
+                >
+                  −
+                </button>
+                <span className="min-w-8 text-center text-sm font-bold text-ink">{quantity}</span>
+                <button
+                  onClick={() => setQuantity((q) => Math.min(selected.stock, q + 1))}
+                  disabled={quantity >= selected.stock}
+                  aria-label="+1"
+                  className="grid h-9 w-9 place-items-center rounded-xl border border-line bg-surface text-base font-bold text-ink-soft disabled:opacity-40"
+                >
+                  +
+                </button>
+                <span className="text-xs text-ink-faint">{t('del.stockLeft', { n: selected.stock })}</span>
+              </div>
+
+              {selected.prescriptionRequired && (
+                <label className="mt-4 flex cursor-pointer items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50 p-3">
+                  <input
+                    type="checkbox"
+                    checked={prescriptionAccepted}
+                    onChange={(e) => setPrescriptionAccepted(e.target.checked)}
+                    className="mt-0.5 h-4 w-4 accent-amber-600"
+                  />
+                  <span className="text-xs font-medium text-amber-900">{t('del.prescriptionConfirm')}</span>
+                </label>
+              )}
+
               {fee === 0 ? (
                 <p className="mt-4 rounded-xl bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700">
-                  Commandes ≥ {formatAr(FREE_ABOVE)} — livraison {t('del.free')}
+                  {t('del.freeAbove', { amount: formatAr(FREE_ABOVE) })}
                 </p>
               ) : null}
 
               <div className="mt-4 space-y-2 border-t border-line pt-4 text-sm">
                 <div className="flex justify-between text-ink-soft">
-                  <span>Sous-total</span>
-                  <span>{selected.price ? formatAr(selected.price) : '—'}</span>
+                  <span>{t('del.subtotal')}</span>
+                  <span>{subtotal ? formatAr(subtotal) : '—'}</span>
                 </div>
                 <div className="flex justify-between text-ink-soft">
                   <span>{t('del.fee')}</span>
@@ -151,34 +201,39 @@ export function DeliveryPage() {
                 </div>
                 <div className="flex justify-between text-base font-bold text-ink">
                   <span>{t('del.total')}</span>
-                  <span>{total ? formatAr(total + 500) : '—'}</span>
+                  <span>{total ? formatAr(total) : '—'}</span>
                 </div>
+                {lastTotal !== null && lastTotal !== total && (
+                  <p className="pt-1 text-xs text-ink-faint">
+                    {t('del.lastCharged', { amount: formatAr(lastTotal) })}
+                  </p>
+                )}
               </div>
 
               <Button
                 className="mt-5 w-full"
                 loading={placing}
                 onClick={handleOrder}
-                disabled={!address.trim()}
+                disabled={!address.trim() || (selected.prescriptionRequired && !prescriptionAccepted)}
               >
                 <Plus className="h-4 w-4" /> {t('del.place')}
               </Button>
-              <p className="mt-2 text-center text-[11px] text-ink-faint">Frais de livraison simulés • Paiement à la livraison</p>
+              <p className="mt-2 text-center text-[11px] text-ink-faint">{t('del.codNote')}</p>
             </>
           ) : (
-            <p className="mt-4 text-sm text-ink-soft">Sélectionnez un médicament pour calculer la livraison.</p>
+            <p className="mt-4 text-sm text-ink-soft">{t('del.selectFirst')}</p>
           )}
         </aside>
       </div>
 
       <div className="mt-8">
         <div className="flex items-center justify-between">
-          <h2 className="text-base font-bold text-ink">Commandes en cours</h2>
-          <span className="text-xs text-ink-faint">Historique des livraisons</span>
+          <h2 className="text-base font-bold text-ink">{t('del.currentOrders')}</h2>
+          <span className="text-xs text-ink-faint">{t('del.history')}</span>
         </div>
         {deliveries.length === 0 ? (
           <div className="mt-3">
-            <EmptyState icon={<Bike className="h-6 w-6" />} title={t('del.noOrders')} description="Vos commandes de livraison apparaîtront ici." />
+            <EmptyState icon={<Bike className="h-6 w-6" />} title={t('del.noOrders')} description={t('del.noOrdersDesc')} />
           </div>
         ) : (
           <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">

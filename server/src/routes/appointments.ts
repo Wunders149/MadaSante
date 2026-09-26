@@ -3,7 +3,15 @@ import type { Request, Response } from 'express'
 import { z } from 'zod'
 import { db } from '../db.js'
 import { requireAuth } from '../auth.js'
-import { generateReference } from '../helpers.js'
+import { generateReference, isProviderRole, uniqueId } from '../helpers.js'
+import {
+  CONSULT_TYPES,
+  PROVIDER_TABLE,
+  basePriceFor,
+  loadProviderRecord,
+  locationFor,
+  platformFeeFor,
+} from '../catalog.js'
 
 export const appointmentsRouter = Router()
 appointmentsRouter.use(requireAuth)
@@ -19,29 +27,36 @@ const mapAppointment = (r: Row) => ({
   providerName: r.provider_name,
   providerPhoto: r.provider_photo ?? undefined,
   type: r.type,
+  consultationType: r.consultation_type ?? undefined,
   date: r.date,
   time: r.time,
   location: r.location,
   status: r.status,
   price: r.price,
+  basePrice: r.base_price ?? undefined,
   paymentStatus: r.payment_status,
 })
 
 const BOOK_STATUSES = ['confirmed', 'pending'] as const
 const MUTATION_STATUSES = ['confirmed', 'pending', 'completed', 'cancelled'] as const
 
+/**
+ * Provider-owned details are accepted so the client does not have to refetch,
+ * but the stored values come from the catalog record — see `POST /`.
+ * `price` and `paymentStatus` are deliberately not in this schema: a client
+ * must not be able to name its own price or declare an appointment paid.
+ */
 const createSchema = z.object({
-  providerId: z.string(),
-  providerType: z.string(),
-  providerName: z.string(),
+  providerId: z.string().min(1),
+  providerType: z.string().min(1),
+  providerName: z.string().optional(),
   providerPhoto: z.string().optional(),
-  type: z.string(),
-  date: z.string(),
-  time: z.string(),
-  location: z.string(),
-  price: z.number(),
+  type: z.string().min(1),
+  consultationType: z.enum(CONSULT_TYPES).optional(),
+  date: z.string().min(1),
+  time: z.string().min(1),
+  location: z.string().optional(),
   status: z.enum(BOOK_STATUSES).optional(),
-  paymentStatus: z.enum(['paid', 'pending', 'unpaid']).optional(),
 })
 
 appointmentsRouter.get('/', async (req: Request, res: Response) => {
@@ -51,6 +66,8 @@ appointmentsRouter.get('/', async (req: Request, res: Response) => {
   if (auth.role === 'patient') {
     where.push('patient_id = ?')
     params.push(auth.id)
+  } else if (auth.role === 'admin') {
+    where.push('1 = 1')
   } else if (auth.providerId) {
     where.push('provider_id = ?')
     params.push(auth.providerId)
@@ -76,25 +93,57 @@ appointmentsRouter.post('/', async (req: Request, res: Response) => {
     return
   }
   const input = parsed.data
+
+  if (!isProviderRole(input.providerType)) {
+    res.status(400).json({ error: 'Type de professionnel invalide' })
+    return
+  }
+
+  // The catalog record is the source of truth for who this is, what it costs
+  // and where it happens. Anything the client sent for those is ignored.
+  const record = await loadProviderRecord(input.providerType, input.providerId)
+  if (!record) {
+    res.status(404).json({ error: 'Professionnel introuvable' })
+    return
+  }
+
+  const basePrice = basePriceFor(record, input.consultationType)
+  if (basePrice <= 0) {
+    res.status(409).json({ error: "Ce professionnel n'a pas encore défini ses honoraires" })
+    return
+  }
+  const total = basePrice + platformFeeFor(basePrice)
+
+  // Each role's display name lives in a different column (`provider` for
+  // ambulances), so read it through the role mapping rather than hardcoding.
+  const nameCol = PROVIDER_TABLE[input.providerType]!.nameCol
+  const providerName = String(record[nameCol] ?? '')
+  const patientRow = (await db.query('SELECT location FROM users WHERE id = ?', [req.auth!.id])).rows[0] as
+    | { location: string | null }
+    | undefined
+
   const appointment = {
-    id: `ap-${Date.now()}`,
+    id: uniqueId('ap'),
     reference: generateReference('MS'),
     patientId: req.auth!.id,
     providerId: input.providerId,
     providerType: input.providerType,
-    providerName: input.providerName,
-    providerPhoto: input.providerPhoto ?? null,
+    providerName,
+    providerPhoto: (record.photo as string | null) ?? null,
     type: input.type,
+    consultationType: input.consultationType ?? null,
     date: input.date,
     time: input.time,
-    location: input.location,
+    location: locationFor(record, input.consultationType, patientRow?.location ?? null),
     status: input.status ?? 'confirmed',
-    price: input.price,
-    paymentStatus: input.paymentStatus ?? 'unpaid',
+    price: total,
+    basePrice,
+    // Always starts unpaid: `POST /payments` is what flips it to 'paid'.
+    paymentStatus: 'unpaid',
   }
   await db.query(
-    `INSERT INTO appointments (id, reference, patient_id, provider_id, provider_type, provider_name, provider_photo, type, date, time, location, status, price, payment_status)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO appointments (id, reference, patient_id, provider_id, provider_type, provider_name, provider_photo, type, consultation_type, date, time, location, status, price, base_price, payment_status)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       appointment.id,
       appointment.reference,
@@ -104,16 +153,38 @@ appointmentsRouter.post('/', async (req: Request, res: Response) => {
       appointment.providerName,
       appointment.providerPhoto,
       appointment.type,
+      appointment.consultationType,
       appointment.date,
       appointment.time,
       appointment.location,
       appointment.status,
       appointment.price,
+      appointment.basePrice,
       appointment.paymentStatus,
     ],
   )
   res.status(201).json(mapAppointment({ ...appointment, provider_photo: appointment.providerPhoto }))
 })
+
+/**
+ * Allowed status moves, by who is asking.
+ *
+ * A patient may only withdraw their own booking — previously any authenticated
+ * patient could PATCH their appointment to 'completed' or 'confirmed'.
+ * 'completed' and 'cancelled' are terminal.
+ */
+const PROVIDER_TRANSITIONS: Record<string, string[]> = {
+  pending: ['confirmed', 'cancelled'],
+  confirmed: ['completed', 'cancelled'],
+  completed: [],
+  cancelled: [],
+}
+const PATIENT_TRANSITIONS: Record<string, string[]> = {
+  pending: ['cancelled'],
+  confirmed: ['cancelled'],
+  completed: [],
+  cancelled: [],
+}
 
 appointmentsRouter.patch('/:id/status', async (req: Request, res: Response) => {
   const auth = req.auth!
@@ -127,15 +198,28 @@ appointmentsRouter.patch('/:id/status', async (req: Request, res: Response) => {
     res.status(404).json({ error: 'Rendez-vous introuvable' })
     return
   }
-  if (auth.role !== 'patient' && row.provider_id !== auth.providerId) {
+  const next = parsed.data.status
+  const current = String(row.status)
+
+  if (auth.role === 'patient') {
+    if (row.patient_id !== auth.id) {
+      res.status(403).json({ error: 'Forbidden' })
+      return
+    }
+  } else if (auth.role === 'admin') {
+    // Admins moderate any appointment.
+  } else if (row.provider_id !== auth.providerId) {
     res.status(403).json({ error: 'Forbidden' })
     return
   }
-  if (auth.role === 'patient' && row.patient_id !== auth.id) {
-    res.status(403).json({ error: 'Forbidden' })
+
+  const allowed = auth.role === 'patient' ? PATIENT_TRANSITIONS : PROVIDER_TRANSITIONS
+  if (!(allowed[current] ?? []).includes(next)) {
+    res.status(409).json({ error: `Transition ${current} → ${next} non autorisée` })
     return
   }
-  await db.query('UPDATE appointments SET status = ? WHERE id = ?', [parsed.data.status, req.params.id])
+
+  await db.query('UPDATE appointments SET status = ? WHERE id = ?', [next, req.params.id])
   const updated = (await db.query('SELECT * FROM appointments WHERE id = ?', [req.params.id])).rows[0] as Row
   res.json(mapAppointment(updated))
 })

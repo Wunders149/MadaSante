@@ -22,6 +22,11 @@
   /* Surfaces */
   --surface-page: #f6f9f7;
   --surface-card: #ffffff;
+  /* Neutral fills for inputs and inline panels that sit on top of a card.
+     Without these, `bg-surface` / `bg-surface-soft` resolved to nothing and
+     rendered with no background at all. */
+  --surface: #f6f9f7;
+  --surface-soft: #eef4f1;
   --ink: #101a15;
   --ink-soft: #5b6b62;
   --ink-faint: #83938a;
@@ -51,6 +56,8 @@
 
   --color-page: var(--surface-page);
   --color-card: var(--surface-card);
+  --color-surface: var(--surface);
+  --color-surface-soft: var(--surface-soft);
   --color-ink: var(--ink);
   --color-ink-soft: var(--ink-soft);
   --color-ink-faint: var(--ink-faint);

@@ -2,6 +2,7 @@ import { Router, type Request, type Response } from 'express'
 import { z } from 'zod'
 import { db } from '../db.js'
 import { requireAdmin, requireAuth } from '../auth.js'
+import { createProviderRecord } from '../catalog.js'
 
 export const adminRouter = Router()
 adminRouter.use(requireAuth, requireAdmin)
@@ -131,9 +132,21 @@ adminRouter.patch('/applications/:id', async (req, res) => {
         res.status(409).json({ error: 'Email déjà utilisé' })
         return
       }
+      // A provider account is only usable once it is backed by a catalog
+      // record: `provider_id` is what scopes their appointments, payments and
+      // availability, and `fetchProfile` reads the record for their name and
+      // location. Create both in the same transaction so an approved
+      // application can never land half-wired.
+      const providerId = await createProviderRecord(client, {
+        role: row.role,
+        orgName: row.org_name,
+        phone: row.phone,
+        location: row.location,
+        city: row.city,
+      })
       await client.query(
         `INSERT INTO users (id, first_name, last_name, phone, email, password_hash, role, location, photo, provider_id)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NULL, NULL)`,
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NULL, $9)`,
         [
           `u_${row.id}`,
           row.first_name,
@@ -143,6 +156,7 @@ adminRouter.patch('/applications/:id', async (req, res) => {
           row.password_hash,
           row.role,
           row.location,
+          providerId,
         ],
       )
     }
@@ -182,13 +196,13 @@ adminRouter.get('/users', async (req: Request, res: Response) => {
   params.push(offset, limit);
   const rows = (
     await db.query(
-      `SELECT id, first_name, last_name, phone, email, photo, role, location, provider_id,
+      `SELECT id, first_name, last_name, phone, email, photo, role, location, provider_id, created_at,
         (SELECT COUNT(*) FROM appointments a WHERE a.patient_id = users.id) AS appointment_count,
         (SELECT COUNT(*) FROM payments p WHERE p.patient_id = users.id) AS payment_count,
         (SELECT COUNT(*) FROM delivery_orders d WHERE d.patient_id = users.id) AS delivery_count
        FROM users
        ${where.length ? 'WHERE ' : ''}${where.join(' AND ')}
-       ORDER BY created_at DESC`,
+       ORDER BY created_at DESC NULLS LAST, id DESC`,
       params,
     )
   ).rows as unknown as Array<any>;
@@ -209,6 +223,7 @@ adminRouter.get('/users', async (req: Request, res: Response) => {
       role: r.role,
       location: r.location ?? undefined,
       providerId: r.provider_id ?? null,
+      createdAt: r.created_at ?? undefined,
       appointmentCount: Number(r.appointment_count ?? 0),
       paymentCount: Number(r.payment_count ?? 0),
       deliveryCount: Number(r.delivery_count ?? 0),

@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import { SlidersHorizontal } from 'lucide-react'
 import { Modal } from './ui/Modal'
 import { Button } from './ui/Button'
+import { useApp } from '../stores/AppStore'
 import { cn } from '../lib/cn'
 
 interface Props {
@@ -14,8 +15,10 @@ interface Props {
   className?: string
 }
 
-export function FilterPanel({ label = 'Filtres', badge = 0, onApply, onReset, children, className }: Props) {
+export function FilterPanel({ label, badge = 0, onApply, onReset, children, className }: Props) {
+  const { t } = useApp()
   const [open, setOpen] = useState(false)
+  const title = label ?? t('common.filters')
 
   const reset = () => {
     onReset?.()
@@ -31,7 +34,7 @@ export function FilterPanel({ label = 'Filtres', badge = 0, onApply, onReset, ch
         aria-haspopup="dialog"
       >
         <SlidersHorizontal className="h-4 w-4" />
-        {label}
+        {title}
         {badge > 0 && (
           <span className="absolute -right-1.5 -top-1.5 grid h-5 min-w-5 place-items-center rounded-full bg-brand-600 px-1 text-[11px] font-bold text-white">
             {badge}
@@ -42,12 +45,12 @@ export function FilterPanel({ label = 'Filtres', badge = 0, onApply, onReset, ch
       <Modal
         open={open}
         onClose={() => setOpen(false)}
-        title={label}
+        title={title}
         size="sm"
         footer={
           <div className="flex items-center justify-between gap-2">
             <Button variant="ghost" size="sm" onClick={reset}>
-              RÃ©initialiser
+              {t('common.reset')}
             </Button>
             <Button
               size="sm"
@@ -56,7 +59,7 @@ export function FilterPanel({ label = 'Filtres', badge = 0, onApply, onReset, ch
                 setOpen(false)
               }}
             >
-              Appliquer
+              {t('common.apply')}
             </Button>
           </div>
         }

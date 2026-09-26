@@ -24,6 +24,7 @@ import { useApp } from '../../stores/AppStore'
 import { useAuth } from '../../stores/AuthStore'
 import { useDoctor } from '../../lib/hooks'
 import { nextDays } from '../../lib/constants'
+import { ApiError } from '../../lib/api'
 import type { ConsultationType, PaymentMethod } from '../../types'
 import { formatAr, monthDay } from '../../lib/format'
 import { cn } from '../../lib/cn'
@@ -109,44 +110,38 @@ export function NewAppointmentPage() {
     if (!type || !date || !time) return
     setPaying(true)
     try {
-      const start = Date.now()
+      // `consultationType` is the machine key the server prices from; `type` is
+      // the translated label shown in the UI. The server ignores any price and
+      // recomputes the total from the doctor's catalog record.
       const appointment = await bookAppointment({
         providerId: doctor.id,
         providerType: 'doctor',
         providerName: doctor.name,
         providerPhoto: doctor.photo,
         type: t(consultMeta[type].label),
+        consultationType: type,
         date,
         time,
         location,
-        price: total,
       })
-      await pay({
-        service: `Consultation — ${doctor.name}`,
-        providerName: doctor.name,
-        providerId: doctor.id,
-        amount: total,
-        method,
-        breakdown: [
-          { label: t(consultMeta[type].label), amount: price },
-          { label: t('pay.platformFee'), amount: platformFee },
-        ],
-      })
-      const elapsed = Date.now() - start
-      if (elapsed < 900) await new Promise((r) => setTimeout(r, 900 - elapsed))
+      const payment = await pay({ appointmentId: appointment.id, method })
+      const charged = payment.amount
       pushNotification({
         category: 'appointment',
         title: 'Votre rendez-vous est confirmé.',
         message: `Rendez-vous le ${monthDay(date)} à ${time} avec ${doctor.name}.`,
         link: '/patient/appointments',
       })
-      toast('Rendez-vous confirmé', `Réf. ${appointment.reference} · ${formatAr(total)}`, 'success')
-      setConfirmed({ reference: appointment.reference, price: total })
+      toast('Rendez-vous confirmé', `Réf. ${appointment.reference} · ${formatAr(charged)}`, 'success')
+      setConfirmed({ reference: appointment.reference, price: charged })
       setPaying(false)
       setStep(5)
-    } catch {
+    } catch (err) {
       setPaying(false)
-      toast('Paiement échoué', 'Veuillez réessayer.', 'error')
+      // Surface the server's reason (e.g. honoraires not yet defined) rather
+      // than a generic failure, so the patient knows what to do next.
+      const message = err instanceof ApiError ? err.message : t('common.error')
+      toast('Paiement échoué', message, 'error')
     }
   }
 

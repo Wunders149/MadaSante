@@ -9,7 +9,8 @@ import { Modal } from '../../components/ui/Modal'
 import { Badge } from '../../components/ui/Badge'
 import { useApp } from '../../stores/AppStore'
 import { useAuth } from '../../stores/AuthStore'
-import { monthDay } from '../../lib/format'
+import { ApiError } from '../../lib/api'
+import { formatAr, monthDay } from '../../lib/format'
 
 type Tab = 'all' | 'pending' | 'upcoming' | 'past'
 
@@ -21,11 +22,12 @@ const TABS: { key: Tab; label: string }[] = [
 ]
 
 export function ProviderAppointmentsPage() {
-  const { t, appointments, toast } = useApp()
+  const { t, appointments, setAppointmentStatus, toast } = useApp()
   const { user } = useAuth()
   const [tab, setTab] = useState<Tab>('all')
   const [query, setQuery] = useState('')
   const [openId, setOpenId] = useState<string | undefined>()
+  const [busy, setBusy] = useState(false)
 
   const providerId = user?.providerId
   const list = useMemo(() => {
@@ -37,6 +39,28 @@ export function ProviderAppointmentsPage() {
       .filter((a) => !needle || a.reference.toLowerCase().includes(needle))
   }, [appointments, providerId, tab, query])
   const open = list.find((a) => a.id === openId)
+
+  /**
+   * Persists the decision instead of only showing a toast. The server owns the
+   * status transition rules, so its response replaces the local row.
+   */
+  const decide = async (status: 'confirmed' | 'cancelled') => {
+    if (!open) return
+    setBusy(true)
+    try {
+      await setAppointmentStatus(open.id, status)
+      toast(
+        status === 'confirmed' ? t('prov.accepted') : t('prov.declined'),
+        open.reference,
+        status === 'confirmed' ? 'success' : 'info',
+      )
+      setOpenId(undefined)
+    } catch (err) {
+      toast(t('common.error'), err instanceof ApiError ? err.message : undefined, 'error')
+    } finally {
+      setBusy(false)
+    }
+  }
 
   return (
     <div className="page-container max-w-3xl py-5 sm:py-7">
@@ -85,10 +109,10 @@ export function ProviderAppointmentsPage() {
             <div className="flex gap-2">
               {open?.status === 'pending' && (
                 <>
-                  <Button size="sm" variant="ghost" onClick={() => { toast(t('prov.declined'), '', 'error'); setOpenId(undefined) }}>
+                  <Button size="sm" variant="ghost" loading={busy} onClick={() => void decide('cancelled')}>
                     <XCircle className="h-4 w-4" /> {t('prov.decline')}
                   </Button>
-                  <Button size="sm" onClick={() => { toast(t('prov.accepted'), t('apt.status.confirmed'), 'success'); setOpenId(undefined) }}>
+                  <Button size="sm" loading={busy} onClick={() => void decide('confirmed')}>
                     <CheckCircle2 className="h-4 w-4" /> {t('prov.accept')}
                   </Button>
                 </>
@@ -103,7 +127,7 @@ export function ProviderAppointmentsPage() {
         <div className="space-y-3 text-sm">
           <p className="font-semibold text-ink">{open?.providerName}</p>
           <p className="text-ink-soft">{open?.type}</p>
-          <div className="rounded-xl bg-surface px-3 py-2 text-ink-soft">
+          <div className="rounded-xl bg-surface-soft px-3 py-2 text-ink-soft">
             <p>{monthDay(open?.date ?? '')} à {open?.time}</p>
             <p className="mt-1 flex items-center gap-1.5">
               <MapPin className="h-4 w-4 text-brand-600" /> {open?.location}
@@ -111,7 +135,7 @@ export function ProviderAppointmentsPage() {
           </div>
           <div className="flex items-center justify-between">
             <span className="text-ink-soft">{t('common.total')}</span>
-            <span className="font-semibold text-ink">{open ? `${open.price} Ar` : ''}</span>
+            <span className="font-semibold text-ink">{open ? formatAr(open.price) : ''}</span>
           </div>
         </div>
       </Modal>
