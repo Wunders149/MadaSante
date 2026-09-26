@@ -73,11 +73,13 @@ export function ProviderProfilePage() {
     <div className="page-container max-w-2xl py-5 sm:py-7">
       <PageHeader title={t('prov.profile')} subtitle={t('prov.profileDesc')} />
 
-      <div className="mt-5 flex items-center gap-4">
-        <AvatarUploader src={user?.photo} name={`${form.firstName[0] ?? 'P'}${form.lastName[0] ?? ''}`} onChange={savePhoto} />
-        <div className="min-w-0">
+      <div className="card mt-5 flex flex-col gap-4 p-5 sm:flex-row sm:items-center">
+        <div className="flex justify-center sm:justify-start">
+          <AvatarUploader src={user?.photo} name={`${form.firstName[0] ?? 'P'}${form.lastName[0] ?? ''}`} onChange={savePhoto} />
+        </div>
+        <div className="min-w-0 text-center sm:text-left">
           <p className="text-lg font-bold text-ink">{form.firstName} {form.lastName}</p>
-          <div className="mt-1 flex flex-wrap items-center gap-2">
+          <div className="mt-1 flex flex-wrap items-center justify-center gap-2 sm:justify-start">
             <Badge tone="brand">
               <Stethoscope className="h-3 w-3" /> {form.role}
             </Badge>
@@ -86,7 +88,7 @@ export function ProviderProfilePage() {
         </div>
       </div>
 
-      <div className="mt-6 grid grid-cols-1 gap-4">
+      <div className="card mt-6 space-y-4 p-5">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Input
             label={t('auth.firstName')}
@@ -155,7 +157,7 @@ export function ProviderProfilePage() {
         <PasswordChange />
       </div>
 
-      <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+      <div className="mt-8 flex flex-col-reverse gap-3 sm:flex-row">
         <Button fullWidth size="lg" loading={saving} onClick={save}>
           <Save className="h-4 w-4" /> {t('common.save')}
         </Button>

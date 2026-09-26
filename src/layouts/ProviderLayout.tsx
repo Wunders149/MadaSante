@@ -10,10 +10,10 @@ import {
   UserRound,
 } from 'lucide-react'
 import { Sidebar } from '../components/layout/Sidebar'
+import { MobileNav } from '../components/layout/MobileNav'
 import { LangSwitch } from '../components/LangSwitch'
 import type { NavEntry } from '../components/layout/Sidebar'
 import { ToastHost } from '../components/ui/Toasts'
-import { Logo } from '../components/Logo'
 import { Avatar } from '../components/Avatar'
 import { useApp } from '../stores/AppStore'
 import { useAuth } from '../stores/AuthStore'
@@ -62,12 +62,10 @@ export function ProviderLayout() {
     <div className="min-h-screen">
       <Sidebar items={items} footer={footer} />
       <div className="lg:pl-64">
-        <header className="sticky top-0 z-30 border-b border-line bg-page/90 backdrop-blur">
-          <div className="flex items-center justify-between px-4 py-3 lg:px-8 lg:py-4">
-            <div className="lg:hidden">
-              <Logo compact />
-            </div>
-            <div className="hidden lg:block">
+        <MobileNav area="provider" />
+        <header className="sticky top-0 z-30 hidden border-b border-line bg-page/90 backdrop-blur lg:block">
+          <div className="flex items-center justify-between px-8 py-4">
+            <div>
               <h1 className="text-lg font-bold tracking-tight text-ink">{t('prov.title')}</h1>
               <p className="text-xs text-ink-faint">Rôle : {roleLabel(user?.role)}</p>
             </div>
@@ -79,7 +77,7 @@ export function ProviderLayout() {
             </div>
           </div>
         </header>
-        <main className="px-4 pb-24 sm:px-6 lg:px-8 lg:pb-10">
+        <main className="px-4 pb-48 sm:px-6 lg:px-8 lg:pb-10">
           <Outlet />
         </main>
       </div>
