@@ -25,38 +25,65 @@ export function Sidebar({ items, footer }: Props) {
         </div>
         <nav className="flex-1 space-y-1 overflow-y-auto px-3 pb-4" aria-label="Navigation principale">
           {items.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end={item.end}
-              className={({ isActive }) =>
-                cn(
-                  'group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-colors',
-                  isActive
-                    ? 'bg-brand-50 text-brand-800'
-                    : 'text-ink-soft hover:bg-gray-50 hover:text-ink',
-                )
-              }
-            >
-              {({ isActive }) => (
-                <>
-                  <item.icon
-                    className={cn('h-5 w-5 shrink-0', isActive ? 'text-brand-600' : 'text-ink-faint group-hover:text-brand-600')}
-                  />
-                  <span className="min-w-0 flex-1 truncate">{item.label}</span>
-                  {item.badge ? (
-                    <span className="grid h-5 min-w-5 place-items-center rounded-full bg-red-500 px-1 text-[11px] font-bold text-white">
-                      {item.badge}
-                    </span>
-                  ) : null}
-                </>
-              )}
-            </NavLink>
+            <SidebarLink key={item.to} {...item} />
           ))}
         </nav>
         {footer && <div className="flex-none border-t border-line p-3">{footer}</div>}
       </div>
     </aside>
+  )
+}
+
+/**
+ * One navigation row, shared by the sidebar list and by the "switch area" /
+ * "sign out" links in each layout's footer. Having this in one place is what
+ * keeps the active-state treatment identical across the patient, provider and
+ * admin areas.
+ */
+export function SidebarLink({
+  to,
+  label,
+  icon: Icon,
+  badge,
+  end,
+  tone = 'default',
+  onClick,
+  className,
+}: NavEntry & { tone?: 'default' | 'danger'; onClick?: () => void; className?: string }) {
+  return (
+    <NavLink
+      to={to}
+      end={end}
+      onClick={onClick}
+      className={({ isActive }) =>
+        cn(
+          'group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-colors',
+          isActive
+            ? 'bg-brand-50 text-brand-800'
+            : tone === 'danger'
+              ? 'text-ink-soft hover:bg-red-50 hover:text-red-600'
+              : 'text-ink-soft hover:bg-gray-50 hover:text-ink',
+          className,
+        )
+      }
+    >
+      {({ isActive }) => (
+        <>
+          <Icon
+            className={cn(
+              'h-5 w-5 shrink-0',
+              isActive ? 'text-brand-600' : tone === 'danger' ? '' : 'text-ink-faint group-hover:text-brand-600',
+            )}
+          />
+          <span className="min-w-0 flex-1 truncate">{label}</span>
+          {badge ? (
+            <span className="grid h-5 min-w-5 place-items-center rounded-full bg-red-500 px-1 text-[11px] font-bold text-white">
+              {badge}
+            </span>
+          ) : null}
+        </>
+      )}
+    </NavLink>
   )
 }
 

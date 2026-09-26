@@ -6,6 +6,7 @@ import { Button } from '../../components/ui/Button'
 import { Label, Input } from '../../components/ui/Field'
 import { AvatarUploader } from '../../components/AvatarUploader'
 import { PasswordChange } from '../../components/PasswordChange'
+import { ConfirmationModal } from '../../components/ui/ConfirmationModal'
 import { ProviderCatalogForm } from '../../components/ProviderCatalogForm'
 import { useApp } from '../../stores/AppStore'
 import { useAuth } from '../../stores/AuthStore'
@@ -163,22 +164,16 @@ export function ProviderProfilePage() {
         </Button>
       </div>
 
-      {showLogout && (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-ink/40 px-4" onClick={() => setShowLogout(false)}>
-          <div className="w-full max-w-sm rounded-3xl bg-card p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-lg font-bold text-ink">{t('nav.logout')} ?</h3>
-            <p className="mt-1 text-sm text-ink-soft">{t('profile.logoutDesc')}</p>
-            <div className="mt-5 flex gap-3">
-              <Button variant="ghost" fullWidth onClick={() => setShowLogout(false)}>
-                {t('common.cancel')}
-              </Button>
-              <Button variant="danger" fullWidth onClick={logout}>
-                {t('nav.logout')}
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmationModal
+        open={showLogout}
+        onClose={() => setShowLogout(false)}
+        onConfirm={logout}
+        title={`${t('nav.logout')} ?`}
+        message={t('profile.logoutDesc')}
+        confirmLabel={t('nav.logout')}
+        cancelLabel={t('common.cancel')}
+        tone="danger"
+      />
     </div>
   )
 }

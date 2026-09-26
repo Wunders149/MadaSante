@@ -183,6 +183,7 @@ export const apiRoutes = {
     limit?: number
   }) =>
     api<{ users: User[]; page: number; limit: number; total: number; totalPages: number }>(`/admin/users${qs(params ?? {})}`),
+  adminUser: (id: string) => api<AdminUserDetail>(`/admin/users/${id}`),
 
   deliveries: () => api<DeliveryOrder[]>('/deliveries'),
   /**
@@ -201,6 +202,56 @@ export const apiRoutes = {
   emergencyRequests: () => api<EmergencyRequest[]>('/emergency-requests'),
   createEmergencyRequest: (body: unknown) =>
     api<EmergencyRequest>('/emergency-requests', { method: 'POST', body: JSON.stringify(body) }),
+}
+
+/** Admin view of one account plus its recent activity. */
+export interface AdminUserDetail {
+  user: User
+  totals: {
+    appointments: number
+    payments: number
+    paidTotal: number
+    deliveries: number
+    emergency: number
+  }
+  appointments: Array<{
+    id: string
+    reference: string
+    provider_name: string
+    type: string
+    date: string
+    time: string
+    status: string
+    price: number
+    payment_status: string
+  }>
+  payments: Array<{
+    id: string
+    reference: string
+    provider_name: string
+    service: string
+    date: string
+    amount: number
+    method: string
+    status: string
+  }>
+  deliveries: Array<{
+    id: string
+    reference: string
+    medicine_name: string
+    quantity: number
+    total: number
+    status: string
+    date: string
+  }>
+  emergencyRequests: Array<{
+    id: string
+    reference: string
+    emergency_type: string
+    destination_hospital: string
+    status: string
+    date: string
+  }>
 }
 
 export interface SearchResults {

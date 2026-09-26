@@ -235,5 +235,89 @@ adminRouter.get('/users', async (req: Request, res: Response) => {
   })
 })
 
+/**
+ * Full activity for one account, for the admin user detail screen.
+ *
+ * Everything is already keyed on the owning user id, so this needs no extra
+ * ownership logic — an admin can only see rows that belong to the user asked
+ * for. The recent-activity lists are capped so a heavy account cannot make the
+ * page enormous.
+ */
+const RECENT_LIMIT = 20
+
+adminRouter.get('/users/:id', async (req: Request, res: Response) => {
+  const row = (
+    await db.query('SELECT id, first_name, last_name, phone, email, photo, role, location, provider_id, created_at FROM users WHERE id = $1', [
+      req.params.id,
+    ])
+  ).rows[0] as Record<string, unknown> | undefined
+  if (!row) {
+    res.status(404).json({ error: 'Compte introuvable' })
+    return
+  }
+
+  const [appointments, payments, deliveries, emergency] = await Promise.all([
+    db.query(
+      `SELECT id, reference, provider_name, type, date, time, status, price, payment_status
+         FROM appointments WHERE patient_id = $1 ORDER BY date DESC, time DESC LIMIT $2`,
+      [row.id, RECENT_LIMIT],
+    ),
+    db.query(
+      `SELECT id, reference, provider_name, service, date, amount, method, status
+         FROM payments WHERE patient_id = $1 ORDER BY date DESC LIMIT $2`,
+      [row.id, RECENT_LIMIT],
+    ),
+    db.query(
+      `SELECT id, reference, medicine_name, quantity, total, status, date
+         FROM delivery_orders WHERE patient_id = $1 ORDER BY date DESC LIMIT $2`,
+      [row.id, RECENT_LIMIT],
+    ),
+    db.query(
+      `SELECT id, reference, emergency_type, destination_hospital, status, date
+         FROM emergency_requests WHERE patient_id = $1 ORDER BY date DESC LIMIT $2`,
+      [row.id, RECENT_LIMIT],
+    ),
+  ])
+
+  const totals = (
+    await db.query(
+      `SELECT
+         (SELECT COUNT(*) FROM appointments WHERE patient_id = users.id)::int AS appointment_count,
+         (SELECT COUNT(*) FROM payments WHERE patient_id = users.id)::int AS payment_count,
+         (SELECT COALESCE(SUM(amount), 0)::int FROM payments WHERE patient_id = users.id AND status = 'success') AS paid_total,
+         (SELECT COUNT(*) FROM delivery_orders WHERE patient_id = users.id)::int AS delivery_count,
+         (SELECT COUNT(*) FROM emergency_requests WHERE patient_id = users.id)::int AS emergency_count
+       FROM users WHERE id = $1`,
+      [row.id],
+    )
+  ).rows[0] as Record<string, number>
+
+  res.json({
+    user: {
+      id: row.id,
+      firstName: row.first_name,
+      lastName: row.last_name,
+      phone: row.phone,
+      email: row.email,
+      photo: row.photo ?? undefined,
+      role: row.role,
+      location: row.location ?? undefined,
+      providerId: row.provider_id ?? null,
+      createdAt: row.created_at ?? undefined,
+    },
+    totals: {
+      appointments: totals.appointment_count,
+      payments: totals.payment_count,
+      paidTotal: totals.paid_total,
+      deliveries: totals.delivery_count,
+      emergency: totals.emergency_count,
+    },
+    appointments: appointments.rows,
+    payments: payments.rows,
+    deliveries: deliveries.rows,
+    emergencyRequests: emergency.rows,
+  })
+})
+
 
 

@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { CalendarDays, CheckCircle2, MapPin, XCircle } from 'lucide-react'
 import { PageHeader } from '../../components/ui/Headers'
+import { SegmentedTabs } from '../../components/ui/Tabs'
 import { SearchBar } from '../../components/SearchBar'
 import { AppointmentCard } from '../../components/AppointmentCard'
 import { EmptyState } from '../../components/ui/States'
@@ -14,11 +15,11 @@ import { formatAr, monthDay } from '../../lib/format'
 
 type Tab = 'all' | 'pending' | 'upcoming' | 'past'
 
-const TABS: { key: Tab; label: string }[] = [
-  { key: 'all', label: 'common.all' },
-  { key: 'pending', label: 'apt.status.pending' },
-  { key: 'upcoming', label: 'apt.list.upcoming' },
-  { key: 'past', label: 'apt.list.past' },
+const TABS: { key: Tab; labelKey: string }[] = [
+  { key: 'all', labelKey: 'common.all' },
+  { key: 'pending', labelKey: 'apt.status.pending' },
+  { key: 'upcoming', labelKey: 'apt.list.upcoming' },
+  { key: 'past', labelKey: 'apt.list.past' },
 ]
 
 export function ProviderAppointmentsPage() {
@@ -65,22 +66,21 @@ export function ProviderAppointmentsPage() {
   return (
     <div className="page-container max-w-3xl py-5 sm:py-7">
       <PageHeader title={t('prov.appointments')} subtitle={t('apt.title')} />
-      <div className="mt-4 flex flex-wrap gap-1 rounded-2xl border border-line bg-gray-100 p-1">
-        {TABS.map(({ key, label }) => (
-          <button
-            key={key}
-            onClick={() => setTab(key)}
-            className={`flex-1 rounded-xl px-3 py-2 text-sm font-semibold transition ${
-              tab === key ? 'bg-card text-brand-700 shadow-sm' : 'text-ink-soft'
-            }`}
-            aria-pressed={tab === key}
-          >
-            {t(label)}
-          </button>
-        ))}
-      </div>
+      <SegmentedTabs
+        value={tab}
+        onChange={setTab}
+        ariaLabel={t('prov.appointments')}
+        className="mt-4"
+        options={TABS.map(({ key, labelKey }) => ({ key, label: t(labelKey) }))}
+      />
       <div className="mt-4">
-        <SearchBar value={query} onChange={setQuery} placeholder={t('search.title')} />
+        <SearchBar
+          value={query}
+          onChange={setQuery}
+          placeholder={t('prov.searchAppointments')}
+          aria-label={t('prov.searchAppointments')}
+          size="md"
+        />
       </div>
 
       {list.length === 0 ? (

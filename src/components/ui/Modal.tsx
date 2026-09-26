@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react'
 import type { ReactNode } from 'react'
 import { X } from 'lucide-react'
 import { cn } from '../../lib/cn'
@@ -10,6 +11,8 @@ interface Props {
   footer?: ReactNode
   size?: 'sm' | 'md' | 'lg' | 'full'
   hideClose?: boolean
+  /** Accessible name for the close control. */
+  closeLabel?: string
 }
 
 const sizes = {
@@ -19,21 +22,43 @@ const sizes = {
   full: 'max-w-full h-full rounded-none sm:rounded-2xl sm:max-h-[92vh]',
 }
 
-export function Modal({ open, onClose, title, children, footer, size = 'md', hideClose }: Props) {
+export function Modal({ open, onClose, title, children, footer, size = 'md', hideClose, closeLabel = 'Fermer' }: Props) {
+  const panelRef = useRef<HTMLDivElement>(null)
+
+  // Escape to dismiss and a scroll lock on the page behind. Without these the
+  // dialog traps no focus, so keyboard users can tab into the dimmed content
+  // underneath and cannot reliably get out.
+  useEffect(() => {
+    if (!open) return
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose()
+    }
+    document.addEventListener('keydown', onKeyDown)
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    panelRef.current?.focus()
+    return () => {
+      document.removeEventListener('keydown', onKeyDown)
+      document.body.style.overflow = previousOverflow
+    }
+  }, [open, onClose])
+
   if (!open) return null
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center">
       <button
-        aria-label="Fermer"
+        aria-label={closeLabel}
         className="absolute inset-0 bg-ink/40 backdrop-blur-[2px] animate-fade-in"
         onClick={onClose}
         tabIndex={-1}
       />
       <div
+        ref={panelRef}
         role="dialog"
         aria-modal="true"
+        tabIndex={-1}
         className={cn(
-          'relative flex max-h-[92vh] w-full flex-col overflow-hidden rounded-t-2xl bg-card shadow-lifted animate-fade-up sm:rounded-2xl',
+          'relative flex max-h-[92vh] w-full flex-col overflow-hidden rounded-t-2xl bg-card shadow-lifted animate-fade-up outline-none sm:rounded-2xl',
           sizes[size],
         )}
       >
@@ -43,7 +68,7 @@ export function Modal({ open, onClose, title, children, footer, size = 'md', hid
             <button
               onClick={onClose}
               className="grid h-9 w-9 place-items-center rounded-full text-ink-soft transition hover:bg-gray-100"
-              aria-label="Fermer"
+              aria-label={closeLabel}
             >
               <X className="h-5 w-5" />
             </button>

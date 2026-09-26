@@ -1,4 +1,5 @@
 export { AdminApplicationsPage } from './AdminApplicationsPage'
 export { AdminApplicationDetailPage } from './AdminApplicationDetailPage'
 export { AdminPatientsPage } from './AdminPatientsPage'
+export { AdminPatientDetailPage } from './AdminPatientDetailPage'
 export { AdminProfilePage } from './AdminProfilePage'

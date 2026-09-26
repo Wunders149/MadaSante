@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Ambulance, Inbox, MapPin, Phone } from 'lucide-react'
 import { PageHeader } from '../../components/ui/Headers'
+import { SegmentedTabs } from '../../components/ui/Tabs'
 import { Button } from '../../components/ui/Button'
 import { AppointmentCard } from '../../components/AppointmentCard'
 import { EmptyState } from '../../components/ui/States'
@@ -47,20 +48,13 @@ export function ProviderRequestsPage() {
     <div className="page-container max-w-3xl py-5 sm:py-7">
       <PageHeader title={t('prov.requests')} subtitle={t('prov.subtitle')} />
 
-      <div className="mt-4 flex flex-wrap gap-1 rounded-2xl border border-line bg-gray-100 p-1">
-        {tabs.map(({ key, label }) => (
-          <button
-            key={key}
-            onClick={() => setTab(key)}
-            className={`flex-1 rounded-xl px-3 py-2 text-sm font-semibold transition ${
-              tab === key ? 'bg-card text-brand-700 shadow-sm' : 'text-ink-soft'
-            }`}
-            aria-pressed={tab === key}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
+      <SegmentedTabs
+        value={tab}
+        onChange={setTab}
+        ariaLabel={t('prov.requests')}
+        className="mt-4"
+        options={tabs.map(({ key, label }) => ({ key, label }))}
+      />
 
       {tab === 'appointments' ? (
         pending.length === 0 ? (

@@ -115,4 +115,12 @@ export function useAdminUsers(params?: {
     queryFn: () => apiRoutes.adminUsers(params),
   })
 }
+
+export function useAdminUser(id?: string) {
+  return useQuery({
+    queryKey: ['admin', 'users', 'detail', id],
+    queryFn: () => apiRoutes.adminUser(id as string),
+    enabled: Boolean(id),
+  })
+}
 export type { Ambulance, Doctor, Hospital, ImagingCenter, Laboratory, Medicine, Nurse, Pharmacy, User }

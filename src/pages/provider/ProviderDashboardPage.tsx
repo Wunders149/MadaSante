@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { Link } from 'react-router-dom'
 import { CalendarCheck2, Clock3, TrendingUp, Wallet } from 'lucide-react'
 import { PageHeader } from '../../components/ui/Headers'
 import { AppointmentCard } from '../../components/AppointmentCard'
@@ -29,10 +30,10 @@ export function ProviderDashboardPage() {
   const recent = mine.slice(0, 5)
 
   const stats = [
-    { icon: CalendarCheck2, label: t('prov.today'), value: String(today.length), cls: 'text-brand-600 bg-brand-50' },
-    { icon: Clock3, label: t('prov.upcoming'), value: String(upcoming.length), cls: 'text-blue-600 bg-blue-50' },
-    { icon: Wallet, label: t('prov.revenue'), value: formatAr(total), cls: 'text-green-600 bg-green-50' },
-    { icon: TrendingUp, label: t('prov.pendingRequests'), value: String(pendingRequests), cls: 'text-amber-600 bg-amber-50' },
+    { icon: CalendarCheck2, label: t('prov.today'), value: String(today.length), cls: 'text-brand-600 bg-brand-50', to: '/provider/appointments' },
+    { icon: Clock3, label: t('prov.upcoming'), value: String(upcoming.length), cls: 'text-blue-600 bg-blue-50', to: '/provider/appointments' },
+    { icon: Wallet, label: t('prov.revenue'), value: formatAr(total), cls: 'text-green-600 bg-green-50', to: '/provider/payments' },
+    { icon: TrendingUp, label: t('prov.pendingRequests'), value: String(pendingRequests), cls: 'text-amber-600 bg-amber-50', to: '/provider/requests' },
   ]
 
   return (
@@ -50,9 +51,14 @@ export function ProviderDashboardPage() {
         </div>
       )}
 
+      {/* Each tile drills into the page that explains the number. */}
       <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
-        {stats.map(({ icon: Icon, label, value, cls }) => (
-          <div key={label} className="card flex items-center gap-3 p-4">
+        {stats.map(({ icon: Icon, label, value, cls, to }) => (
+          <Link
+            key={label}
+            to={to}
+            className="card flex items-center gap-3 p-4 transition hover:border-brand-300 hover:shadow-soft"
+          >
             <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ${cls}`}>
               <Icon className="h-5 w-5" />
             </span>
@@ -60,7 +66,7 @@ export function ProviderDashboardPage() {
               <p className="truncate text-xs text-ink-soft">{label}</p>
               <p className="truncate text-lg font-extrabold text-ink">{value}</p>
             </div>
-          </div>
+          </Link>
         ))}
       </div>
 

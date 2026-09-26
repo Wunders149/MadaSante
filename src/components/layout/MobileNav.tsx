@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from 'react-router-dom'
-import { CalendarDays, ClipboardCheck, Home, LogOut, User } from 'lucide-react'
+import { CalendarDays, ClipboardCheck, Home, LogOut, User, Users } from 'lucide-react'
 import { Logo } from '../Logo'
 import { Avatar } from '../Avatar'
 import { LangSwitch } from '../LangSwitch'
@@ -25,6 +25,7 @@ const AREA_ITEMS: Record<MobileNavArea, BarItem[]> = {
   ],
   admin: [
     { to: '/admin', label: 'admin.applications', icon: ClipboardCheck, end: true },
+    { to: '/admin/patients', label: 'admin.patients', icon: Users },
     { to: '/admin/profile', label: 'nav.profile', icon: User },
   ],
 }
@@ -34,7 +35,7 @@ interface Props {
 }
 
 export function MobileNav({ area }: Props) {
-  const { t, unreadCount } = useApp()
+  const { t } = useApp()
   const { user, logout } = useAuth()
   const navigate = useNavigate()
   const items = AREA_ITEMS[area]
@@ -78,18 +79,16 @@ export function MobileNav({ area }: Props) {
             >
               {({ isActive }) => (
                 <>
+                  {/* No notification badge here: the unread count belongs to
+                      notifications, and neither area has a notifications
+                      screen, so badging "Requests" with it was misleading. */}
                   <span
                     className={cn(
-                      'relative grid h-8 w-12 place-items-center rounded-full transition-colors',
+                      'grid h-8 w-12 place-items-center rounded-full transition-colors',
                       isActive && 'bg-brand-50',
                     )}
                   >
                     <item.icon className="h-5.5 w-5.5" />
-                    {item.to === '/provider/requests' && unreadCount > 0 && (
-                      <span className="absolute -top-1 right-1 grid h-4 min-w-4 place-items-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
-                        {unreadCount}
-                      </span>
-                    )}
                   </span>
                   {t(item.label)}
                 </>

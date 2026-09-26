@@ -40,6 +40,7 @@ import {
   AdminApplicationsPage,
   AdminApplicationDetailPage,
   AdminPatientsPage,
+  AdminPatientDetailPage,
   AdminProfilePage,
 } from './pages/admin'
 
@@ -154,7 +155,9 @@ export function App() {
             <Route path="applications" element={<AdminApplicationsPage />} />
             <Route path="applications/:id" element={<AdminApplicationDetailPage />} />
             <Route path="patients" element={<AdminPatientsPage />} />
-            <Route path="patients/:id" element={<AdminApplicationDetailPage />} />
+            {/* Was bound to AdminApplicationDetailPage, so following a patient
+                loaded an application by the wrong id. */}
+            <Route path="patients/:id" element={<AdminPatientDetailPage />} />
             <Route path="profile" element={<AdminProfilePage />} />
           </Route>
 
