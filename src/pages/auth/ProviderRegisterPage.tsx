@@ -7,10 +7,10 @@ import { Input, Select } from '../../components/ui/Field'
 import { useApp } from '../../stores/AppStore'
 import { apiRoutes } from '../../lib/api'
 import { CITIES } from '../../lib/constants'
-import { roleLabelKey } from '../../lib/roles'
+import { roleLabelKey, PROVIDER_ROLES } from '../../lib/roles'
 import type { Role } from '../../types'
 
-const providerRoles: Role[] = ['doctor', 'nurse', 'pharmacy', 'laboratory', 'imaging_center', 'hospital', 'ambulance_driver']
+const providerRoles: Role[] = [...PROVIDER_ROLES]
 const docTypes = ['license', 'diploma', 'id', 'certificate'] as const
 
 interface DraftDoc {

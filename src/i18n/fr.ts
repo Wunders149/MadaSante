@@ -33,6 +33,15 @@ export const fr: Record<string, string> = {
   'auth.imagingRole': 'Imagerie',
   'auth.hospitalRole': 'Hôpital',
   'auth.ambulanceRole': 'Ambulance',
+  'auth.psychologistRole': 'Psychologue',
+  'auth.psychiatristRole': 'Psychiatre',
+  'auth.kineRole': 'Kinésithérapeute',
+  'auth.ergoRole': 'Ergothérapeute',
+  'auth.speechRole': 'Orthophoniste',
+  'auth.dietitianRole': 'Diététicien',
+  'auth.midwifeRole': 'Sage-femme',
+  'auth.ngoRole': 'ONG médicale',
+  'auth.roleHint': 'Votre rôle est détecté automatiquement à la connexion.',
   'auth.invalidCredentials': 'Identifiants invalides. Vérifiez votre adresse e-mail et votre mot de passe.',
   'auth.privacyNote': 'Vos données sont chiffrées et utilisées uniquement pour votre prise en charge.',
   'auth.secureBadge': 'Connexion sécurisée JWT',
@@ -50,6 +59,8 @@ export const fr: Record<string, string> = {
   'nav.laboratories': 'Laboratoires',
   'nav.imaging': 'Imagerie',
   'nav.nurses': 'Infirmières',
+  'nav.professionals': 'Autres professionnels',
+  'nav.ngos': 'ONG & associations',
   'nav.ambulance': 'Ambulances',
   'nav.delivery': 'Livraison',
   'nav.payments': 'Paiements',
@@ -379,6 +390,10 @@ export const fr: Record<string, string> = {
   'orient.type.imagingDesc': 'Radiographie, scanner, IRM…',
   'orient.type.nurse': 'Soins infirmiers',
   'orient.type.nurseDesc': 'Interventions à domicile',
+  'orient.type.professional': 'Psy, kiné, ergo',
+  'orient.type.professionalDesc': 'Soutien psychologique et rééducation',
+  'orient.type.ngo': 'ONG médicale',
+  'orient.type.ngoDesc': 'Soins gratuits ou à faible coût',
 
   // Delivery
   'del.title': 'Livraison de médicaments',
@@ -646,6 +661,27 @@ export const fr: Record<string, string> = {
 
   // Misc
   'misc.ar': 'Ar',
+
+  // Allied-health professionals (psychology, physio, occupational therapy, …)
+  'prac.title': 'Psychologues, kinésithérapeutes & autres professionnels',
+  'prac.subtitle': 'Professionnels de santé paramédicaux et psychologiques à Madagascar.',
+  'prac.profession': 'Profession',
+  'prac.searchPlaceholder': 'Rechercher un professionnel, une spécialité…',
+  'prac.resultsCount': '{n} professionnels',
+  'prac.priceOnRequest': 'Sur devis',
+  'prac.empty': 'Aucun professionnel pour le moment',
+  'prac.emptyDesc': 'Ces professionnels sont en cours d’ajout. Revenez bientôt ou contactez-nous pour une orientation.',
+
+  // Medical NGOs and associations
+  'ngo.title': 'ONG & associations médicales',
+  'ngo.subtitle': 'Organisations qui proposent des soins gratuits ou à faible coût à Madagascar.',
+  'ngo.searchPlaceholder': 'Rechercher une organisation, un domaine d’intervention…',
+  'ngo.resultsCount': '{n} organisations',
+  'ngo.freeCare': 'Soins gratuits',
+  'ngo.coverage': 'Zones d’intervention',
+  'ngo.website': 'Site web',
+  'ngo.empty': 'Aucune organisation référencée',
+  'ngo.emptyDesc': 'Aucune association médicale n’est encore enregistrée. N’hésitez pas à nous contacter pour une orientation.',
   'misc.today': 'Aujourd’hui',
   'misc.tomorrow': 'Demain',
   'misc.emergencyIndicator': 'Service d’urgence',

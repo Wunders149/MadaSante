@@ -33,6 +33,15 @@ export const mg: Record<string, string> = {
   'auth.imagingRole': 'Imagerie',
   'auth.hospitalRole': 'Hospitaly',
   'auth.ambulanceRole': 'Ambulance',
+  'auth.psychologistRole': 'Mpanalaholo',
+  'auth.psychiatristRole': 'Mpitsabo psykiatria',
+  'auth.kineRole': 'Kinésitérapeute',
+  'auth.ergoRole': 'Ergothérapeute',
+  'auth.speechRole': 'Mpanalaholy fiteny',
+  'auth.dietitianRole': 'Mpamboly sakafo',
+  'auth.midwifeRole': 'Mpitsabo momba ny zaza',
+  'auth.ngoRole': 'ONG ara-pahasalamana',
+  'auth.roleHint': 'Hitondrana ho azyo ny andraikitrao rehefa miditra ianao.',
   'auth.invalidCredentials': 'Diso ny mombamomba. Hamarino ny adiresy mailaka sy ny teny miafinao.',
   'auth.privacyNote': 'Voaroa ny angon-drindrinao ary ampiasaina ho an’ny fitsaboanao ihany.',
   'auth.secureBadge': 'Fidirana azo antoka',
@@ -48,6 +57,8 @@ export const mg: Record<string, string> = {
   'nav.laboratories': 'Laboratoara',
   'nav.imaging': 'Imagerie',
   'nav.nurses': 'Mpisampy',
+  'nav.professionals': 'Mpikaroka hafa',
+  'nav.ngos': 'ONG sy fikambanana',
   'nav.ambulance': 'Ambulance',
   'nav.delivery': 'Fanaterana',
   'nav.payments': 'Fandoavam-bola',
@@ -375,6 +386,10 @@ export const mg: Record<string, string> = {
   'orient.type.imagingDesc': 'Radiografia, scanner, IRM…',
   'orient.type.nurse': 'Fitsaboana mpisampy',
   'orient.type.nurseDesc': 'Fanatanterahana an-tanànàna',
+  'orient.type.professional': 'Psy, kiné, ergo',
+  'orient.type.professionalDesc': 'Fampaherezana ara-pihaino sy fampidirana',
+  'orient.type.ngo': 'ONG ara-pahasalamana',
+  'orient.type.ngoDesc': 'Fitsaboana maimpoana na mora vidy',
 
   // Delivery
   'del.title': 'Fanaterana fanafody',
@@ -642,6 +657,27 @@ export const mg: Record<string, string> = {
 
   // Misc
   'misc.ar': 'Ar',
+
+  // Allied-health professionals
+  'prac.title': 'Mpanalaholo, kinésitérapeute ary mpikaroka hafa',
+  'prac.subtitle': 'Mpikaroka ara-pahasalamana sy ara-pihaino eto Madagasikara.',
+  'prac.profession': 'Asa',
+  'prac.searchPlaceholder': 'Hitady mpikaroka, manampahaizana manokana…',
+  'prac.resultsCount': '{n} mpikaroka',
+  'prac.priceOnRequest': 'Alohan’ny resaka',
+  'prac.empty': 'Mbola tsy misy mpikaroka',
+  'prac.emptyDesc': 'Ampianafana ireo mpikaroka ireo. Miverenaa aoriana na mifandraisa aminay.',
+
+  // Medical NGOs
+  'ngo.title': 'ONG sy fikambanana ara-pahasalamana',
+  'ngo.subtitle': 'Fikambanana manome fitsaboana maimpoana na mora vidy eto Madagasikara.',
+  'ngo.searchPlaceholder': 'Hitady fikambanana, sehatra iainan’izy…',
+  'ngo.resultsCount': '{n} fikambanana',
+  'ngo.freeCare': 'Fitsaboana maimpoana',
+  'ngo.coverage': 'Toerana iainan’izy',
+  'ngo.website': 'Tranon-taritrasy',
+  'ngo.empty': 'Tsy misy fikambanana voatahiry',
+  'ngo.emptyDesc': 'Mbola tsy misy fikambanana ara-pahasalamana voarakitra. Aza manatrika mifandraisa aminay.',
   'misc.today': 'Androany',
   'misc.tomorrow': 'Rahampitso',
   'misc.emergencyIndicator': 'Serisy vonjy',

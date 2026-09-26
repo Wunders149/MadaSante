@@ -20,6 +20,8 @@ import {
   ImagingPage,
   HospitalsPage,
   NursesPage,
+  PractitionersPage,
+  MedicalNgosPage,
   AmbulancePage,
   DeliveryPage,
   PaymentsPage,
@@ -119,6 +121,8 @@ export function App() {
             <Route path="imaging" element={<ImagingPage />} />
             <Route path="hospitals" element={<HospitalsPage />} />
             <Route path="nurses" element={<NursesPage />} />
+            <Route path="professionals" element={<PractitionersPage />} />
+            <Route path="ngos" element={<MedicalNgosPage />} />
             <Route path="ambulance" element={<AmbulancePage />} />
             <Route path="delivery" element={<DeliveryPage />} />
             <Route path="payments" element={<PaymentsPage />} />

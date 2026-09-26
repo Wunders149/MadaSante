@@ -3,8 +3,10 @@ import { useNavigate } from 'react-router-dom'
 import {
   Ambulance as AmbulanceIcon,
   Beaker,
+  Brain,
   Building2,
   FlaskConical,
+  HandHeart,
   HeartPulse,
   Pill,
   Scan,
@@ -55,6 +57,8 @@ const v2Services: V2Service[] = [
   { label: 'Laboratoires', to: '/patient/laboratories', icon: FlaskConical, tone: 'brand' },
   { label: 'Imagerie', to: '/patient/imaging', icon: Scan, tone: 'blue' },
   { label: 'Infirmières', to: '/patient/nurses', icon: Syringe, tone: 'blue' },
+  { label: 'Psy & Kiné', to: '/patient/professionals', icon: Brain, tone: 'blue' },
+  { label: 'ONG médicales', to: '/patient/ngos', icon: HandHeart, tone: 'amber' },
   { label: 'Ambulances', to: '/patient/ambulance', icon: AmbulanceIcon, tone: 'red' },
   { label: 'Livraison', to: '/patient/delivery', icon: Truck, tone: 'orange' },
 ]

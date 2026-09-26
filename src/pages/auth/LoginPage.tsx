@@ -3,13 +3,13 @@ import { Link, useNavigate } from 'react-router-dom'
 import { KeyRound, ShieldCheck } from 'lucide-react'
 import { AuthShell, RoleTabs } from './shared'
 import { Button } from '../../components/ui/Button'
-import { Input } from '../../components/ui/Field'
+import { Input, Select } from '../../components/ui/Field'
 import { useApp } from '../../stores/AppStore'
 import { useAuth } from '../../stores/AuthStore'
-import { roleLabelKey } from '../../lib/roles'
+import { roleLabelKey, PROVIDER_ROLES } from '../../lib/roles'
 import type { Role } from '../../types'
 
-const providerRoles: Role[] = ['doctor', 'nurse', 'pharmacy', 'laboratory', 'imaging_center', 'hospital', 'ambulance_driver']
+const providerRoles: Role[] = [...PROVIDER_ROLES]
 
 export function LoginPage() {
   const { t, toast } = useApp()
@@ -59,23 +59,20 @@ export function LoginPage() {
 
         {tab === 'provider' && (
           <div>
-            <p className="mb-1.5 text-sm font-semibold text-ink">{t('auth.asProvider')}</p>
-            <div className="flex flex-wrap gap-1.5">
+            {/* A chip per role stopped being readable once the catalogue grew
+                past a dozen professions; a select keeps every role reachable. */}
+            <Select
+              label={t('auth.asProvider')}
+              value={providerRole}
+              onChange={(e) => setProviderRole(e.target.value as Role)}
+            >
               {providerRoles.map((r) => (
-                <button
-                  key={r}
-                  type="button"
-                  onClick={() => setProviderRole(r)}
-                  className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
-                    providerRole === r
-                      ? 'border-brand-600 bg-brand-600 text-white'
-                      : 'border-line bg-card text-ink-soft'
-                  }`}
-                >
+                <option key={r} value={r}>
                   {t(roleLabelKey(r))}
-                </button>
+                </option>
               ))}
-            </div>
+            </Select>
+            <p className="mt-1.5 text-xs text-ink-faint">{t('auth.roleHint')}</p>
           </div>
         )}
 

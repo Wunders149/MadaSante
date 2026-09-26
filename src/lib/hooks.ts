@@ -58,6 +58,17 @@ export function useAmbulances() {
   return useQuery({ queryKey: ['ambulances'], queryFn: () => apiRoutes.ambulances() })
 }
 
+export function usePractitioners(profession?: string) {
+  return useQuery({
+    queryKey: ['practitioners', profession ?? 'all'],
+    queryFn: () => apiRoutes.practitioners(qs({ profession })),
+  })
+}
+
+export function useMedicalNgos() {
+  return useQuery({ queryKey: ['medical-ngos'], queryFn: () => apiRoutes.medicalNgos() })
+}
+
 export function useCatalogSummary() {
   return useQuery({ queryKey: ['summary'], queryFn: () => apiRoutes.summary() })
 }

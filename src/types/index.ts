@@ -7,7 +7,29 @@ export type Role =
   | 'imaging_center'
   | 'hospital'
   | 'ambulance_driver'
+  | 'psychologist'
+  | 'psychiatrist'
+  | 'kinesitherapist'
+  | 'ergotherapist'
+  | 'speech_therapist'
+  | 'dietitian'
+  | 'midwife'
+  | 'medical_ngo'
   | 'admin'
+
+/**
+ * Allied-health professions that share the `practitioners` catalog table and
+ * the single "Professionals" directory. Kept in sync with the server's
+ * PRACTITIONER_ROLES.
+ */
+export type Profession =
+  | 'psychologist'
+  | 'psychiatrist'
+  | 'kinesitherapist'
+  | 'ergotherapist'
+  | 'speech_therapist'
+  | 'dietitian'
+  | 'midwife'
 
 export type Lang = 'fr' | 'mg' | 'en'
 
@@ -55,6 +77,44 @@ export interface ProviderProfile {
   specialty?: string
   description?: string
   needsSetup: boolean
+}
+
+export interface Practitioner {
+  id: string
+  profession: Profession
+  name: string
+  qualification: string
+  specialty: string
+  location: string
+  city: string
+  services: string[]
+  languages: string[]
+  consultationTypes: ConsultationType[]
+  price: number
+  priceHome?: number
+  availabilitySlots: string[]
+  photo?: string
+  rating: number
+  reviews: number
+  description: string
+}
+
+export interface MedicalNgo {
+  id: string
+  name: string
+  focus: string
+  location: string
+  city: string
+  services: string[]
+  /** Regions / districts the organisation operates in. */
+  coverage: string[]
+  openingHours: string
+  phone: string
+  email?: string
+  website?: string
+  freeCare: boolean
+  rating: number
+  description: string
 }
 
 export type ConsultationType = 'cabinet' | 'home' | 'hospital'

@@ -2,6 +2,7 @@ import { Router } from 'express'
 import type { Request, Response } from 'express'
 import { db } from '../db.js'
 import { CITIES } from '../cities.js'
+import { PRACTITIONER_ROLES } from '../helpers.js'
 
 export const catalogRouter = Router()
 
@@ -257,6 +258,104 @@ catalogRouter.get('/nurses', async (req: Request, res: Response) => {
 
 catalogRouter.get('/ambulances', list('ambulances', mapAmbulance, 'provider'))
 
+function mapPractitioner(r: Row) {
+  return {
+    id: r.id,
+    profession: r.profession,
+    name: r.name,
+    qualification: r.qualification,
+    specialty: r.specialty,
+    location: r.location,
+    city: r.city,
+    services: parse(r.services as string),
+    languages: parse(r.languages as string),
+    consultationTypes: parse(r.consultation_types as string),
+    price: r.price,
+    priceHome: r.price_home == null ? undefined : r.price_home,
+    availabilitySlots: parse(r.availability_slots as string),
+    photo: r.photo,
+    rating: r.rating,
+    reviews: r.reviews,
+    description: r.description,
+  }
+}
+
+function mapMedicalNgo(r: Row) {
+  return {
+    id: r.id,
+    name: r.name,
+    focus: r.focus,
+    location: r.location,
+    city: r.city,
+    services: parse(r.services as string),
+    coverage: parse(r.coverage as string),
+    openingHours: r.opening_hours,
+    phone: r.phone,
+    email: r.email ?? undefined,
+    website: r.website ?? undefined,
+    freeCare: bool(r.free_care as number),
+    rating: r.rating,
+    description: r.description,
+  }
+}
+
+/**
+ * Allied-health directory: psychologists, psychiatrists, physiotherapists,
+ * occupational and speech therapists, dietitians and midwives.
+ *
+ * `profession` is the provider role, so the whole table browses as one list and
+ * a single filter narrows it to one profession. The profession value is checked
+ * against the known set rather than interpolated.
+ */
+catalogRouter.get('/practitioners', async (req: Request, res: Response) => {
+  const q = like(String(req.query.q ?? ''))
+  const city = String(req.query.city ?? '') || undefined
+  const profession = String(req.query.profession ?? '') || undefined
+  const where: string[] = []
+  const params: unknown[] = []
+  if (q) {
+    where.push('(LOWER(name) LIKE ? OR LOWER(specialty) LIKE ? OR LOWER(qualification) LIKE ? OR LOWER(city) LIKE ? OR LOWER(services) LIKE ?)')
+    params.push(q, q, q, q, q)
+  }
+  if (city) {
+    where.push('city = ?')
+    params.push(city)
+  }
+  if (profession && (PRACTITIONER_ROLES as readonly string[]).includes(profession)) {
+    where.push('profession = ?')
+    params.push(profession)
+  }
+  const rows = (
+    await db.query(
+      `SELECT * FROM practitioners${where.length ? ` WHERE ${where.join(' AND ')}` : ''} ORDER BY rating DESC, name`,
+      params,
+    )
+  ).rows as Row[]
+  res.json(rows.map(mapPractitioner))
+})
+
+catalogRouter.get('/medical-ngos', async (req: Request, res: Response) => {
+  const q = like(String(req.query.q ?? ''))
+  const city = String(req.query.city ?? '') || undefined
+  const where: string[] = []
+  const params: unknown[] = []
+  if (q) {
+    where.push('(LOWER(name) LIKE ? OR LOWER(focus) LIKE ? OR LOWER(city) LIKE ? OR LOWER(services) LIKE ?)')
+    params.push(q, q, q, q)
+  }
+  if (city) {
+    where.push('city = ?')
+    params.push(city)
+  }
+  const rows = (
+    await db.query(
+      `SELECT * FROM medical_ngos${where.length ? ` WHERE ${where.join(' AND ')}` : ''} ORDER BY rating DESC, name`,
+      params,
+    )
+  ).rows as Row[]
+  res.json(rows.map(mapMedicalNgo))
+})
+
 catalogRouter.get('/summary', async (_req: Request, res: Response) => {
   const count = async (table: string) => {
     const r = await db.query(`SELECT COUNT(*)::int AS n FROM ${table}`)
@@ -270,6 +369,8 @@ catalogRouter.get('/summary', async (_req: Request, res: Response) => {
     imaging: await count('imaging_centers'),
     nurses: await count('nurses'),
     facilities: await count('hospitals'),
+    practitioners: await count('practitioners'),
+    ngos: await count('medical_ngos'),
   })
 })
 

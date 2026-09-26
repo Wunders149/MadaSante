@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Stethoscope, Building2, FlaskConical, Scan, UserRound } from 'lucide-react'
+import { Stethoscope, Building2, FlaskConical, Scan, UserRound, Brain, HandHeart } from 'lucide-react'
 import { PageHeader } from '../../components/ui/Headers'
 import { OrientationBanner } from '../../components/OrientationBanner'
 import { Button } from '../../components/ui/Button'
@@ -13,6 +13,8 @@ const TYPES = [
   { key: 'laboratory', icon: FlaskConical, to: '/patient/laboratories', desc: 'orient.type.labDesc' },
   { key: 'imaging', icon: Scan, to: '/patient/imaging', desc: 'orient.type.imagingDesc' },
   { key: 'nurse', icon: UserRound, to: '/patient/nurses', desc: 'orient.type.nurseDesc' },
+  { key: 'professional', icon: Brain, to: '/patient/professionals', desc: 'orient.type.professionalDesc' },
+  { key: 'ngo', icon: HandHeart, to: '/patient/ngos', desc: 'orient.type.ngoDesc' },
 ]
 
 export function OrientationPage() {

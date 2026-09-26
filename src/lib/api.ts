@@ -9,6 +9,7 @@ import type {
   Hospital,
   ImagingCenter,
   Laboratory,
+  MedicalNgo,
   Medicine,
   NotificationItem,
   Nurse,
@@ -18,6 +19,7 @@ import type {
   Provider,
   ProviderApplication,
   ProviderProfile,
+  Practitioner,
   User,
 } from '../types'
 
@@ -114,6 +116,8 @@ export const apiRoutes = {
   imagingCenters: (query?: string) => api<ImagingCenter[]>(`/imaging-centers${query ?? ''}`),
   nurses: (query?: string) => api<Nurse[]>(`/nurses${query ?? ''}`),
   ambulances: (query?: string) => api<Ambulance[]>(`/ambulances${query ?? ''}`),
+  practitioners: (query?: string) => api<Practitioner[]>(`/practitioners${query ?? ''}`),
+  medicalNgos: (query?: string) => api<MedicalNgo[]>(`/medical-ngos${query ?? ''}`),
   summary: () => api<Record<string, number>>('/summary'),
   cities: () => api<string[]>('/cities'),
   search: (q: string, category: string) =>
@@ -263,5 +267,7 @@ export interface SearchResults {
   laboratories: Laboratory[]
   imaging: ImagingCenter[]
   nurses: Nurse[]
+  practitioners: Practitioner[]
+  ngos: MedicalNgo[]
   total: number
 }

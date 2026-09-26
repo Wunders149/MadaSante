@@ -1,10 +1,12 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import {
   Ambulance as AmbulanceIcon,
+  Brain,
   Building2,
   CalendarDays,
   CreditCard,
   FlaskConical,
+  HandHeart,
   Home,
   LogOut,
   Package,
@@ -42,6 +44,8 @@ export function PatientLayout() {
     { to: '/patient/laboratories', label: t('nav.laboratories'), icon: FlaskConical },
     { to: '/patient/imaging', label: t('nav.imaging'), icon: Scan },
     { to: '/patient/nurses', label: t('nav.nurses'), icon: UserRound },
+    { to: '/patient/professionals', label: t('nav.professionals'), icon: Brain },
+    { to: '/patient/ngos', label: t('nav.ngos'), icon: HandHeart },
     { to: '/patient/ambulance', label: t('nav.ambulance'), icon: AmbulanceIcon },
     { to: '/patient/delivery', label: t('nav.delivery'), icon: Package },
     { to: '/patient/appointments', label: t('nav.appointments'), icon: CalendarDays },

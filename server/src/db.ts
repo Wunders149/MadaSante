@@ -161,6 +161,43 @@ export async function migrate() {
       response_time TEXT NOT NULL
     );
 
+    CREATE TABLE IF NOT EXISTS practitioners (
+      id TEXT PRIMARY KEY,
+      profession TEXT NOT NULL,
+      name TEXT NOT NULL,
+      qualification TEXT NOT NULL,
+      specialty TEXT NOT NULL,
+      location TEXT NOT NULL,
+      city TEXT NOT NULL,
+      services TEXT NOT NULL,
+      languages TEXT NOT NULL,
+      consultation_types TEXT NOT NULL,
+      price INT NOT NULL,
+      price_home INT,
+      availability_slots TEXT NOT NULL,
+      photo TEXT,
+      rating DOUBLE PRECISION NOT NULL,
+      reviews INT NOT NULL,
+      description TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS medical_ngos (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      focus TEXT NOT NULL,
+      location TEXT NOT NULL,
+      city TEXT NOT NULL,
+      services TEXT NOT NULL,
+      coverage TEXT NOT NULL,
+      opening_hours TEXT NOT NULL,
+      phone TEXT NOT NULL,
+      email TEXT,
+      website TEXT,
+      free_care INT NOT NULL,
+      rating DOUBLE PRECISION NOT NULL,
+      description TEXT NOT NULL
+    );
+
     CREATE TABLE IF NOT EXISTS appointments (
       id TEXT PRIMARY KEY,
       reference TEXT NOT NULL UNIQUE,

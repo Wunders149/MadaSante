@@ -1,6 +1,14 @@
 import { db } from './db.js'
 import type { DbClient } from './db.js'
-import { PROVIDER_ROLES, isProviderRole, uniqueId } from './helpers.js'
+import {
+  FACILITY_ROLES,
+  PRACTITIONER_ROLES,
+  PROFESSION_SPECIALTY,
+  PROVIDER_ROLES,
+  isPractitionerRole,
+  isProviderRole,
+  uniqueId,
+} from './helpers.js'
 
 /**
  * Catalog (directory) records and pricing rules.
@@ -34,7 +42,13 @@ export const FREE_DELIVERY_ABOVE = 20_000
 export const CONSULT_TYPES: ['cabinet', 'home', 'hospital'] = ['cabinet', 'home', 'hospital']
 export type ConsultationType = (typeof CONSULT_TYPES)[number]
 
-/** Catalog table and display-name column for each provider role. */
+/**
+ * Catalog table and display-name column for each provider role.
+ *
+ * The allied-health roles all resolve to `practitioners` — they share a record
+ * shape and are browsed as one directory — and `practitioners.profession`
+ * holds the role itself, so nothing downstream needs a second lookup.
+ */
 export const PROVIDER_TABLE: Record<string, { table: string; nameCol: string }> = {
   doctor: { table: 'doctors', nameCol: 'name' },
   nurse: { table: 'nurses', nameCol: 'name' },
@@ -43,7 +57,16 @@ export const PROVIDER_TABLE: Record<string, { table: string; nameCol: string }> 
   imaging_center: { table: 'imaging_centers', nameCol: 'name' },
   hospital: { table: 'hospitals', nameCol: 'name' },
   ambulance_driver: { table: 'ambulances', nameCol: 'provider' },
+  medical_ngo: { table: 'medical_ngos', nameCol: 'name' },
+  ...Object.fromEntries(
+    PRACTITIONER_ROLES.map((role) => [role, { table: 'practitioners', nameCol: 'name' }]),
+  ),
 }
+
+/** Roles that can be booked, i.e. everything except NGO-style organisations. */
+export const BOOKABLE_ROLES = PROVIDER_ROLES.filter(
+  (role) => !(FACILITY_ROLES as readonly string[]).includes(role),
+)
 
 export function platformFeeFor(basePrice: number): number {
   return Math.round(basePrice * PLATFORM_FEE_RATE)
@@ -177,8 +200,26 @@ export async function createProviderRecord(
         [id, name, location, city, phone, '—'],
       )
       break
+    case 'medical_ngo':
+      await client.query(
+        `INSERT INTO medical_ngos (id, name, focus, location, city, services, coverage, opening_hours, phone, email, website, free_care, rating, description)
+         VALUES ($1, $2, $3, $4, $5, '[]', '[]', $6, $7, NULL, NULL, 0, 0, '')`,
+        [id, name, 'Santé générale', location, city, DEFAULT_OPENING_HOURS, phone],
+      )
+      break
     default:
-      throw new Error(`Cannot create a catalog record for role "${role}"`)
+      if (!isPractitionerRole(role)) {
+        throw new Error(`Cannot create a catalog record for role "${role}"`)
+      }
+      // All remaining bookable roles are allied-health professions sharing the
+      // `practitioners` table. `profession` is the role verbatim so the public
+      // provider directory can still filter by it.
+      await client.query(
+        `INSERT INTO practitioners (id, profession, name, qualification, specialty, location, city, services, languages, consultation_types, price, price_home, availability_slots, photo, rating, reviews, description)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, '[]', '["mg","fr"]', '["cabinet"]', 0, NULL, '[]', NULL, 0, 0, '')`,
+        [id, role, name, PROFESSION_SPECIALTY[role] ?? '', PROFESSION_SPECIALTY[role] ?? '', location, city],
+      )
+      break
   }
   return id
 }

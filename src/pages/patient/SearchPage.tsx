@@ -4,6 +4,7 @@ import {
   Building2,
   Clock,
   FlaskConical,
+  HandHeart,
   Pill,
   Scan,
   Search,
@@ -17,10 +18,11 @@ import { Avatar } from '../../components/Avatar'
 import { Button } from '../../components/ui/Button'
 import { useApp } from '../../stores/AppStore'
 import { useSearch } from '../../lib/hooks'
+import { roleLabelKey } from '../../lib/roles'
 import { formatAr } from '../../lib/format'
 import { cn } from '../../lib/cn'
 
-type Category = 'all' | 'doctors' | 'medicines' | 'facilities' | 'laboratories' | 'imaging' | 'nurses'
+type Category = 'all' | 'doctors' | 'medicines' | 'facilities' | 'laboratories' | 'imaging' | 'nurses' | 'professionals' | 'ngos'
 
 const categories: { key: Category; label: string; icon: typeof Search }[] = [
   { key: 'all', label: 'Tous', icon: Search },
@@ -30,6 +32,8 @@ const categories: { key: Category; label: string; icon: typeof Search }[] = [
   { key: 'laboratories', label: 'Laboratoires', icon: FlaskConical },
   { key: 'imaging', label: 'Imagerie', icon: Scan },
   { key: 'nurses', label: 'Infirmières', icon: UserRound },
+  { key: 'professionals', label: 'Psy, kiné, ergo', icon: UserRound },
+  { key: 'ngos', label: 'ONG', icon: HandHeart },
 ]
 
 export function SearchPage() {
@@ -60,10 +64,23 @@ export function SearchPage() {
       laboratories: category === 'all' || category === 'laboratories' ? searchData.laboratories : [],
       imaging: category === 'all' || category === 'imaging' ? searchData.imaging : [],
       nurses: category === 'all' || category === 'nurses' ? searchData.nurses : [],
+      practitioners: category === 'all' || category === 'professionals' ? searchData.practitioners : [],
+      ngos: category === 'all' || category === 'ngos' ? searchData.ngos : [],
     }
   }, [category, searchData])
 
-  const total = results ? [results.doctors, results.medicines, results.facilities, results.laboratories, results.imaging, results.nurses].reduce((a, x) => a + x.length, 0) : 0
+  const total = results
+    ? [
+        results.doctors,
+        results.medicines,
+        results.facilities,
+        results.laboratories,
+        results.imaging,
+        results.nurses,
+        results.practitioners,
+        results.ngos,
+      ].reduce((a, x) => a + x.length, 0)
+    : 0
 
   const search = () => {
     if (!query.trim()) return
@@ -221,6 +238,44 @@ export function SearchPage() {
                     <span className="block text-xs text-ink-soft">{n.qualification} · {n.city}</span>
                   </span>
                   <span className="text-sm font-bold text-ink">{formatAr(n.price)}</span>
+                </button>
+              ))}
+            </ResultsGroup>
+          )}
+
+          {results.practitioners.length > 0 && (
+            <ResultsGroup title={`${t('nav.professionals')} (${results.practitioners.length})`}>
+              {results.practitioners.map((p) => (
+                <button key={p.id} onClick={() => navigate('/patient/professionals')} className="card touch-target flex w-full items-center gap-3 p-3.5 text-left transition hover:border-brand-300">
+                  <Avatar name={p.name} src={p.photo} size="md" />
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-bold text-ink">{p.name}</span>
+                    <span className="block text-xs text-ink-soft">
+                      {t(roleLabelKey(p.profession))} · {p.city}
+                    </span>
+                  </span>
+                  {p.price > 0 && <span className="text-sm font-bold text-ink">{formatAr(p.price)}</span>}
+                </button>
+              ))}
+            </ResultsGroup>
+          )}
+
+          {results.ngos.length > 0 && (
+            <ResultsGroup title={`${t('nav.ngos')} (${results.ngos.length})`}>
+              {results.ngos.map((ngo) => (
+                <button key={ngo.id} onClick={() => navigate('/patient/ngos')} className="card touch-target flex w-full items-center gap-3 p-3.5 text-left transition hover:border-brand-300">
+                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-amber-50 text-amber-700">
+                    <HandHeart className="h-5 w-5" />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-bold text-ink">{ngo.name}</span>
+                    <span className="block text-xs text-ink-soft">{ngo.focus} · {ngo.city}</span>
+                  </span>
+                  {ngo.freeCare && (
+                    <span className="shrink-0 rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-bold text-emerald-700">
+                      {t('ngo.freeCare')}
+                    </span>
+                  )}
                 </button>
               ))}
             </ResultsGroup>

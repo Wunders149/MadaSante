@@ -22,6 +22,8 @@ searchRouter.get('/search', async (req: Request, res: Response) => {
     laboratories: [],
     imaging: [],
     nurses: [],
+    practitioners: [],
+    ngos: [],
     total: 0,
   }
 
@@ -47,6 +49,12 @@ searchRouter.get('/search', async (req: Request, res: Response) => {
   )
   const nurses = ((await db.query('SELECT * FROM nurses')).rows as Row[]).filter((r) =>
     qmatch(r, ['name', 'services', 'city'], q),
+  )
+  const practitioners = ((await db.query('SELECT * FROM practitioners')).rows as Row[]).filter((r) =>
+    qmatch(r, ['name', 'specialty', 'qualification', 'services', 'city'], q),
+  )
+  const ngos = ((await db.query('SELECT * FROM medical_ngos')).rows as Row[]).filter((r) =>
+    qmatch(r, ['name', 'focus', 'services', 'coverage', 'city'], q),
   )
 
   const mapMedicine = (r: Row) => ({
@@ -132,6 +140,41 @@ searchRouter.get('/search', async (req: Request, res: Response) => {
       photo: r.photo,
       rating: r.rating,
     })),
+    practitioners: practitioners.map((r) => ({
+      id: r.id,
+      profession: r.profession,
+      name: r.name,
+      qualification: r.qualification,
+      specialty: r.specialty,
+      location: r.location,
+      city: r.city,
+      services: parse(r.services as string),
+      languages: parse(r.languages as string),
+      consultationTypes: parse(r.consultation_types as string),
+      price: r.price,
+      priceHome: r.price_home == null ? undefined : r.price_home,
+      availabilitySlots: parse(r.availability_slots as string),
+      photo: r.photo,
+      rating: r.rating,
+      reviews: r.reviews,
+      description: r.description,
+    })),
+    ngos: ngos.map((r) => ({
+      id: r.id,
+      name: r.name,
+      focus: r.focus,
+      location: r.location,
+      city: r.city,
+      services: parse(r.services as string),
+      coverage: parse(r.coverage as string),
+      openingHours: r.opening_hours,
+      phone: r.phone,
+      email: r.email ?? undefined,
+      website: r.website ?? undefined,
+      freeCare: r.free_care === 1,
+      rating: r.rating,
+      description: r.description,
+    })),
   }
 
   const total =
@@ -140,7 +183,9 @@ searchRouter.get('/search', async (req: Request, res: Response) => {
     results.facilities.length +
     results.laboratories.length +
     results.imaging.length +
-    results.nurses.length
+    results.nurses.length +
+    results.practitioners.length +
+    results.ngos.length
 
   res.json({ ...results, total })
 })

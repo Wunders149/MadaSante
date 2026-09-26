@@ -7,6 +7,7 @@ import { generateReference, isProviderRole, uniqueId } from '../helpers.js'
 import {
   CONSULT_TYPES,
   PROVIDER_TABLE,
+  BOOKABLE_ROLES,
   basePriceFor,
   loadProviderRecord,
   locationFor,
@@ -96,6 +97,12 @@ appointmentsRouter.post('/', async (req: Request, res: Response) => {
 
   if (!isProviderRole(input.providerType)) {
     res.status(400).json({ error: 'Type de professionnel invalide' })
+    return
+  }
+  // Organisations such as medical NGOs are listed in the directory but have no
+  // consultation to schedule, so say that rather than failing later on a fee.
+  if (!(BOOKABLE_ROLES as readonly string[]).includes(input.providerType)) {
+    res.status(400).json({ error: 'Ce type de prestataire n’accepte pas de prise de rendez-vous' })
     return
   }
 
