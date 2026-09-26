@@ -6,9 +6,8 @@ import { requireAuth, requireProvider } from '../auth.js'
 import { publicUser, type UserRow } from '../helpers.js'
 
 export const providersRouter = Router()
-providersRouter.use(requireAuth, requireProvider)
-
-type Row = Record<string, unknown>
+// Public, unauthenticated route: catalog of providers for patients to browse.
+export const providersRouterPublic = Router()
 
 const TABLE_BY_ROLE: Record<string, { table: string; nameCol: string }> = {
   doctor: { table: 'doctors', nameCol: 'name' },
@@ -19,6 +18,8 @@ const TABLE_BY_ROLE: Record<string, { table: string; nameCol: string }> = {
   hospital: { table: 'hospitals', nameCol: 'name' },
   ambulance_driver: { table: 'ambulances', nameCol: 'provider' },
 }
+
+type Row = Record<string, unknown>
 
 async function fetchProfile(role: string, providerId: string | null) {
   if (!providerId) return undefined
@@ -88,14 +89,72 @@ providersRouter.put('/me', async (req: Request, res: Response) => {
   res.json({ user, provider: await fetchProfile(user.role, user.providerId ?? null) })
 })
 
-providersRouter.get('/me/availability', async (req: Request, res: Response) => {
+// Public, unauthenticated: catalog of providers patients can browse.
+providersRouterPublic.get('/', async (req: Request, res: Response) => {
+  const role = typeof req.query.role === 'string' ? req.query.role : undefined
+  const page = Math.max(1, Number(req.query.page ?? 1))
+  const limit = Math.min(200, Math.max(1, Number(req.query.limit ?? 50)))
+  const offset = (page - 1) * limit
+  const where: string[] = []
+  const params: unknown[] = []
+  if (role && role in TABLE_BY_ROLE) {
+    where.push('role = ?')
+    params.push(role)
+  }
+  if (typeof req.query.city === 'string' && req.query.city) {
+    where.push('city = ?')
+    params.push(req.query.city)
+  }
+  if (typeof req.query.location === 'string' && req.query.location) {
+    where.push('location ILIKE ?')
+    params.push(`%${req.query.location}%`)
+  }
+  params.push(offset, limit)
   const rows = (
-    await db.query('SELECT day, slot, available FROM availability WHERE provider_id = $1 ORDER BY day, slot', [
-      req.auth!.providerId,
-    ])
+    await db.query(
+      `SELECT id, role, name, location, city, photo, rating, description
+       FROM (
+         SELECT id, 'doctor' AS role, name, location, city, photo, rating, description FROM doctors
+         UNION ALL SELECT id, 'nurse' AS role, name, location, city, photo, rating, description FROM nurses
+         UNION ALL SELECT id, 'pharmacy' AS role, name, location, city, NULL AS photo, rating, NULL AS description FROM pharmacies
+         UNION ALL SELECT id, 'laboratory' AS role, name, location, city, NULL AS photo, rating, NULL AS description FROM laboratories
+         UNION ALL SELECT id, 'imaging_center' AS role, name, location, city, NULL AS photo, rating, NULL AS description FROM imaging_centers
+         UNION ALL SELECT id, 'hospital' AS role, name, location, city, NULL AS photo, rating, description FROM hospitals
+         UNION ALL SELECT id, 'ambulance_driver' AS role, provider AS name, location, city, NULL AS photo, rating, NULL AS description FROM ambulances
+       ) rolesn       WHERE ${where.length ? 'TRUE' : '1=0'}`,
+      params,
+    )
   ).rows as Row[]
-  res.json(rows.map((r) => ({ day: r.day, slot: r.slot, available: r.available === 1 })))
+
+  const providers = rows.map((r) => ({
+    id: r.id,
+    role: r.role,
+    name: r.name,
+    location: r.location ?? undefined,
+    city: r.city ?? undefined,
+    photo: r.photo ?? undefined,
+    rating: Number(r.rating ?? 0),
+    description: r.description ?? undefined,
+  }))
+
+  const totalRows = (
+    await db.query(
+      `SELECT COUNT(*)::int AS total FROM (
+         SELECT id FROM doctorsn         UNION ALL SELECT id FROM nursesn         UNION ALL SELECT id FROM pharmaciesn         UNION ALL SELECT id FROM laboratoriesn         UNION ALL SELECT id FROM imaging_centersn         UNION ALL SELECT id FROM hospitalsn         UNION ALL SELECT provider AS id FROM ambulancesn       ) p ${where.length ? 'WHERE ' : ''}` + where.join(' AND '),
+      params.slice(0, params.length - 2),
+    )
+  ).rows[0] as { total: number }
+
+  res.json({
+    providers,
+    page,
+    limit,
+    total: Number(totalRows.total),
+    totalPages: Math.ceil(Number(totalRows.total) / limit),
+  })
 })
+
+providersRouter.use(requireAuth, requireProvider)
 
 const availabilitySchema = z.object({
   entries: z.array(z.object({ day: z.string(), slot: z.string(), available: z.boolean() })).max(200),

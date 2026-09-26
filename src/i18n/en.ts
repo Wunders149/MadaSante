@@ -491,6 +491,12 @@ export const en: Record<string, string> = {
   'admin.profile': 'My profile',
   'admin.profileDesc': 'Manage your super admin account.',
   'admin.profileInfo': 'Personal information',
+  'admin.patients': 'Registered patients',
+  'admin.patientsDesc': 'Review all registered users on the platform.',
+  'admin.patient': 'Patient',
+  'admin.admin': 'Admin',
+  'admin.noPatients': 'No patients registered yet',
+  'admin.noPatientsDesc': 'All patients have been verified or the platform is new.',
 
   'toast.appointment': 'Appointment confirmed',
   'toast.payment': 'Payment successful',

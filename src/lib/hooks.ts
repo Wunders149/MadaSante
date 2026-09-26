@@ -104,4 +104,15 @@ export function useAdminApplication(id?: string) {
   })
 }
 
+
+export function useAdminUsers(params?: {
+  role?: string
+  page?: number
+  limit?: number
+}) {
+  return useQuery({
+    queryKey: ['admin', 'users', params ?? {}],
+    queryFn: () => apiRoutes.adminUsers(params),
+  })
+}
 export type { Ambulance, Doctor, Hospital, ImagingCenter, Laboratory, Medicine, Nurse, Pharmacy, User }

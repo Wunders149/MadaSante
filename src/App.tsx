@@ -39,6 +39,7 @@ import { AdminLayout } from './layouts/AdminLayout'
 import {
   AdminApplicationsPage,
   AdminApplicationDetailPage,
+  AdminPatientsPage,
   AdminProfilePage,
 } from './pages/admin'
 
@@ -152,6 +153,8 @@ export function App() {
             <Route index element={<AdminApplicationsPage />} />
             <Route path="applications" element={<AdminApplicationsPage />} />
             <Route path="applications/:id" element={<AdminApplicationDetailPage />} />
+            <Route path="patients" element={<AdminPatientsPage />} />
+            <Route path="patients/:id" element={<AdminApplicationDetailPage />} />
             <Route path="profile" element={<AdminProfilePage />} />
           </Route>
 

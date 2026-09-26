@@ -12,6 +12,7 @@ import type {
   Nurse,
   Payment,
   Pharmacy,
+  Provider,
   ProviderApplication,
   User,
 } from '../types'
@@ -141,6 +142,20 @@ export const apiRoutes = {
   availability: () => api<{ day: string; slot: string; available: boolean }[]>('/providers/me/availability'),
   saveAvailability: (entries: { day: string; slot: string; available: boolean }[]) =>
     api<{ ok: boolean }>('/providers/me/availability', { method: 'PUT', body: JSON.stringify({ entries }) }),
+  providers: (params?: {
+    role?: string
+    city?: string
+    location?: string
+    page?: number
+    limit?: number
+  }) =>
+    api<{ providers: Provider[]; page: number; limit: number; total: number; totalPages: number }>(`/providers${qs(params ?? {})}`),
+  adminUsers: (params?: {
+    role?: string
+    page?: number
+    limit?: number
+  }) =>
+    api<{ users: User[]; page: number; limit: number; total: number; totalPages: number }>(`/admin/users${qs(params ?? {})}`),
 
   deliveries: () => api<DeliveryOrder[]>('/deliveries'),
   createDelivery: (body: unknown) =>

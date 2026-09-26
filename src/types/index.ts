@@ -21,6 +21,21 @@ export interface User {
   role: Role
   location?: string
   providerId?: string | null
+  createdAt?: string
+  appointmentCount?: number
+  paymentCount?: number
+  deliveryCount?: number
+}
+
+export interface Provider {
+  id: string
+  role: Role
+  name: string
+  location?: string
+  city?: string
+  photo?: string
+  rating: number
+  description?: string
 }
 
 export type ConsultationType = 'cabinet' | 'home' | 'hospital'

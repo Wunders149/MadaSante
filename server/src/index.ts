@@ -12,7 +12,7 @@ import { searchRouter } from './routes/search.js'
 import { appointmentsRouter } from './routes/appointments.js'
 import { paymentsRouter } from './routes/payments.js'
 import { notificationsRouter } from './routes/notifications.js'
-import { providersRouter } from './routes/providers.js'
+import { providersRouter, providersRouterPublic } from './routes/providers.js'
 import { deliveriesRouter } from './routes/deliveries.js'
 import { emergencyRouter } from './routes/emergency.js'
 import { adminRouter } from './routes/admin.js'
@@ -35,6 +35,7 @@ app.use('/api', searchRouter)
 app.use('/api/appointments', appointmentsRouter)
 app.use('/api/payments', paymentsRouter)
 app.use('/api/notifications', notificationsRouter)
+app.use('/api/providers', providersRouterPublic)
 app.use('/api/providers', providersRouter)
 app.use('/api/deliveries', deliveriesRouter)
 app.use('/api/emergency-requests', emergencyRouter)
