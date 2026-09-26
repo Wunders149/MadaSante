@@ -426,6 +426,7 @@ export const fr: Record<string, string> = {
   'profile.changePhoto': 'Changer la photo',
   'profile.removePhoto': 'Supprimer la photo',
   'profile.photoUpdated': 'Photo de profil mise à jour',
+  'profile.logoutDesc': 'Vous devrez vous reconnecter pour accéder à votre compte.',
   'profile.passwordSection': 'Changer le mot de passe',
   'profile.currentPassword': 'Mot de passe actuel',
   'profile.newPassword': 'Nouveau mot de passe',
@@ -511,6 +512,9 @@ export const fr: Record<string, string> = {
   'admin.savedReview': 'Validation enregistrée.',
   'admin.reviewNote': 'Note de suivi',
   'admin.backToList': 'Retour aux candidatures',
+  'admin.profile': 'Mon profil',
+  'admin.profileDesc': 'Gérez votre compte super admin.',
+  'admin.profileInfo': 'Informations personnelles',
 
   // Toast
   'toast.appointment': 'Rendez-vous confirmé',

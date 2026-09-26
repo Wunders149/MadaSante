@@ -405,6 +405,7 @@ export const en: Record<string, string> = {
   'profile.changePhoto': 'Change photo',
   'profile.removePhoto': 'Remove photo',
   'profile.photoUpdated': 'Profile photo updated',
+  'profile.logoutDesc': 'You will need to sign in again to access your account.',
   'profile.passwordSection': 'Change password',
   'profile.currentPassword': 'Current password',
   'profile.newPassword': 'New password',
@@ -487,6 +488,9 @@ export const en: Record<string, string> = {
   'admin.savedReview': 'Review saved.',
   'admin.reviewNote': 'Review note',
   'admin.backToList': 'Back to applications',
+  'admin.profile': 'My profile',
+  'admin.profileDesc': 'Manage your super admin account.',
+  'admin.profileInfo': 'Personal information',
 
   'toast.appointment': 'Appointment confirmed',
   'toast.payment': 'Payment successful',

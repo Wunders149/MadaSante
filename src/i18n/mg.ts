@@ -42,6 +42,7 @@ export const mg: Record<string, string> = {
   'common.book': 'Haka fotoana',
   'common.search': 'Hikaroka',
   'common.cancel': 'Hanafoana',
+  'profile.logoutDesc': 'Mila miditra indray ianao mba hiditra amin’ny kaontinao.',
   'common.confirm': 'Hanamarina',
   'common.next': 'Manaraka',
   'common.back': 'Hiverina',
@@ -110,6 +111,9 @@ export const mg: Record<string, string> = {
 
   'admin.title': 'Super admin',
   'admin.applications': 'Fangatahana',
+  'admin.profile': 'Ny mombamomba ahy',
+  'admin.profileDesc': 'Tantano ny kaontinao super admin.',
+  'admin.profileInfo': 'Mombamomba anao',
   'admin.approved': 'Ekena',
   'admin.rejected': 'Nolavina',
   'admin.pending': 'Miandry',

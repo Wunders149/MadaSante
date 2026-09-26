@@ -10,6 +10,7 @@ import {
   UserRound,
 } from 'lucide-react'
 import { Sidebar } from '../components/layout/Sidebar'
+import { LangSwitch } from '../components/LangSwitch'
 import type { NavEntry } from '../components/layout/Sidebar'
 import { ToastHost } from '../components/ui/Toasts'
 import { Logo } from '../components/Logo'
@@ -41,6 +42,9 @@ export function ProviderLayout() {
 
   const footer = (
     <div className="space-y-1">
+      <div className="px-1 pb-2">
+        <LangSwitch />
+      </div>
       <NavLink to="/patient" className={({ isActive }) => navCls(isActive)}>
         <ArrowLeftRight className="h-5 w-5 text-ink-faint" />
         <span className="min-w-0 flex-1 truncate">{t('nav.patientArea')}</span>

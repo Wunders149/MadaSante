@@ -36,7 +36,11 @@ import {
   ProviderProfilePage,
 } from './pages/provider'
 import { AdminLayout } from './layouts/AdminLayout'
-import { AdminApplicationsPage, AdminApplicationDetailPage } from './pages/admin'
+import {
+  AdminApplicationsPage,
+  AdminApplicationDetailPage,
+  AdminProfilePage,
+} from './pages/admin'
 
 type GuardRole = 'patient' | 'provider' | 'admin'
 
@@ -148,6 +152,7 @@ export function App() {
             <Route index element={<AdminApplicationsPage />} />
             <Route path="applications" element={<AdminApplicationsPage />} />
             <Route path="applications/:id" element={<AdminApplicationDetailPage />} />
+            <Route path="profile" element={<AdminProfilePage />} />
           </Route>
 
           <Route path="/" element={<RootRedirect />} />

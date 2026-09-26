@@ -1,17 +1,16 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Languages, Search } from 'lucide-react'
+import { Search } from 'lucide-react'
 import { Logo } from '../Logo'
 import { Avatar } from '../Avatar'
 import { NotificationBell } from '../NotificationCard'
+import { LangSwitch } from '../LangSwitch'
 import { useApp } from '../../stores/AppStore'
 import { useAuth } from '../../stores/AuthStore'
 
-const langLabel = { fr: 'FR', en: 'EN', mg: 'MG' } as const
-
 export function AppHeader() {
   const { user } = useAuth()
-  const { t, setLang, lang, unreadCount } = useApp()
+  const { t, unreadCount } = useApp()
   const navigate = useNavigate()
   const [query, setQuery] = useState('')
 
@@ -25,6 +24,7 @@ export function AppHeader() {
       <div className="flex items-center justify-between px-4 py-3 lg:hidden">
         <Logo compact />
         <div className="flex items-center gap-2">
+          <LangSwitch />
           <NotificationBell onClick={() => navigate('/patient/notifications')} />
           <button
             onClick={() => navigate('/patient/profile')}
@@ -53,17 +53,7 @@ export function AppHeader() {
           />
         </form>
         <div className="flex items-center gap-2.5">
-          <button
-            onClick={() => {
-              const next = lang === 'fr' ? 'mg' : lang === 'mg' ? 'en' : 'fr'
-              setLang(next)
-            }}
-            className="flex h-11 items-center gap-1.5 rounded-full border border-line bg-card px-3 text-sm font-bold text-ink-soft shadow-sm transition hover:text-brand-700"
-            aria-label="Changer de langue"
-          >
-            <Languages className="h-4 w-4" />
-            <span>{langLabel[lang]}</span>
-          </button>
+          <LangSwitch />
           <NotificationBell onClick={() => navigate('/patient/notifications')} />
           <button
             onClick={() => navigate('/patient/profile')}
