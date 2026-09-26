@@ -11,7 +11,10 @@
     "test": "node --import tsx --test src/**/*.test.ts",
     "seed:demo": "tsx src/demo/run.ts",
     "seed:demo:dry-run": "tsx src/demo/run.ts --dry-run",
-    "seed:demo:clean": "tsx src/demo/run.ts --clean"
+    "seed:demo:clean": "tsx src/demo/run.ts --clean",
+    "db:reset:dry-run": "tsx src/reset.ts --dry-run",
+    "db:reset": "tsx src/reset.ts",
+    "db:admin": "tsx src/cli/admin.ts"
   },
   "dependencies": {
     "bcryptjs": "^3.0.2",

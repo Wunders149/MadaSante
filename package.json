@@ -17,7 +17,10 @@
     "test": "npm --prefix server run test",
     "seed:demo": "npm --prefix server run seed:demo",
     "seed:demo:dry-run": "npm --prefix server run seed:demo:dry-run",
-    "seed:demo:clean": "npm --prefix server run seed:demo:clean"
+    "seed:demo:clean": "npm --prefix server run seed:demo:clean",
+    "db:reset:dry-run": "npm --prefix server run db:reset:dry-run",
+    "db:reset": "npm --prefix server run db:reset",
+    "db:admin": "npm --prefix server run db:admin --"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.13",

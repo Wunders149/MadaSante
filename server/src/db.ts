@@ -53,6 +53,8 @@ export const db = {
       release: (err) => client.release(err),
     }
   },
+  /** Closes the pool. One-shot CLI scripts need this to exit promptly. */
+  end: () => pool.end(),
 }
 
 export async function migrate() {
