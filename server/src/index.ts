@@ -57,9 +57,26 @@ if (fs.existsSync(indexFile)) {
   })
 }
 
-app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
+/**
+ * Error message that is safe to hand back to the client: the real reason the
+ * request failed (so the UI can show it), minus anything credential-shaped,
+ * truncated to keep responses bounded. The full stack stays in the logs.
+ */
+function publicErrorMessage(err: Error): string {
+  const message = (err.message || '').trim() || 'Erreur serveur'
+  return message
+    .replace(/postgres(?:ql)?:\/\/\S+/gi, 'postgres://***')
+    .replace(/(password\s*=\s*)\S+/gi, '$1***')
+    .slice(0, 300)
+}
+
+app.use((err: Error, _req: Request, res: Response, next: NextFunction) => {
   console.error(err)
-  res.status(500).json({ error: 'Erreur serveur' })
+  if (res.headersSent) {
+    next(err)
+    return
+  }
+  res.status(500).json({ error: publicErrorMessage(err) })
 })
 
 app.listen(config.port, () => {
