@@ -81,10 +81,6 @@ export function useCatalogSummary() {
   return useQuery({ queryKey: ['summary'], queryFn: () => apiRoutes.summary() })
 }
 
-export function useCities() {
-  return useQuery({ queryKey: ['cities'], queryFn: () => apiRoutes.cities() })
-}
-
 export function useSearch(q: string, category: string) {
   const query = q.trim()
   return useQuery({

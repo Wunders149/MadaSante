@@ -4,6 +4,7 @@ import { useApp } from '../stores/AppStore'
 import { Avatar } from './Avatar'
 import { StatusBadge } from './ui/StatusBadge'
 import { monthDay } from '../lib/format'
+import { cn } from '../lib/cn'
 
 const statusTone: Record<Appointment['status'], 'brand' | 'amber' | 'green' | 'red'> = {
   confirmed: 'brand',
@@ -14,23 +15,28 @@ const statusTone: Record<Appointment['status'], 'brand' | 'amber' | 'green' | 'r
 
 export function AppointmentCard({ appointment, onOpen }: { appointment: Appointment; onOpen?: () => void }) {
   const { t } = useApp()
-  return (
-    <button
-      type="button"
-      onClick={onOpen}
-      className="card touch-target flex w-full items-center gap-3 p-4 text-left transition hover:border-brand-300 hover:shadow-soft sm:p-4"
-    >
+  const isRequest = appointment.status === 'pending' && !appointment.date
+
+  const body = (
+    <>
       <Avatar name={appointment.providerName} src={appointment.providerPhoto} size="md" />
       <div className="min-w-0 flex-1">
         <p className="truncate text-[15px] font-bold text-ink">{appointment.providerName}</p>
         <p className="text-sm text-ink-soft">{appointment.type}</p>
         <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-ink-soft">
-          <span className="flex items-center gap-1">
-            <CalendarDays className="h-3.5 w-3.5 text-ink-faint" /> {monthDay(appointment.date)}
-          </span>
-          <span className="flex items-center gap-1">
-            <Clock className="h-3.5 w-3.5 text-ink-faint" /> {appointment.time}
-          </span>
+          {isRequest ? (
+            // A request has no slot yet; showing an empty date read as a bug.
+            <span className="font-medium text-amber-700">{t('nurse.slotToConfirm')}</span>
+          ) : (
+            <>
+              <span className="flex items-center gap-1">
+                <CalendarDays className="h-3.5 w-3.5 text-ink-faint" /> {monthDay(appointment.date)}
+              </span>
+              <span className="flex items-center gap-1">
+                <Clock className="h-3.5 w-3.5 text-ink-faint" /> {appointment.time}
+              </span>
+            </>
+          )}
           <span className="hidden items-center gap-1 sm:flex">
             <MapPin className="h-3.5 w-3.5 text-ink-faint" /> {appointment.location}
           </span>
@@ -40,6 +46,21 @@ export function AppointmentCard({ appointment, onOpen }: { appointment: Appointm
         <StatusBadge label={t(`apt.status.${appointment.status}`)} tone={statusTone[appointment.status]} />
         <span className="text-xs font-medium text-ink-faint">{appointment.reference}</span>
       </div>
+    </>
+  )
+
+  const className =
+    'card touch-target flex w-full items-center gap-3 p-4 text-left transition hover:border-brand-300 hover:shadow-soft sm:p-4'
+
+  // Only render as a button when there is something to open. A <button> with no
+  // handler is focusable and announces itself as clickable but does nothing.
+  if (!onOpen) {
+    return <div className={className}>{body}</div>
+  }
+
+  return (
+    <button type="button" onClick={onOpen} className={cn(className)}>
+      {body}
     </button>
   )
 }

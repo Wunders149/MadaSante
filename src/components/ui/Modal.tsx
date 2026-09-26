@@ -22,17 +22,48 @@ const sizes = {
   full: 'max-w-full h-full rounded-none sm:rounded-2xl sm:max-h-[92vh]',
 }
 
+const FOCUSABLE =
+  'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
+
 export function Modal({ open, onClose, title, children, footer, size = 'md', hideClose, closeLabel = 'Fermer' }: Props) {
   const panelRef = useRef<HTMLDivElement>(null)
 
-  // Escape to dismiss and a scroll lock on the page behind. Without these the
-  // dialog traps no focus, so keyboard users can tab into the dimmed content
-  // underneath and cannot reliably get out.
+  // Escape to dismiss, a scroll lock on the page behind, and a focus trap.
+  // Without the trap, Tab walks out of the dialog into the dimmed content
+  // underneath, so keyboard users end up interacting with a page they cannot
+  // see. Focus is also restored to whatever opened the dialog on close.
   useEffect(() => {
     if (!open) return
+    const previouslyFocused = document.activeElement as HTMLElement | null
+
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose()
+      if (event.key === 'Escape') {
+        onClose()
+        return
+      }
+      if (event.key !== 'Tab') return
+      const panel = panelRef.current
+      if (!panel) return
+      const items = [...panel.querySelectorAll<HTMLElement>(FOCUSABLE)].filter(
+        (el) => el.offsetParent !== null || el === document.activeElement,
+      )
+      if (items.length === 0) {
+        event.preventDefault()
+        panel.focus()
+        return
+      }
+      const first = items[0]
+      const last = items[items.length - 1]
+      const active = document.activeElement
+      if (event.shiftKey && (active === first || active === panel)) {
+        event.preventDefault()
+        last.focus()
+      } else if (!event.shiftKey && active === last) {
+        event.preventDefault()
+        first.focus()
+      }
     }
+
     document.addEventListener('keydown', onKeyDown)
     const previousOverflow = document.body.style.overflow
     document.body.style.overflow = 'hidden'
@@ -40,6 +71,7 @@ export function Modal({ open, onClose, title, children, footer, size = 'md', hid
     return () => {
       document.removeEventListener('keydown', onKeyDown)
       document.body.style.overflow = previousOverflow
+      previouslyFocused?.focus?.()
     }
   }, [open, onClose])
 

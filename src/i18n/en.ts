@@ -194,6 +194,8 @@ export const en: Record<string, string> = {
   'nurse.services': 'Services',
   'nurse.qualification': 'Qualification',
   'nurse.availableNow': 'Available now',
+  'nurse.requestSent': 'Request sent · Ref. {ref}',
+  'nurse.slotToConfirm': 'Slot to be confirmed with the professional',
 
   'apt.title': 'New appointment',
   'apt.stepType': 'Consultation type',

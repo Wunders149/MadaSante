@@ -48,10 +48,11 @@ export function LaboratoryCard({ laboratory }: { laboratory: Laboratory }) {
         <Button variant="ghost" size="sm" onClick={() => setShowTests(true)}>
           {t('common.view')}
         </Button>
+        {/* No "book" action: there is no appointment flow for a laboratory, and
+            a button that silently does nothing is worse than no button. */}
         <Button variant="outline" size="sm" to={`tel:${laboratory.phone.replace(/\s/g, '')}`}>
           <Phone className="h-4 w-4" /> {t('common.contact')}
         </Button>
-        <Button size="sm">Prendre rendez-vous</Button>
       </div>
 
       <Modal open={showTests} onClose={() => setShowTests(false)} title={`${laboratory.name} — ${t('lab.tests')}`}>

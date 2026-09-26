@@ -200,6 +200,8 @@ export const mg: Record<string, string> = {
   'nurse.services': 'Serisy',
   'nurse.qualification': 'Fanharatam-pahaizana',
   'nurse.availableNow': 'Misy',
+  'nurse.requestSent': 'Nalefa ny fangatahana · Laharana {ref}',
+  'nurse.slotToConfirm': 'Toerana hevitra kely amin’ny mpikaroka',
 
   // Appointment
   'apt.title': 'Fotoana vaovao',

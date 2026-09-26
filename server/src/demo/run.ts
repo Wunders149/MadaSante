@@ -214,7 +214,21 @@ async function main() {
   process.exit(0)
 }
 
-main().catch((err) => {
-  console.error('[seed:demo] Failed:', err)
-  process.exit(1)
-})
+/**
+ * `--clean` removes the demo rows; `--dry-run` previews the removal.
+ * Without either flag this seeds, as before.
+ */
+async function dispatch() {
+  const argv = process.argv.slice(2)
+  if (!argv.includes('--clean') && !argv.includes('--dry-run')) return main()
+  const { cleanDemo } = await import('./clean.js')
+  await cleanDemo(argv.includes('--dry-run'))
+  return undefined
+}
+
+dispatch()
+  .then(() => process.exit(0))
+  .catch((err) => {
+    console.error('[seed:demo] Failed:', err)
+    process.exit(1)
+  })

@@ -379,6 +379,47 @@ const ADDITIVE_MIGRATIONS: { name: string; sql: string }[] = [
       CREATE INDEX IF NOT EXISTS appointments_provider_id_idx ON appointments (provider_id);
     `,
   },
+  {
+    // Lookup indexes. The search endpoint filters on city and orders by rating
+    // across every catalog table, and provider profiles are read by id on every
+    // booking, so those are the two access paths worth indexing.
+    name: 'catalog lookup indexes',
+    sql: `
+      CREATE INDEX IF NOT EXISTS doctors_city_idx ON doctors (city);
+      CREATE INDEX IF NOT EXISTS hospitals_city_idx ON hospitals (city);
+      CREATE INDEX IF NOT EXISTS pharmacies_city_idx ON pharmacies (city);
+      CREATE INDEX IF NOT EXISTS medicines_city_idx ON medicines (city);
+      CREATE INDEX IF NOT EXISTS laboratories_city_idx ON laboratories (city);
+      CREATE INDEX IF NOT EXISTS imaging_centers_city_idx ON imaging_centers (city);
+      CREATE INDEX IF NOT EXISTS nurses_city_idx ON nurses (city);
+      CREATE INDEX IF NOT EXISTS ambulances_city_idx ON ambulances (city);
+      CREATE INDEX IF NOT EXISTS practitioners_city_idx ON practitioners (city);
+      CREATE INDEX IF NOT EXISTS practitioners_profession_idx ON practitioners (profession);
+      CREATE INDEX IF NOT EXISTS medical_ngos_city_idx ON medical_ngos (city);
+      CREATE INDEX IF NOT EXISTS users_email_idx ON users (email);
+      CREATE INDEX IF NOT EXISTS users_provider_id_idx ON users (provider_id);
+      CREATE INDEX IF NOT EXISTS notifications_user_id_idx ON notifications (user_id, created_at DESC);
+      CREATE INDEX IF NOT EXISTS payments_patient_id_idx ON payments (patient_id);
+      CREATE INDEX IF NOT EXISTS delivery_orders_patient_id_idx ON delivery_orders (patient_id);
+      CREATE INDEX IF NOT EXISTS provider_applications_status_idx ON provider_applications (status);
+    `,
+  },
+  {
+    // Let a rejected applicant apply again.
+    //
+    // `provider_applications.email` was UNIQUE, so re-applying after a
+    // rejection failed with a constraint violation even once the route stopped
+    // treating a rejected application as a duplicate. The "one live
+    // application per email" rule is enforced in the route instead, which lets
+    // a rejected address start a fresh attempt while keeping each attempt as
+    // its own row for the moderation queue.
+    name: 'provider_applications.email not unique',
+    sql: `
+      ALTER TABLE provider_applications DROP CONSTRAINT IF EXISTS provider_applications_email_key;
+      CREATE INDEX IF NOT EXISTS provider_applications_email_idx ON provider_applications (email);
+      CREATE INDEX IF NOT EXISTS provider_applications_email_status_idx ON provider_applications (email, status);
+    `,
+  },
 ]
 
 async function applyAdditiveMigrations() {

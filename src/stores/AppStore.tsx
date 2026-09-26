@@ -54,9 +54,12 @@ interface DeliveryInput {
   prescriptionConfirmed?: boolean
 }
 
+/**
+ * Name and phone are resolved server-side from the authenticated account, so
+ * they are not part of the request. They used to be sent by the client, which
+ * let a caller name and phone an arbitrary person.
+ */
 interface EmergencyInput {
-  patientName: string
-  phone: string
   location: string
   emergencyType: string
   destinationHospital: string
@@ -241,8 +244,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const requestNurse = useCallback(async (input: BookAppointmentInput): Promise<Appointment> => {
-    // A nurse visit is a request, not a confirmed booking: it starts pending
-    // and stays unpaid until the nurse accepts.
+    // A nurse visit is a request, not a confirmed booking: no slot is fixed
+    // (the nurse proposes one when they accept) and it starts pending.
     const appointment = await apiRoutes.createAppointment({ ...input, status: 'pending' })
     setData((prev) => ({ ...prev, appointments: [appointment, ...prev.appointments] }))
     return appointment

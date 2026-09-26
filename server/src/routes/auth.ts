@@ -3,9 +3,27 @@ import bcrypt from 'bcryptjs'
 import { z } from 'zod'
 import { db } from '../db.js'
 import { requireAuth, signToken } from '../auth.js'
-import { isProviderRole, PROVIDER_ROLES, publicUser, type UserRow } from '../helpers.js'
+import { rateLimit } from '../rateLimit.js'
+import { isProviderRole, PROVIDER_ROLES, publicUser, uniqueId, type UserRow } from '../helpers.js'
 
 export const authRouter = Router()
+
+/**
+ * bcrypt runs asynchronously throughout. The synchronous variants block the
+ * event loop for the whole hash/compare, which on an unthrottled login endpoint
+ * is a denial-of-service vector in its own right.
+ */
+const BCRYPT_ROUNDS = 10
+
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  message: 'Trop de tentatives de connexion. Réessayez dans quelques minutes.',
+})
+
+const registerLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 10 })
+const providerRegisterLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 5 })
+const passwordLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 10 })
 
 const loginSchema = z.object({
   email: z.string().email(),
@@ -13,7 +31,7 @@ const loginSchema = z.object({
   role: z.string().optional(),
 })
 
-authRouter.post('/login', async (req, res) => {
+authRouter.post('/login', loginLimiter, async (req, res) => {
   const parsed = loginSchema.safeParse(req.body)
   if (!parsed.success) {
     res.status(400).json({ error: 'Invalid payload' })
@@ -21,7 +39,11 @@ authRouter.post('/login', async (req, res) => {
   }
   const { email, password } = parsed.data
   const row = (await db.query('SELECT * FROM users WHERE email = $1', [email])).rows[0] as UserRow | undefined
-  if (!row || !bcrypt.compareSync(password, row.password_hash)) {
+  // Compare against a dummy hash when the account does not exist so the
+  // response time does not reveal which emails are registered.
+  const hash = row?.password_hash ?? '$2a$10$invalidinvalidinvalidinvalidinvalidinvalidinvalidinvalidinv'
+  const ok = await bcrypt.compare(password, hash)
+  if (!row || !ok) {
     res.status(401).json({ error: 'Identifiants invalides' })
     return
   }
@@ -34,12 +56,12 @@ const registerSchema = z.object({
   lastName: z.string().min(1),
   phone: z.string().min(5),
   email: z.string().email(),
-  password: z.string().min(4),
+  password: z.string().min(6),
   role: z.string(),
   location: z.string().min(1),
 })
 
-authRouter.post('/register', async (req, res) => {
+authRouter.post('/register', registerLimiter, async (req, res) => {
   const parsed = registerSchema.safeParse(req.body)
   if (!parsed.success) {
     res.status(400).json({ error: 'Payload invalide' })
@@ -58,8 +80,8 @@ authRouter.post('/register', async (req, res) => {
     return
   }
 
-  const id = `u_${Date.now()}`
-  const hash = bcrypt.hashSync(data.password, 10)
+  const id = uniqueId('u')
+  const hash = await bcrypt.hash(data.password, BCRYPT_ROUNDS)
   await db.query(
     `INSERT INTO users (id, first_name, last_name, phone, email, password_hash, role, location, provider_id)
      VALUES ($1, $2, $3, $4, $5, $6, 'patient', $7, NULL)`,
@@ -74,6 +96,40 @@ authRouter.post('/logout', (_req, res) => {
   res.json({ ok: true })
 })
 
+/**
+ * Uploaded documents are stored as base64 in `provider_documents.data` and
+ * echoed back to admins in full, so they are validated rather than accepted as
+ * an opaque blob. Previously any non-empty string of any mime up to the global
+ * 6 MB body limit was stored.
+ */
+const ALLOWED_DOC_MIME = ['image/png', 'image/jpeg', 'image/webp', 'application/pdf'] as const
+/** Decoded size cap per document (~2 MB), checked before it reaches the database. */
+const MAX_DOC_BYTES = 2 * 1024 * 1024
+
+function base64ByteLength(value: string): number {
+  const clean = value.includes(',') ? value.slice(value.indexOf(',') + 1) : value
+  const padding = clean.endsWith('==') ? 2 : clean.endsWith('=') ? 1 : 0
+  return Math.max(0, Math.floor((clean.length * 3) / 4) - padding)
+}
+
+const documentSchema = z
+  .object({
+    docType: z.enum(['license', 'diploma', 'id', 'certificate']),
+    fileName: z.string().min(1).max(200),
+    mime: z.enum(ALLOWED_DOC_MIME),
+    data: z.string().min(1),
+  })
+  .superRefine((doc, ctx) => {
+    // The payload must actually be base64 of the declared type, not an
+    // arbitrary string smuggled through the `mime` field.
+    if (!/^[A-Za-z0-9+/=\r\n]+$/.test(doc.data.replace(/^data:[^;]+;base64,/, ''))) {
+      ctx.addIssue({ code: 'custom', path: ['data'], message: 'Document : contenu base64 invalide' })
+    }
+    if (base64ByteLength(doc.data) > MAX_DOC_BYTES) {
+      ctx.addIssue({ code: 'custom', path: ['data'], message: 'Document : fichier trop volumineux' })
+    }
+  })
+
 const providerRegisterSchema = z.object({
   role: z.enum(PROVIDER_ROLES),
   orgName: z.string().min(2),
@@ -85,23 +141,14 @@ const providerRegisterSchema = z.object({
   city: z.string().min(1),
   licenseNumber: z.string().min(3),
   password: z.string().min(6),
-  documents: z
-    .array(
-      z.object({
-        docType: z.string().min(1),
-        fileName: z.string().min(1),
-        mime: z.string().min(1),
-        data: z.string().min(1),
-      }),
-    )
-    .min(1)
-    .max(3),
+  documents: z.array(documentSchema).min(1).max(3),
 })
 
-authRouter.post('/provider-register', async (req, res) => {
+authRouter.post('/provider-register', providerRegisterLimiter, async (req, res) => {
   const parsed = providerRegisterSchema.safeParse(req.body)
   if (!parsed.success) {
-    res.status(400).json({ error: 'Formulaire incomplet ou documents manquants' })
+    const first = parsed.error.issues[0]
+    res.status(400).json({ error: first?.message ?? 'Formulaire incomplet ou documents invalides' })
     return
   }
   const data = parsed.data
@@ -110,14 +157,21 @@ authRouter.post('/provider-register', async (req, res) => {
     res.status(409).json({ error: 'Email déjà utilisé' })
     return
   }
-  const duplicate = await db.query('SELECT id FROM provider_applications WHERE email = $1', [data.email])
+  // Only a *pending* or approved application blocks a resubmission. A rejected
+  // applicant is allowed to apply again — previously the check ignored status,
+  // so one rejection locked that email out permanently.
+  const duplicate = await db.query(
+    `SELECT id FROM provider_applications WHERE email = $1 AND status IN ('pending', 'approved')`,
+    [data.email],
+  )
   if ((duplicate.rowCount ?? 0) > 0) {
-    res.status(409).json({ error: 'Une demande a déjà été soumise avec cet email' })
+    res.status(409).json({ error: 'Une demande est déjà en cours avec cet email' })
     return
   }
-  const id = `pa_${Date.now()}_${Math.floor(Math.random() * 1000)}`
+  const id = uniqueId('pa')
   const reference = `PA-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`
   const createdAt = new Date().toISOString()
+  const passwordHash = await bcrypt.hash(data.password, BCRYPT_ROUNDS)
   const client = await db.connect()
   try {
     await client.query('BEGIN')
@@ -136,7 +190,7 @@ authRouter.post('/provider-register', async (req, res) => {
         data.location,
         data.city,
         data.licenseNumber,
-        bcrypt.hashSync(data.password, 10),
+        passwordHash,
         createdAt,
       ],
     )
@@ -228,7 +282,7 @@ const changePasswordSchema = z.object({
   newPassword: z.string().min(6),
 })
 
-authRouter.put('/me/password', requireAuth, async (req, res) => {
+authRouter.put('/me/password', requireAuth, passwordLimiter, async (req, res) => {
   const parsed = changePasswordSchema.safeParse(req.body)
   if (!parsed.success) {
     res.status(400).json({ error: 'Le nouveau mot de passe doit contenir au moins 6 caractères' })
@@ -239,12 +293,12 @@ authRouter.put('/me/password', requireAuth, async (req, res) => {
     res.status(401).json({ error: 'Session invalide' })
     return
   }
-  if (!bcrypt.compareSync(parsed.data.currentPassword, row.password_hash)) {
+  if (!(await bcrypt.compare(parsed.data.currentPassword, row.password_hash))) {
     res.status(400).json({ error: 'Mot de passe actuel incorrect' })
     return
   }
   await db.query('UPDATE users SET password_hash = $1 WHERE id = $2', [
-    bcrypt.hashSync(parsed.data.newPassword, 10),
+    await bcrypt.hash(parsed.data.newPassword, BCRYPT_ROUNDS),
     req.auth!.id,
   ])
   res.json({ ok: true })

@@ -54,7 +54,7 @@ export function ImagingCard({ center }: { center: ImagingCenter }) {
         <Button variant="outline" size="sm" to={`tel:${center.phone.replace(/\s/g, '')}`}>
           <Phone className="h-4 w-4" /> {t('common.contact')}
         </Button>
-        <Button size="sm">Prendre rendez-vous</Button>
+        {/* No "book" action: imaging has no appointment flow yet. */}
       </div>
 
       <Modal open={showExams} onClose={() => setShowExams(false)} title={`${center.name} — ${t('img.exams')}`}>

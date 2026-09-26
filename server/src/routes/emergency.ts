@@ -3,7 +3,8 @@ import type { Request, Response } from 'express'
 import { z } from 'zod'
 import { db } from '../db.js'
 import { requireAuth } from '../auth.js'
-import { generateReference, todayIso } from '../helpers.js'
+import { generateReference, todayIso, uniqueId } from '../helpers.js'
+import { rateLimit } from '../rateLimit.js'
 
 export const emergencyRouter = Router()
 emergencyRouter.use(requireAuth)
@@ -24,12 +25,15 @@ const mapEmergency = (r: Row) => ({
   date: r.date,
 })
 
+/**
+ * The patient's name and phone are taken from the authenticated account, not
+ * from the body. They were previously taken from the body, so a request record
+ * could name and phone an arbitrary person.
+ */
 const createSchema = z.object({
-  patientName: z.string(),
-  phone: z.string(),
-  location: z.string(),
-  emergencyType: z.string(),
-  destinationHospital: z.string(),
+  location: z.string().min(2).max(300),
+  emergencyType: z.string().min(2).max(80),
+  destinationHospital: z.string().min(2).max(200),
 })
 
 emergencyRouter.get('/', async (req: Request, res: Response) => {
@@ -39,19 +43,25 @@ emergencyRouter.get('/', async (req: Request, res: Response) => {
   res.json(rows.map(mapEmergency))
 })
 
-emergencyRouter.post('/', async (req: Request, res: Response) => {
+emergencyRouter.post('/', rateLimit({ windowMs: 60 * 60 * 1000, max: 5 }), async (req: Request, res: Response) => {
   const parsed = createSchema.safeParse(req.body)
   if (!parsed.success) {
     res.status(400).json({ error: 'Payload invalide' })
     return
   }
   const input = parsed.data
+  const account = (await db.query('SELECT first_name, last_name, phone FROM users WHERE id = $1', [req.auth!.id]))
+    .rows[0] as { first_name: string; last_name: string; phone: string } | undefined
+  if (!account) {
+    res.status(401).json({ error: 'Session invalide' })
+    return
+  }
   const request = {
-    id: `erg-${Date.now()}`,
+    id: uniqueId('erg'),
     reference: generateReference('AMBU'),
     patientId: req.auth!.id,
-    patientName: input.patientName,
-    phone: input.phone,
+    patientName: `${account.first_name} ${account.last_name}`.trim(),
+    phone: account.phone,
     location: input.location,
     emergencyType: input.emergencyType,
     destinationHospital: input.destinationHospital,

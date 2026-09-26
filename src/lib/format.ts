@@ -1,5 +1,3 @@
-import type { Lang } from '../types'
-
 const AR = 'Ar'
 
 export function formatAr(amount: number): string {
@@ -9,6 +7,12 @@ export function formatAr(amount: number): string {
   return `${grouped} ${AR}`
 }
 
+/**
+ * Dates and currency are formatted for the French locale regardless of the
+ * selected UI language. The seeded catalog is French, and switching the number
+ * and date locale per UI language is a larger change than it looks — flagging
+ * it rather than half-doing it.
+ */
 export function formatDateFr(iso: string): string {
   const d = new Date(iso.length === 10 ? `${iso}T00:00:00` : iso)
   return d.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })
@@ -24,25 +28,9 @@ export function formatDateTime(iso: string): string {
   return d.toLocaleString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
 }
 
-export function isSameDay(date: string): boolean {
-  const d = new Date(date.length === 10 ? `${date}T00:00:00` : date)
-  const today = new Date()
-  return (
-    d.getFullYear() === today.getFullYear() &&
-    d.getMonth() === today.getMonth() &&
-    d.getDate() === today.getDate()
-  )
-}
-
 export function monthDay(date: string): string {
   const d = new Date(date.length === 10 ? `${date}T00:00:00` : date)
   return d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })
-}
-
-export function generateReference(prefix: string): string {
-  const year = new Date().getFullYear()
-  const random = Math.floor(1000 + Math.random() * 9000)
-  return `${prefix}-${year}-${random}`
 }
 
 export function initials(name: string): string {
@@ -53,8 +41,4 @@ export function initials(name: string): string {
     .slice(0, 2)
     .join('')
     .toUpperCase()
-}
-
-export function langCode(lang: Lang): string {
-  return lang === 'mg' ? 'mg' : lang
 }

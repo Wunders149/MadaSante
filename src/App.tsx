@@ -1,51 +1,57 @@
-import { useEffect } from 'react'
+import { Suspense, lazy, useEffect } from 'react'
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import type { ReactNode } from 'react'
 import { AppProvider } from './stores/AppStore'
 import { AuthProvider, useAuth } from './stores/AuthStore'
 import { PatientLayout } from './layouts/PatientLayout'
 import { ProviderLayout } from './layouts/ProviderLayout'
-
-import { LoginPage, RegisterPage, ProviderRegisterPage, NotFoundPage } from './pages/auth'
-import {
-  HomePage,
-  SearchPage,
-  DoctorsPage,
-  DoctorProfilePage,
-  AppointmentsPage,
-  NewAppointmentPage,
-  PharmaciesPage,
-  MedicinesPage,
-  LaboratoriesPage,
-  ImagingPage,
-  HospitalsPage,
-  NursesPage,
-  PractitionersPage,
-  PractitionerProfilePage,
-  MedicalNgosPage,
-  AmbulancePage,
-  DeliveryPage,
-  PaymentsPage,
-  ProfilePage,
-  NotificationsPage,
-  OrientationPage,
-} from './pages/patient'
-import {
-  ProviderDashboardPage,
-  ProviderAppointmentsPage,
-  ProviderAvailabilityPage,
-  ProviderRequestsPage,
-  ProviderPaymentsPage,
-  ProviderProfilePage,
-} from './pages/provider'
 import { AdminLayout } from './layouts/AdminLayout'
-import {
-  AdminApplicationsPage,
-  AdminApplicationDetailPage,
-  AdminPatientsPage,
-  AdminPatientDetailPage,
-  AdminProfilePage,
-} from './pages/admin'
+import { ErrorBoundary } from './components/ui/ErrorBoundary'
+import { RouteFallback } from './components/ui/RouteFallback'
+import { LoginPage, RegisterPage, ProviderRegisterPage, NotFoundPage } from './pages/auth'
+
+/**
+ * Every page below the layouts is loaded on demand.
+ *
+ * Eagerly importing 30+ pages shipped one ~620 kB chunk that every visitor
+ * downloaded in full, including the admin and provider consoles they will
+ * never see. The layouts stay eager because they are needed immediately after
+ * authentication; everything else is code-split per route.
+ */
+const HomePage = lazy(() => import('./pages/patient/HomePage').then((m) => ({ default: m.HomePage })))
+const SearchPage = lazy(() => import('./pages/patient/SearchPage').then((m) => ({ default: m.SearchPage })))
+const DoctorsPage = lazy(() => import('./pages/patient/DoctorsPage').then((m) => ({ default: m.DoctorsPage })))
+const DoctorProfilePage = lazy(() => import('./pages/patient/DoctorProfilePage').then((m) => ({ default: m.DoctorProfilePage })))
+const AppointmentsPage = lazy(() => import('./pages/patient/AppointmentsPage').then((m) => ({ default: m.AppointmentsPage })))
+const NewAppointmentPage = lazy(() => import('./pages/patient/NewAppointmentPage').then((m) => ({ default: m.NewAppointmentPage })))
+const PharmaciesPage = lazy(() => import('./pages/patient/PharmaciesPage').then((m) => ({ default: m.PharmaciesPage })))
+const MedicinesPage = lazy(() => import('./pages/patient/MedicinesPage').then((m) => ({ default: m.MedicinesPage })))
+const LaboratoriesPage = lazy(() => import('./pages/patient/LaboratoriesPage').then((m) => ({ default: m.LaboratoriesPage })))
+const ImagingPage = lazy(() => import('./pages/patient/ImagingPage').then((m) => ({ default: m.ImagingPage })))
+const HospitalsPage = lazy(() => import('./pages/patient/HospitalsPage').then((m) => ({ default: m.HospitalsPage })))
+const NursesPage = lazy(() => import('./pages/patient/NursesPage').then((m) => ({ default: m.NursesPage })))
+const PractitionersPage = lazy(() => import('./pages/patient/PractitionersPage').then((m) => ({ default: m.PractitionersPage })))
+const PractitionerProfilePage = lazy(() => import('./pages/patient/PractitionerProfilePage').then((m) => ({ default: m.PractitionerProfilePage })))
+const MedicalNgosPage = lazy(() => import('./pages/patient/MedicalNgosPage').then((m) => ({ default: m.MedicalNgosPage })))
+const AmbulancePage = lazy(() => import('./pages/patient/AmbulancePage').then((m) => ({ default: m.AmbulancePage })))
+const DeliveryPage = lazy(() => import('./pages/patient/DeliveryPage').then((m) => ({ default: m.DeliveryPage })))
+const PaymentsPage = lazy(() => import('./pages/patient/PaymentsPage').then((m) => ({ default: m.PaymentsPage })))
+const ProfilePage = lazy(() => import('./pages/patient/ProfilePage').then((m) => ({ default: m.ProfilePage })))
+const NotificationsPage = lazy(() => import('./pages/patient/NotificationsPage').then((m) => ({ default: m.NotificationsPage })))
+const OrientationPage = lazy(() => import('./pages/patient/OrientationPage').then((m) => ({ default: m.OrientationPage })))
+
+const ProviderDashboardPage = lazy(() => import('./pages/provider/ProviderDashboardPage').then((m) => ({ default: m.ProviderDashboardPage })))
+const ProviderAppointmentsPage = lazy(() => import('./pages/provider/ProviderAppointmentsPage').then((m) => ({ default: m.ProviderAppointmentsPage })))
+const ProviderAvailabilityPage = lazy(() => import('./pages/provider/ProviderAvailabilityPage').then((m) => ({ default: m.ProviderAvailabilityPage })))
+const ProviderRequestsPage = lazy(() => import('./pages/provider/ProviderRequestsPage').then((m) => ({ default: m.ProviderRequestsPage })))
+const ProviderPaymentsPage = lazy(() => import('./pages/provider/ProviderPaymentsPage').then((m) => ({ default: m.ProviderPaymentsPage })))
+const ProviderProfilePage = lazy(() => import('./pages/provider/ProviderProfilePage').then((m) => ({ default: m.ProviderProfilePage })))
+
+const AdminApplicationsPage = lazy(() => import('./pages/admin/AdminApplicationsPage').then((m) => ({ default: m.AdminApplicationsPage })))
+const AdminApplicationDetailPage = lazy(() => import('./pages/admin/AdminApplicationDetailPage').then((m) => ({ default: m.AdminApplicationDetailPage })))
+const AdminPatientsPage = lazy(() => import('./pages/admin/AdminPatientsPage').then((m) => ({ default: m.AdminPatientsPage })))
+const AdminPatientDetailPage = lazy(() => import('./pages/admin/AdminPatientDetailPage').then((m) => ({ default: m.AdminPatientDetailPage })))
+const AdminProfilePage = lazy(() => import('./pages/admin/AdminProfilePage').then((m) => ({ default: m.AdminProfilePage })))
 
 type GuardRole = 'patient' | 'provider' | 'admin'
 
@@ -95,6 +101,22 @@ export function App() {
   return (
     <AuthProvider>
       <AppProvider>
+        <LazyRoutes />
+      </AppProvider>
+    </AuthProvider>
+  )
+}
+
+
+/**
+ * Every page below a layout is lazy, so a chunk fetch needs a Suspense
+ * boundary. It sits inside the providers because the layouts render their own
+ * chrome (sidebar, header) and should stay on screen while the page loads.
+ */
+function LazyRoutes() {
+  return (
+    <ErrorBoundary>
+      <Suspense fallback={<RouteFallback />}>
         <ScrollToTop />
         <Routes>
           <Route path="/login" element={<LoginPage />} />
@@ -105,7 +127,9 @@ export function App() {
             path="/patient"
             element={
               <RequireAuth role="patient">
-                <PatientLayout />
+                <ErrorBoundary label="espace patient">
+                  <PatientLayout />
+                </ErrorBoundary>
               </RequireAuth>
             }
           >
@@ -141,7 +165,9 @@ export function App() {
             path="/provider"
             element={
               <RequireAuth role="provider">
-                <ProviderLayout />
+                <ErrorBoundary label="espace professionnel">
+                  <ProviderLayout />
+                </ErrorBoundary>
               </RequireAuth>
             }
           >
@@ -157,7 +183,9 @@ export function App() {
             path="/admin"
             element={
               <RequireAuth role="admin">
-                <AdminLayout />
+                <ErrorBoundary label="espace admin">
+                  <AdminLayout />
+                </ErrorBoundary>
               </RequireAuth>
             }
           >
@@ -174,7 +202,7 @@ export function App() {
           <Route path="/" element={<RootRedirect />} />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
-      </AppProvider>
-    </AuthProvider>
+      </Suspense>
+    </ErrorBoundary>
   )
 }

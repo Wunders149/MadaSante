@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { db } from '../db.js'
 import { requireAuth } from '../auth.js'
 import { generateReference, isProviderRole, uniqueId } from '../helpers.js'
+import { canTransition } from '../appointmentStatus.js'
 import {
   CONSULT_TYPES,
   PROVIDER_TABLE,
@@ -47,18 +48,33 @@ const MUTATION_STATUSES = ['confirmed', 'pending', 'completed', 'cancelled'] as 
  * `price` and `paymentStatus` are deliberately not in this schema: a client
  * must not be able to name its own price or declare an appointment paid.
  */
-const createSchema = z.object({
-  providerId: z.string().min(1),
-  providerType: z.string().min(1),
-  providerName: z.string().optional(),
-  providerPhoto: z.string().optional(),
-  type: z.string().min(1),
-  consultationType: z.enum(CONSULT_TYPES).optional(),
-  date: z.string().min(1),
-  time: z.string().min(1),
-  location: z.string().optional(),
-  status: z.enum(BOOK_STATUSES).optional(),
-})
+/**
+ * A request rather than a booking may leave the slot open: a nurse visit is
+ * requested and the nurse proposes a time when they accept. Confirmed bookings
+ * still require a concrete date and time.
+ */
+const createSchema = z
+  .object({
+    providerId: z.string().min(1),
+    providerType: z.string().min(1),
+    providerName: z.string().optional(),
+    providerPhoto: z.string().optional(),
+    type: z.string().min(1),
+    consultationType: z.enum(CONSULT_TYPES).optional(),
+    date: z.string(),
+    time: z.string(),
+    location: z.string().optional(),
+    status: z.enum(BOOK_STATUSES).optional(),
+  })
+  .superRefine((value, ctx) => {
+    if (value.status === 'pending') return
+    if (!value.date) {
+      ctx.addIssue({ code: 'custom', path: ['date'], message: 'Date requise pour une réservation' })
+    }
+    if (!value.time) {
+      ctx.addIssue({ code: 'custom', path: ['time'], message: 'Heure requise pour une réservation' })
+    }
+  })
 
 appointmentsRouter.get('/', async (req: Request, res: Response) => {
   const auth = req.auth!
@@ -179,24 +195,9 @@ appointmentsRouter.post('/', async (req: Request, res: Response) => {
 })
 
 /**
- * Allowed status moves, by who is asking.
- *
- * A patient may only withdraw their own booking — previously any authenticated
- * patient could PATCH their appointment to 'completed' or 'confirmed'.
- * 'completed' and 'cancelled' are terminal.
+ * Status rules live in `appointmentStatus.ts` so they can be tested without
+ * booting Express or a database pool.
  */
-const PROVIDER_TRANSITIONS: Record<string, string[]> = {
-  pending: ['confirmed', 'cancelled'],
-  confirmed: ['completed', 'cancelled'],
-  completed: [],
-  cancelled: [],
-}
-const PATIENT_TRANSITIONS: Record<string, string[]> = {
-  pending: ['cancelled'],
-  confirmed: ['cancelled'],
-  completed: [],
-  cancelled: [],
-}
 
 appointmentsRouter.patch('/:id/status', async (req: Request, res: Response) => {
   const auth = req.auth!
@@ -225,8 +226,7 @@ appointmentsRouter.patch('/:id/status', async (req: Request, res: Response) => {
     return
   }
 
-  const allowed = auth.role === 'patient' ? PATIENT_TRANSITIONS : PROVIDER_TRANSITIONS
-  if (!(allowed[current] ?? []).includes(next)) {
+  if (!canTransition(auth.role, current, next)) {
     res.status(409).json({ error: `Transition ${current} → ${next} non autorisée` })
     return
   }
