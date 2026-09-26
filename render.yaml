@@ -3,7 +3,7 @@ services:
     name: madasante
     runtime: node
     plan: free
-    buildCommand: npm ci && npm run build
+    buildCommand: cd server && npm ci && npm run build
     startCommand: node server/dist/index.js
     envVars:
       - key: NODE_ENV
