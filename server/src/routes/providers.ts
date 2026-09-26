@@ -9,6 +9,11 @@ export const providersRouter = Router()
 // Public, unauthenticated route: catalog of providers for patients to browse.
 export const providersRouterPublic = Router()
 
+// Everything mounted on providersRouter is the provider's own account, so it
+// must run as an authenticated provider. Registered up front: routes below are
+// matched in order, and without this `req.auth` is undefined in the handlers.
+providersRouter.use(requireAuth, requireProvider)
+
 const TABLE_BY_ROLE: Record<string, { table: string; nameCol: string }> = {
   doctor: { table: 'doctors', nameCol: 'name' },
   nurse: { table: 'nurses', nameCol: 'name' },
@@ -90,6 +95,18 @@ providersRouter.put('/me', async (req: Request, res: Response) => {
 })
 
 // Public, unauthenticated: catalog of providers patients can browse.
+// Every UNION branch must project the same columns, and only columns that
+// actually exist: hospitals has no photo, nurses has no description.
+const PROVIDER_UNION = `
+  SELECT id, 'doctor' AS role, name, location, city, photo, rating, description FROM doctors
+  UNION ALL SELECT id, 'nurse' AS role, name, location, city, photo, rating, NULL AS description FROM nurses
+  UNION ALL SELECT id, 'pharmacy' AS role, name, location, city, NULL AS photo, rating, NULL AS description FROM pharmacies
+  UNION ALL SELECT id, 'laboratory' AS role, name, location, city, NULL AS photo, rating, NULL AS description FROM laboratories
+  UNION ALL SELECT id, 'imaging_center' AS role, name, location, city, NULL AS photo, rating, NULL AS description FROM imaging_centers
+  UNION ALL SELECT id, 'hospital' AS role, name, location, city, NULL AS photo, rating, description FROM hospitals
+  UNION ALL SELECT id, 'ambulance_driver' AS role, provider AS name, location, city, NULL AS photo, rating, NULL AS description FROM ambulances
+`
+
 providersRouterPublic.get('/', async (req: Request, res: Response) => {
   const role = typeof req.query.role === 'string' ? req.query.role : undefined
   const page = Math.max(1, Number(req.query.page ?? 1))
@@ -109,22 +126,22 @@ providersRouterPublic.get('/', async (req: Request, res: Response) => {
     where.push('location ILIKE ?')
     params.push(`%${req.query.location}%`)
   }
-  params.push(offset, limit)
+  const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : ''
+
   const rows = (
     await db.query(
       `SELECT id, role, name, location, city, photo, rating, description
-       FROM (
-         SELECT id, 'doctor' AS role, name, location, city, photo, rating, description FROM doctors
-         UNION ALL SELECT id, 'nurse' AS role, name, location, city, photo, rating, description FROM nurses
-         UNION ALL SELECT id, 'pharmacy' AS role, name, location, city, NULL AS photo, rating, NULL AS description FROM pharmacies
-         UNION ALL SELECT id, 'laboratory' AS role, name, location, city, NULL AS photo, rating, NULL AS description FROM laboratories
-         UNION ALL SELECT id, 'imaging_center' AS role, name, location, city, NULL AS photo, rating, NULL AS description FROM imaging_centers
-         UNION ALL SELECT id, 'hospital' AS role, name, location, city, NULL AS photo, rating, description FROM hospitals
-         UNION ALL SELECT id, 'ambulance_driver' AS role, provider AS name, location, city, NULL AS photo, rating, NULL AS description FROM ambulances
-       ) rolesn       WHERE ${where.length ? 'TRUE' : '1=0'}`,
-      params,
+         FROM (${PROVIDER_UNION}) p
+        ${whereSql}
+        ORDER BY name, id
+        LIMIT $${params.length + 1} OFFSET $${params.length + 2}`,
+      [...params, offset, limit],
     )
   ).rows as Row[]
+
+  const totalRows = (
+    await db.query(`SELECT COUNT(*)::int AS total FROM (${PROVIDER_UNION}) p ${whereSql}`, params)
+  ).rows[0] as { total: number }
 
   const providers = rows.map((r) => ({
     id: r.id,
@@ -137,24 +154,15 @@ providersRouterPublic.get('/', async (req: Request, res: Response) => {
     description: r.description ?? undefined,
   }))
 
-  const totalRows = (
-    await db.query(
-      `SELECT COUNT(*)::int AS total FROM (
-         SELECT id FROM doctorsn         UNION ALL SELECT id FROM nursesn         UNION ALL SELECT id FROM pharmaciesn         UNION ALL SELECT id FROM laboratoriesn         UNION ALL SELECT id FROM imaging_centersn         UNION ALL SELECT id FROM hospitalsn         UNION ALL SELECT provider AS id FROM ambulancesn       ) p ${where.length ? 'WHERE ' : ''}` + where.join(' AND '),
-      params.slice(0, params.length - 2),
-    )
-  ).rows[0] as { total: number }
-
+  const total = Number(totalRows.total)
   res.json({
     providers,
     page,
     limit,
-    total: Number(totalRows.total),
-    totalPages: Math.ceil(Number(totalRows.total) / limit),
+    total,
+    totalPages: Math.ceil(total / limit),
   })
 })
-
-providersRouter.use(requireAuth, requireProvider)
 
 const availabilitySchema = z.object({
   entries: z.array(z.object({ day: z.string(), slot: z.string(), available: z.boolean() })).max(200),
