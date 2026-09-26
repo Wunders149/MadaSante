@@ -125,7 +125,7 @@ adminRouter.patch('/applications/:id', async (req, res) => {
   try {
     await client.query('BEGIN')
     if (status === 'approved') {
-      const existing = await client.query('SELECT id FROM users WHERE email = ?', [row.email])
+      const existing = await client.query('SELECT id FROM users WHERE email = $1', [row.email])
       if ((existing.rowCount ?? 0) > 0) {
         await client.query('ROLLBACK')
         res.status(409).json({ error: 'Email déjà utilisé' })
@@ -133,7 +133,7 @@ adminRouter.patch('/applications/:id', async (req, res) => {
       }
       await client.query(
         `INSERT INTO users (id, first_name, last_name, phone, email, password_hash, role, location, photo, provider_id)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL)`,
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NULL, NULL)`,
         [
           `u_${row.id}`,
           row.first_name,
@@ -146,7 +146,7 @@ adminRouter.patch('/applications/:id', async (req, res) => {
         ],
       )
     }
-    await client.query('UPDATE provider_applications SET status = ?, review_note = ?, reviewed_at = ? WHERE id = ?', [
+    await client.query('UPDATE provider_applications SET status = $1, review_note = $2, reviewed_at = $3 WHERE id = $4', [
       status,
       note ?? row.review_note ?? null,
       reviewedAt,

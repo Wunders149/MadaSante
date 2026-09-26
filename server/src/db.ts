@@ -1,5 +1,5 @@
 import pg from 'pg'
-import type { PoolClient } from 'pg'
+import type { QueryResult } from 'pg'
 import { config } from './config.js'
 
 // Supabase (and most managed Postgres providers) require TLS.
@@ -14,9 +14,28 @@ function toPgSql(text: string): string {
   return text.replace(/\?/g, () => `$${++i}`)
 }
 
+/**
+ * Client returned by `db.connect()`.
+ *
+ * It behaves like a pooled pg client, but `query()` always runs through
+ * `toPgSql` first, so transaction code can use the same SQLite-style `?`
+ * placeholders as `db.query`. Raw `client.query('... ?')` used to hit
+ * Postgres unconverted and blow up with `syntax error at or near "?"`.
+ */
+export type DbClient = {
+  query: (text: string, params?: unknown[]) => Promise<QueryResult>
+  release: (err?: Error | boolean) => void
+}
+
 export const db = {
   query: (text: string, params: unknown[] = []) => pool.query(toPgSql(text), params),
-  connect: (): Promise<PoolClient> => pool.connect(),
+  connect: async (): Promise<DbClient> => {
+    const client = await pool.connect()
+    return {
+      query: (text, params = []) => client.query(toPgSql(text), params),
+      release: (err) => client.release(err),
+    }
+  },
 }
 
 export async function migrate() {
