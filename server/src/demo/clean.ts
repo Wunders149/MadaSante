@@ -37,6 +37,14 @@ const add = (set: Set<string>, value: unknown) => {
   if (typeof value === 'string' && value) set.add(value)
 }
 
+/**
+ * Reserved for this fixture file. Anything on it that is not a fixture account
+ * was created by hand while testing — an application submitted through the UI,
+ * or a registration — and is therefore also disposable. Accounts on real
+ * domains are never touched by this rule.
+ */
+const DEMO_EMAIL_DOMAIN = '@demo.mg'
+
 async function buildPlan(): Promise<Plan> {
   const plan: Plan = {
     catalog: new Map(),
@@ -118,6 +126,47 @@ async function buildPlan(): Promise<Plan> {
     for (const r of notes.rows) plan.notifications.add(r.id)
   }
 
+  // --- residue from manual testing on the reserved demo domain -------------
+  // An application submitted through the UI gets a generated id, so it is not
+  // reachable via `pa_demo_%`. Catching it by its email domain is what stops
+  // hand-made test accounts accumulating in the database across sessions.
+  const strays = (
+    await db.query(
+      `SELECT u.id, u.role, u.provider_id, a.id AS application_id
+         FROM users u
+         LEFT JOIN provider_applications a ON a.email = u.email
+        WHERE u.email LIKE $1`,
+      [`%${DEMO_EMAIL_DOMAIN}`],
+    )
+  ).rows as Array<{ id: string; role: string; provider_id: string | null; application_id: string | null }>
+
+  for (const stray of strays) {
+    if (plan.users.has(stray.id)) continue
+    plan.users.add(stray.id)
+    const account = (
+      await db.query('SELECT email FROM users WHERE id = $1', [stray.id])
+    ).rows[0] as { email: string } | undefined
+    if (account) plan.userEmails.add(account.email)
+    if (stray.application_id) plan.applications.add(stray.application_id)
+    if (stray.provider_id) {
+      const table = PROVIDER_TABLE[stray.role]?.table
+      if (table) put(table, stray.provider_id)
+    }
+  }
+
+  // Re-collect activity for the widened user set.
+  const allUsers = [...plan.users]
+  const [appts, pays, dels, notes] = await Promise.all([
+    db.query('SELECT id FROM appointments WHERE patient_id = ANY($1) OR provider_id = ANY($1)', [allUsers]),
+    db.query('SELECT id FROM payments WHERE patient_id = ANY($1) OR provider_id = ANY($1)', [allUsers]),
+    db.query('SELECT id FROM delivery_orders WHERE patient_id = ANY($1)', [allUsers]),
+    db.query('SELECT id FROM notifications WHERE user_id = ANY($1)', [allUsers]),
+  ])
+  for (const r of appts.rows) plan.appointments.add(r.id)
+  for (const r of pays.rows) plan.payments.add(r.id)
+  for (const r of dels.rows) plan.deliveries.add(r.id)
+  for (const r of notes.rows) plan.notifications.add(r.id)
+
   return plan
 }
 
@@ -157,7 +206,7 @@ export async function cleanDemo(dryRun: boolean) {
 
   console.log(`[seed:clean] ${dryRun ? 'DRY RUN — nothing will be deleted.' : 'Removing demo rows.'}`)
   console.log(`[seed:clean] demo applications found: ${plan.applications.size}`)
-  console.log(`[seed:clean] demo accounts found:      ${plan.userEmails.size}`)
+  console.log(`[seed:clean] demo accounts found:      ${plan.userEmails.size}  (fixtures + any hand-made accounts on *${DEMO_EMAIL_DOMAIN})`)
   console.log('')
 
   const client = await db.connect()

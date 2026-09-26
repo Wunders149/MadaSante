@@ -15,7 +15,9 @@
     "preview": "vite preview",
     "start": "node server/dist/index.js",
     "test": "npm --prefix server run test",
-    "seed:demo": "npm --prefix server run seed:demo"
+    "seed:demo": "npm --prefix server run seed:demo",
+    "seed:demo:dry-run": "npm --prefix server run seed:demo:dry-run",
+    "seed:demo:clean": "npm --prefix server run seed:demo:clean"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.13",
