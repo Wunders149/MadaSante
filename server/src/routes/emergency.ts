@@ -32,14 +32,14 @@ const createSchema = z.object({
   destinationHospital: z.string(),
 })
 
-emergencyRouter.get('/', (req: Request, res: Response) => {
-  const rows = db
-    .prepare('SELECT * FROM emergency_requests WHERE patient_id = ? ORDER BY date DESC')
-    .all(req.auth!.id) as Row[]
+emergencyRouter.get('/', async (req: Request, res: Response) => {
+  const rows = (
+    await db.query('SELECT * FROM emergency_requests WHERE patient_id = ? ORDER BY date DESC', [req.auth!.id])
+  ).rows as Row[]
   res.json(rows.map(mapEmergency))
 })
 
-emergencyRouter.post('/', (req: Request, res: Response) => {
+emergencyRouter.post('/', async (req: Request, res: Response) => {
   const parsed = createSchema.safeParse(req.body)
   if (!parsed.success) {
     res.status(400).json({ error: 'Payload invalide' })
@@ -59,9 +59,22 @@ emergencyRouter.post('/', (req: Request, res: Response) => {
     ambulance: null,
     date: todayIso(),
   }
-  db.prepare(`
-    INSERT INTO emergency_requests (id, reference, patient_id, patient_name, phone, location, emergency_type, destination_hospital, status, ambulance, date)
-    VALUES (@id, @reference, @patientId, @patientName, @phone, @location, @emergencyType, @destinationHospital, @status, @ambulance, @date)
-  `).run(request)
+  await db.query(
+    `INSERT INTO emergency_requests (id, reference, patient_id, patient_name, phone, location, emergency_type, destination_hospital, status, ambulance, date)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      request.id,
+      request.reference,
+      request.patientId,
+      request.patientName,
+      request.phone,
+      request.location,
+      request.emergencyType,
+      request.destinationHospital,
+      request.status,
+      request.ambulance,
+      request.date,
+    ],
+  )
   res.status(201).json(mapEmergency(request))
 })

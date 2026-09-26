@@ -19,10 +19,10 @@ const mapNotification = (r: Row) => ({
   link: r.link ?? undefined,
 })
 
-notificationsRouter.get('/', (req: Request, res: Response) => {
-  const rows = db
-    .prepare('SELECT * FROM notifications WHERE user_id = ? ORDER BY created_at DESC')
-    .all(req.auth!.id) as Row[]
+notificationsRouter.get('/', async (req: Request, res: Response) => {
+  const rows = (
+    await db.query('SELECT * FROM notifications WHERE user_id = ? ORDER BY created_at DESC', [req.auth!.id])
+  ).rows as Row[]
   res.json(rows.map(mapNotification))
 })
 
@@ -33,7 +33,7 @@ const createSchema = z.object({
   link: z.string().optional(),
 })
 
-notificationsRouter.post('/', (req: Request, res: Response) => {
+notificationsRouter.post('/', async (req: Request, res: Response) => {
   const parsed = createSchema.safeParse(req.body)
   if (!parsed.success) {
     res.status(400).json({ error: 'Payload invalide' })
@@ -50,25 +50,36 @@ notificationsRouter.post('/', (req: Request, res: Response) => {
     createdAt: new Date().toISOString(),
     link: input.link ?? null,
   }
-  db.prepare(`
-    INSERT INTO notifications (id, user_id, title, message, category, read, created_at, link)
-    VALUES (@id, @userId, @title, @message, @category, @read, @createdAt, @link)
-  `).run(notification)
+  await db.query(
+    `INSERT INTO notifications (id, user_id, title, message, category, read, created_at, link)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      notification.id,
+      notification.userId,
+      notification.title,
+      notification.message,
+      notification.category,
+      notification.read,
+      notification.createdAt,
+      notification.link,
+    ],
+  )
   res.status(201).json(mapNotification(notification))
 })
 
-notificationsRouter.patch('/:id/read', (req: Request, res: Response) => {
-  const result = db
-    .prepare('UPDATE notifications SET read = 1 WHERE id = ? AND user_id = ?')
-    .run(req.params.id, req.auth!.id)
-  if (result.changes === 0) {
+notificationsRouter.patch('/:id/read', async (req: Request, res: Response) => {
+  const result = await db.query('UPDATE notifications SET read = 1 WHERE id = ? AND user_id = ?', [
+    req.params.id,
+    req.auth!.id,
+  ])
+  if ((result.rowCount ?? 0) === 0) {
     res.status(404).json({ error: 'Notification introuvable' })
     return
   }
   res.json({ ok: true })
 })
 
-notificationsRouter.patch('/read-all', (req: Request, res: Response) => {
-  db.prepare('UPDATE notifications SET read = 1 WHERE user_id = ?').run(req.auth!.id)
+notificationsRouter.patch('/read-all', async (req: Request, res: Response) => {
+  await db.query('UPDATE notifications SET read = 1 WHERE user_id = ?', [req.auth!.id])
   res.json({ ok: true })
 })

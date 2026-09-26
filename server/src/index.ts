@@ -4,7 +4,7 @@ import express from 'express'
 import cors from 'cors'
 import type { NextFunction, Request, Response } from 'express'
 import { config } from './config.js'
-import { db, migrate } from './db.js'
+import { migrate } from './db.js'
 import { ensureAdmin } from './seed.js'
 import { authRouter } from './routes/auth.js'
 import { catalogRouter } from './routes/catalog.js'
@@ -17,8 +17,8 @@ import { deliveriesRouter } from './routes/deliveries.js'
 import { emergencyRouter } from './routes/emergency.js'
 import { adminRouter } from './routes/admin.js'
 
-migrate()
-ensureAdmin()
+await migrate()
+await ensureAdmin()
 
 const app = express()
 
@@ -64,5 +64,3 @@ app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
 app.listen(config.port, () => {
   console.log(`Mada Sante API listening on http://localhost:${config.port}`)
 })
-
-void db

@@ -3,18 +3,15 @@ services:
     name: madasante
     runtime: node
     plan: free
-    buildCommand: npm install && npm run build
-    startCommand: npm start
+    buildCommand: npm ci && npm run build
+    startCommand: node server/dist/index.js
     envVars:
       - key: NODE_ENV
         value: production
-      - key: JWT_SECRET
-        generateValue: true
       - key: PORT
         value: 10000
-      - key: ADMIN_EMAIL
-        sync: false
-      - key: ADMIN_PASSWORD
-        sync: false
-    # SQLite DB lives under server/data (ephemeral on Render).
-    # A super admin is bootstrapped on start from ADMIN_EMAIL / ADMIN_PASSWORD.
+      - key: PG_SSL
+        value: "true"
+    # Database is hosted on Supabase Postgres (DATABASE_URL).
+    # Schema is created on boot by migrate(); a super admin is
+    # bootstrapped from ADMIN_EMAIL / ADMIN_PASSWORD.

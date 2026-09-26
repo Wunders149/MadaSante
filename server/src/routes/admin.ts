@@ -66,31 +66,34 @@ function mapDoc(row: DocRow) {
   }
 }
 
-adminRouter.get('/applications', (req, res) => {
+adminRouter.get('/applications', async (req, res) => {
   const status = typeof req.query.status === 'string' ? req.query.status : undefined
-  const rows = db
-    .prepare(
+  const rows = (
+    await db.query(
       `SELECT ${APP_COLUMNS},
         (SELECT COUNT(*) FROM provider_documents d WHERE d.application_id = p.id) AS doc_count
        FROM provider_applications p
        ${status ? 'WHERE status = ?' : ''}
        ORDER BY created_at DESC`,
+      status ? [status] : [],
     )
-    .all(...(status ? [status] : [])) as Array<AppRow & { doc_count: number }>
-  res.json(rows.map((r) => ({ ...mapApp(r), documentCount: r.doc_count })))
+  ).rows as unknown as Array<AppRow & { doc_count: number }>
+  res.json(rows.map((r) => ({ ...mapApp(r), documentCount: Number(r.doc_count) })))
 })
 
-adminRouter.get('/applications/:id', (req, res) => {
-  const row = db
-    .prepare(`SELECT ${APP_COLUMNS} FROM provider_applications p WHERE id = ?`)
-    .get(req.params.id) as AppRow | undefined
+adminRouter.get('/applications/:id', async (req, res) => {
+  const row = (
+    await db.query(`SELECT ${APP_COLUMNS} FROM provider_applications p WHERE id = ?`, [req.params.id])
+  ).rows[0] as AppRow | undefined
   if (!row) {
     res.status(404).json({ error: 'Demande introuvable' })
     return
   }
-  const docs = db
-    .prepare('SELECT id, doc_type, file_name, mime, data FROM provider_documents WHERE application_id = ?')
-    .all(row.id) as DocRow[]
+  const docs = (
+    await db.query('SELECT id, doc_type, file_name, mime, data FROM provider_documents WHERE application_id = ?', [
+      row.id,
+    ])
+  ).rows as DocRow[]
   res.json({ application: { ...mapApp(row), documents: docs.map(mapDoc) } })
 })
 
@@ -99,16 +102,16 @@ const reviewSchema = z.object({
   note: z.string().max(500).optional(),
 })
 
-adminRouter.patch('/applications/:id', (req, res) => {
+adminRouter.patch('/applications/:id', async (req, res) => {
   const parsed = reviewSchema.safeParse(req.body)
   if (!parsed.success) {
     res.status(400).json({ error: 'Statut invalide' })
     return
   }
   const { status, note } = parsed.data
-  const row = db
-    .prepare(`SELECT ${APP_COLUMNS} FROM provider_applications p WHERE id = ?`)
-    .get(req.params.id) as AppRow | undefined
+  const row = (
+    await db.query(`SELECT ${APP_COLUMNS} FROM provider_applications p WHERE id = ?`, [req.params.id])
+  ).rows[0] as AppRow | undefined
   if (!row) {
     res.status(404).json({ error: 'Demande introuvable' })
     return
@@ -118,40 +121,46 @@ adminRouter.patch('/applications/:id', (req, res) => {
     return
   }
   const reviewedAt = new Date().toISOString()
-  const review = db.transaction(() => {
+  const client = await db.connect()
+  try {
+    await client.query('BEGIN')
     if (status === 'approved') {
-      const existing = db.prepare('SELECT id FROM users WHERE email = ?').get(row.email)
-      if (existing) {
-        return { error: 'Email déjà utilisé' }
+      const existing = await client.query('SELECT id FROM users WHERE email = ?', [row.email])
+      if ((existing.rowCount ?? 0) > 0) {
+        await client.query('ROLLBACK')
+        res.status(409).json({ error: 'Email déjà utilisé' })
+        return
       }
-      db.prepare(`
-        INSERT INTO users (id, first_name, last_name, phone, email, password_hash, role, location, photo, provider_id)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL)
-      `).run(
-        `u_${row.id}`,
-        row.first_name,
-        row.last_name,
-        row.phone,
-        row.email,
-        row.password_hash,
-        row.role,
-        row.location,
+      await client.query(
+        `INSERT INTO users (id, first_name, last_name, phone, email, password_hash, role, location, photo, provider_id)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL)`,
+        [
+          `u_${row.id}`,
+          row.first_name,
+          row.last_name,
+          row.phone,
+          row.email,
+          row.password_hash,
+          row.role,
+          row.location,
+        ],
       )
     }
-    db.prepare("UPDATE provider_applications SET status = ?, review_note = ?, reviewed_at = ? WHERE id = ?").run(
+    await client.query('UPDATE provider_applications SET status = ?, review_note = ?, reviewed_at = ? WHERE id = ?', [
       status,
       note ?? row.review_note ?? null,
       reviewedAt,
       row.id,
-    )
-    return null
-  })()
-  if (review) {
-    res.status(409).json({ error: review.error })
-    return
+    ])
+    await client.query('COMMIT')
+  } catch (err) {
+    await client.query('ROLLBACK')
+    throw err
+  } finally {
+    client.release()
   }
-  const updated = db
-    .prepare(`SELECT ${APP_COLUMNS} FROM provider_applications p WHERE id = ?`)
-    .get(row.id) as AppRow
+  const updated = (
+    await db.query(`SELECT ${APP_COLUMNS} FROM provider_applications p WHERE id = ?`, [row.id])
+  ).rows[0] as AppRow
   res.json({ application: mapApp(updated) })
 })

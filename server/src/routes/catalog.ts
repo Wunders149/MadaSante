@@ -160,15 +160,20 @@ const collectFilters = (req: Request) => {
   return out
 }
 
-const list = (table: string, mapper: (r: Row) => unknown, orderBy = 'name') => (req: Request, res: Response) => {
-  const { where, params } = collectFilters(req)
-  const rows = db
-    .prepare(`SELECT * FROM ${table}${where.length ? ` WHERE ${where.join(' AND ')}` : ''} ORDER BY ${orderBy}`)
-    .all(...params) as Row[]
-  res.json(rows.map(mapper))
-}
+const list =
+  (table: string, mapper: (r: Row) => unknown, orderBy = 'name') =>
+  async (req: Request, res: Response) => {
+    const { where, params } = collectFilters(req)
+    const rows = (
+      await db.query(
+        `SELECT * FROM ${table}${where.length ? ` WHERE ${where.join(' AND ')}` : ''} ORDER BY ${orderBy}`,
+        params,
+      )
+    ).rows as Row[]
+    res.json(rows.map(mapper))
+  }
 
-catalogRouter.get('/doctors', (req: Request, res: Response) => {
+catalogRouter.get('/doctors', async (req: Request, res: Response) => {
   const q = like(String(req.query.q ?? ''))
   const city = String(req.query.city ?? '') || undefined
   const type = String(req.query.type ?? '') || undefined
@@ -180,14 +185,14 @@ catalogRouter.get('/doctors', (req: Request, res: Response) => {
   if (q) params.push(q, q, q)
   if (city) params.push(city)
   if (type) params.push(type)
-  const rows = db
-    .prepare(`SELECT * FROM doctors${where.length ? ` WHERE ${where.join(' AND ')}` : ''} ORDER BY rating DESC`)
-    .all(...params) as Row[]
+  const rows = (
+    await db.query(`SELECT * FROM doctors${where.length ? ` WHERE ${where.join(' AND ')}` : ''} ORDER BY rating DESC`, params)
+  ).rows as Row[]
   res.json(rows.map(mapDoctor))
 })
 
-catalogRouter.get('/doctors/:id', (req: Request, res: Response) => {
-  const row = db.prepare('SELECT * FROM doctors WHERE id = ?').get(req.params.id) as Row | undefined
+catalogRouter.get('/doctors/:id', async (req: Request, res: Response) => {
+  const row = (await db.query('SELECT * FROM doctors WHERE id = $1', [req.params.id])).rows[0] as Row | undefined
   if (!row) {
     res.status(404).json({ error: 'Not found' })
     return
@@ -195,7 +200,7 @@ catalogRouter.get('/doctors/:id', (req: Request, res: Response) => {
   res.json(mapDoctor(row))
 })
 
-catalogRouter.get('/hospitals', (req: Request, res: Response) => {
+catalogRouter.get('/hospitals', async (req: Request, res: Response) => {
   const q = like(String(req.query.q ?? ''))
   const city = String(req.query.city ?? '') || undefined
   const type = String(req.query.type ?? '') || undefined
@@ -210,9 +215,9 @@ catalogRouter.get('/hospitals', (req: Request, res: Response) => {
   if (city) params.push(city)
   if (type) params.push(type)
   if (sector) params.push(sector)
-  const rows = db
-    .prepare(`SELECT * FROM hospitals${where.length ? ` WHERE ${where.join(' AND ')}` : ''} ORDER BY rating DESC`)
-    .all(...params) as Row[]
+  const rows = (
+    await db.query(`SELECT * FROM hospitals${where.length ? ` WHERE ${where.join(' AND ')}` : ''} ORDER BY rating DESC`, params)
+  ).rows as Row[]
   res.json(rows.map(mapHospital))
 })
 
@@ -220,7 +225,7 @@ catalogRouter.get('/pharmacies', list('pharmacies', mapPharmacy))
 catalogRouter.get('/medicines', list('medicines', mapMedicine))
 catalogRouter.get('/laboratories', list('laboratories', mapLaboratory))
 
-catalogRouter.get('/imaging-centers', (req: Request, res: Response) => {
+catalogRouter.get('/imaging-centers', async (req: Request, res: Response) => {
   const q = like(String(req.query.q ?? ''))
   const city = String(req.query.city ?? '') || undefined
   const where: string[] = []
@@ -229,13 +234,13 @@ catalogRouter.get('/imaging-centers', (req: Request, res: Response) => {
   if (city) where.push('city = ?')
   if (q) params.push(q, q, q)
   if (city) params.push(city)
-  const rows = db
-    .prepare(`SELECT * FROM imaging_centers${where.length ? ` WHERE ${where.join(' AND ')}` : ''} ORDER BY rating DESC`)
-    .all(...params) as Row[]
+  const rows = (
+    await db.query(`SELECT * FROM imaging_centers${where.length ? ` WHERE ${where.join(' AND ')}` : ''} ORDER BY rating DESC`, params)
+  ).rows as Row[]
   res.json(rows.map(mapImagingCenter))
 })
 
-catalogRouter.get('/nurses', (req: Request, res: Response) => {
+catalogRouter.get('/nurses', async (req: Request, res: Response) => {
   const q = like(String(req.query.q ?? ''))
   const city = String(req.query.city ?? '') || undefined
   const where: string[] = []
@@ -244,25 +249,27 @@ catalogRouter.get('/nurses', (req: Request, res: Response) => {
   if (city) where.push('city = ?')
   if (q) params.push(q, q, q)
   if (city) params.push(city)
-  const rows = db
-    .prepare(`SELECT * FROM nurses${where.length ? ` WHERE ${where.join(' AND ')}` : ''} ORDER BY rating DESC`)
-    .all(...params) as Row[]
+  const rows = (
+    await db.query(`SELECT * FROM nurses${where.length ? ` WHERE ${where.join(' AND ')}` : ''} ORDER BY rating DESC`, params)
+  ).rows as Row[]
   res.json(rows.map(mapNurse))
 })
 
 catalogRouter.get('/ambulances', list('ambulances', mapAmbulance, 'provider'))
 
-catalogRouter.get('/summary', (_req: Request, res: Response) => {
-  const count = (table: string) =>
-    (db.prepare(`SELECT COUNT(*) AS n FROM ${table}`).get() as { n: number }).n
+catalogRouter.get('/summary', async (_req: Request, res: Response) => {
+  const count = async (table: string) => {
+    const r = await db.query(`SELECT COUNT(*)::int AS n FROM ${table}`)
+    return (r.rows[0] as { n: number }).n
+  }
   res.json({
-    doctors: count('doctors'),
-    medicines: count('medicines'),
-    pharmacies: count('pharmacies'),
-    labs: count('laboratories'),
-    imaging: count('imaging_centers'),
-    nurses: count('nurses'),
-    facilities: count('hospitals'),
+    doctors: await count('doctors'),
+    medicines: await count('medicines'),
+    pharmacies: await count('pharmacies'),
+    labs: await count('laboratories'),
+    imaging: await count('imaging_centers'),
+    nurses: await count('nurses'),
+    facilities: await count('hospitals'),
   })
 })
 

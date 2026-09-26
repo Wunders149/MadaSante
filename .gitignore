@@ -12,7 +12,10 @@ dist
 dist-ssr
 *.local
 
-# SQLite database (server)
+# Environment (contains Supabase credentials)
+.env
+
+# SQLite database (legacy, server)
 server/data/*.db
 server/data/*.db-*
 

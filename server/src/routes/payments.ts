@@ -33,7 +33,7 @@ const createSchema = z.object({
   breakdown: z.array(z.object({ label: z.string(), amount: z.number() })),
 })
 
-paymentsRouter.get('/', (req: Request, res: Response) => {
+paymentsRouter.get('/', async (req: Request, res: Response) => {
   const auth = req.auth!
   const where: string[] = []
   const params: unknown[] = []
@@ -52,13 +52,13 @@ paymentsRouter.get('/', (req: Request, res: Response) => {
     where.push('method = ?')
     params.push(method)
   }
-  const rows = db
-    .prepare(`SELECT * FROM payments WHERE ${where.join(' AND ')} ORDER BY date DESC`)
-    .all(...params) as Row[]
+  const rows = (
+    await db.query(`SELECT * FROM payments WHERE ${where.join(' AND ')} ORDER BY date DESC`, params)
+  ).rows as Row[]
   res.json(rows.map(mapPayment))
 })
 
-paymentsRouter.post('/', (req: Request, res: Response) => {
+paymentsRouter.post('/', async (req: Request, res: Response) => {
   const parsed = createSchema.safeParse(req.body)
   if (!parsed.success) {
     res.status(400).json({ error: 'Payload invalide' })
@@ -78,24 +78,38 @@ paymentsRouter.post('/', (req: Request, res: Response) => {
     status: 'success',
     breakdown: input.breakdown,
   }
-  db.prepare(`
-    INSERT INTO payments (id, reference, patient_id, provider_id, service, provider_name, date, amount, method, status, breakdown)
-    VALUES (@id, @reference, @patientId, @providerId, @service, @providerName, @date, @amount, @method, @status, @breakdown)
-  `).run({ ...payment, breakdown: JSON.stringify(payment.breakdown) })
+  await db.query(
+    `INSERT INTO payments (id, reference, patient_id, provider_id, service, provider_name, date, amount, method, status, breakdown)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      payment.id,
+      payment.reference,
+      payment.patientId,
+      payment.providerId,
+      payment.service,
+      payment.providerName,
+      payment.date,
+      payment.amount,
+      payment.method,
+      payment.status,
+      JSON.stringify(payment.breakdown),
+    ],
+  )
   res.status(201).json(mapPayment({ ...payment, provider_id: payment.providerId, breakdown: JSON.stringify(payment.breakdown) }))
 })
 
-paymentsRouter.get('/summary', (req: Request, res: Response) => {
+paymentsRouter.get('/summary', async (req: Request, res: Response) => {
   const auth = req.auth!
   if (auth.role === 'patient' || !auth.providerId) {
     res.json({ total: 0, count: 0 })
     return
   }
-  const row = db
-    .prepare(`
-      SELECT COALESCE(SUM(amount), 0) AS total, COUNT(*) AS count
-      FROM payments WHERE provider_id = ? AND status = 'success'
-    `)
-    .get(auth.providerId) as { total: number; count: number }
+  const row = (
+    await db.query(
+      `SELECT COALESCE(SUM(amount), 0)::int AS total, COUNT(*)::int AS count
+       FROM payments WHERE provider_id = ? AND status = 'success'`,
+      [auth.providerId],
+    )
+  ).rows[0] as { total: number; count: number }
   res.json({ total: row.total, count: row.count })
 })

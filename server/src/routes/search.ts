@@ -11,7 +11,7 @@ const parse = (value: string) => JSON.parse(value) as unknown
 const qmatch = (row: Row, fields: string[], q: string) =>
   fields.some((f) => String(row[f] ?? '').toLowerCase().includes(q))
 
-searchRouter.get('/search', (req: Request, res: Response) => {
+searchRouter.get('/search', async (req: Request, res: Response) => {
   const q = String(req.query.q ?? '').trim().toLowerCase()
   const category = String(req.query.category ?? 'all')
 
@@ -30,22 +30,22 @@ searchRouter.get('/search', (req: Request, res: Response) => {
     return
   }
 
-  const doctors = (db.prepare('SELECT * FROM doctors').all() as Row[]).filter((r) =>
+  const doctors = ((await db.query('SELECT * FROM doctors')).rows as Row[]).filter((r) =>
     qmatch(r, ['name', 'specialty', 'city'], q),
   )
-  const medicines = (db.prepare('SELECT * FROM medicines').all() as Row[]).filter((r) =>
+  const medicines = ((await db.query('SELECT * FROM medicines')).rows as Row[]).filter((r) =>
     qmatch(r, ['name', 'generic_name'], q),
   )
-  const facilities = (db.prepare('SELECT * FROM hospitals').all() as Row[]).filter((r) =>
+  const facilities = ((await db.query('SELECT * FROM hospitals')).rows as Row[]).filter((r) =>
     qmatch(r, ['name', 'services', 'city'], q),
   )
-  const laboratories = (db.prepare('SELECT * FROM laboratories').all() as Row[]).filter((r) =>
+  const laboratories = ((await db.query('SELECT * FROM laboratories')).rows as Row[]).filter((r) =>
     qmatch(r, ['name', 'tests', 'city'], q),
   )
-  const imaging = (db.prepare('SELECT * FROM imaging_centers').all() as Row[]).filter((r) =>
+  const imaging = ((await db.query('SELECT * FROM imaging_centers')).rows as Row[]).filter((r) =>
     qmatch(r, ['name', 'exams', 'city'], q),
   )
-  const nurses = (db.prepare('SELECT * FROM nurses').all() as Row[]).filter((r) =>
+  const nurses = ((await db.query('SELECT * FROM nurses')).rows as Row[]).filter((r) =>
     qmatch(r, ['name', 'services', 'city'], q),
   )
 
@@ -60,9 +60,8 @@ searchRouter.get('/search', (req: Request, res: Response) => {
     pharmacyName: r.pharmacy_name,
     location: r.location,
     city: r.city,
-    stock: r.stock,
-    available: r.available === 1,
-    prescriptionRequired: r.prescription_required === 1,
+    stock: r.stock,      available: r.available === 1,
+      prescriptionRequired: r.prescription_required === 1,
   })
 
   const results = {

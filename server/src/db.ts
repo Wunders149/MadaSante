@@ -1,17 +1,26 @@
-import fs from 'node:fs'
-import path from 'node:path'
-import Database from 'better-sqlite3'
+import pg from 'pg'
+import type { PoolClient } from 'pg'
 import { config } from './config.js'
 
-fs.mkdirSync(path.dirname(config.dbPath), { recursive: true })
+// Supabase (and most managed Postgres providers) require TLS.
+const pool = new pg.Pool({
+  connectionString: config.databaseUrl,
+  ssl: config.pgSsl ? { rejectUnauthorized: false } : false,
+})
 
-export const db = new Database(config.dbPath)
+/** Convert SQLite-style `?` placeholders to Postgres `$1..$n`. */
+function toPgSql(text: string): string {
+  let i = 0
+  return text.replace(/\?/g, () => `$${++i}`)
+}
 
-db.pragma('journal_mode = WAL')
-db.pragma('foreign_keys = ON')
+export const db = {
+  query: (text: string, params: unknown[] = []) => pool.query(toPgSql(text), params),
+  connect: (): Promise<PoolClient> => pool.connect(),
+}
 
-export function migrate() {
-  db.exec(`
+export async function migrate() {
+  return db.query(`
     CREATE TABLE IF NOT EXISTS users (
       id TEXT PRIMARY KEY,
       first_name TEXT NOT NULL,
@@ -33,13 +42,13 @@ export function migrate() {
       location TEXT NOT NULL,
       city TEXT NOT NULL,
       consultation_types TEXT NOT NULL,
-      price INTEGER NOT NULL,
-      price_home INTEGER,
+      price INT NOT NULL,
+      price_home INT,
       availability TEXT NOT NULL,
       availability_slots TEXT NOT NULL,
       photo TEXT,
-      rating REAL NOT NULL,
-      reviews INTEGER NOT NULL,
+      rating DOUBLE PRECISION NOT NULL,
+      reviews INT NOT NULL,
       description TEXT NOT NULL,
       languages TEXT NOT NULL
     );
@@ -53,9 +62,9 @@ export function migrate() {
       city TEXT NOT NULL,
       services TEXT NOT NULL,
       opening_hours TEXT NOT NULL,
-      emergency_available INTEGER NOT NULL,
+      emergency_available INT NOT NULL,
       phone TEXT NOT NULL,
-      rating REAL NOT NULL,
+      rating DOUBLE PRECISION NOT NULL,
       description TEXT NOT NULL
     );
 
@@ -66,8 +75,8 @@ export function migrate() {
       city TEXT NOT NULL,
       phone TEXT NOT NULL,
       opening_hours TEXT NOT NULL,
-      delivery_available INTEGER NOT NULL,
-      rating REAL NOT NULL
+      delivery_available INT NOT NULL,
+      rating DOUBLE PRECISION NOT NULL
     );
 
     CREATE TABLE IF NOT EXISTS medicines (
@@ -76,14 +85,14 @@ export function migrate() {
       generic_name TEXT NOT NULL,
       form TEXT NOT NULL,
       dose TEXT NOT NULL,
-      price INTEGER NOT NULL,
+      price INT NOT NULL,
       pharmacy_id TEXT NOT NULL,
       pharmacy_name TEXT NOT NULL,
       location TEXT NOT NULL,
       city TEXT NOT NULL,
-      stock INTEGER NOT NULL,
-      available INTEGER NOT NULL,
-      prescription_required INTEGER NOT NULL
+      stock INT NOT NULL,
+      available INT NOT NULL,
+      prescription_required INT NOT NULL
     );
 
     CREATE TABLE IF NOT EXISTS laboratories (
@@ -94,7 +103,7 @@ export function migrate() {
       tests TEXT NOT NULL,
       opening_hours TEXT NOT NULL,
       phone TEXT NOT NULL,
-      rating REAL NOT NULL
+      rating DOUBLE PRECISION NOT NULL
     );
 
     CREATE TABLE IF NOT EXISTS imaging_centers (
@@ -105,7 +114,7 @@ export function migrate() {
       exams TEXT NOT NULL,
       opening_hours TEXT NOT NULL,
       phone TEXT NOT NULL,
-      rating REAL NOT NULL
+      rating DOUBLE PRECISION NOT NULL
     );
 
     CREATE TABLE IF NOT EXISTS nurses (
@@ -116,9 +125,9 @@ export function migrate() {
       city TEXT NOT NULL,
       services TEXT NOT NULL,
       availability TEXT NOT NULL,
-      price INTEGER NOT NULL,
+      price INT NOT NULL,
       photo TEXT,
-      rating REAL NOT NULL
+      rating DOUBLE PRECISION NOT NULL
     );
 
     CREATE TABLE IF NOT EXISTS ambulances (
@@ -128,7 +137,7 @@ export function migrate() {
       city TEXT NOT NULL,
       phone TEXT NOT NULL,
       vehicles TEXT NOT NULL,
-      available INTEGER NOT NULL,
+      available INT NOT NULL,
       response_time TEXT NOT NULL
     );
 
@@ -145,7 +154,7 @@ export function migrate() {
       time TEXT NOT NULL,
       location TEXT NOT NULL,
       status TEXT NOT NULL,
-      price INTEGER NOT NULL,
+      price INT NOT NULL,
       payment_status TEXT NOT NULL
     );
 
@@ -157,7 +166,7 @@ export function migrate() {
       service TEXT NOT NULL,
       provider_name TEXT NOT NULL,
       date TEXT NOT NULL,
-      amount INTEGER NOT NULL,
+      amount INT NOT NULL,
       method TEXT NOT NULL,
       status TEXT NOT NULL,
       breakdown TEXT NOT NULL
@@ -170,13 +179,13 @@ export function migrate() {
       medicine_id TEXT NOT NULL,
       medicine_name TEXT NOT NULL,
       dose TEXT NOT NULL,
-      quantity INTEGER NOT NULL,
+      quantity INT NOT NULL,
       pharmacy_id TEXT NOT NULL,
       pharmacy_name TEXT NOT NULL,
       delivery_address TEXT NOT NULL,
       delivery_time_slot TEXT NOT NULL,
-      delivery_fee INTEGER NOT NULL,
-      total INTEGER NOT NULL,
+      delivery_fee INT NOT NULL,
+      total INT NOT NULL,
       status TEXT NOT NULL,
       date TEXT NOT NULL
     );
@@ -201,7 +210,7 @@ export function migrate() {
       title TEXT NOT NULL,
       message TEXT NOT NULL,
       category TEXT NOT NULL,
-      read INTEGER NOT NULL DEFAULT 0,
+      read INT NOT NULL DEFAULT 0,
       created_at TEXT NOT NULL,
       link TEXT
     );
@@ -210,7 +219,7 @@ export function migrate() {
       provider_id TEXT NOT NULL,
       day TEXT NOT NULL,
       slot TEXT NOT NULL,
-      available INTEGER NOT NULL DEFAULT 1,
+      available INT NOT NULL DEFAULT 1,
       PRIMARY KEY (provider_id, day, slot)
     );
 

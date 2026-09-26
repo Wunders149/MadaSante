@@ -44,7 +44,7 @@ const createSchema = z.object({
   paymentStatus: z.enum(['paid', 'pending', 'unpaid']).optional(),
 })
 
-appointmentsRouter.get('/', (req: Request, res: Response) => {
+appointmentsRouter.get('/', async (req: Request, res: Response) => {
   const auth = req.auth!
   const where: string[] = []
   const params: unknown[] = []
@@ -63,13 +63,13 @@ appointmentsRouter.get('/', (req: Request, res: Response) => {
     where.push('status = ?')
     params.push(status)
   }
-  const rows = db
-    .prepare(`SELECT * FROM appointments WHERE ${where.join(' AND ')} ORDER BY date DESC, time DESC`)
-    .all(...params) as Row[]
+  const rows = (
+    await db.query(`SELECT * FROM appointments WHERE ${where.join(' AND ')} ORDER BY date DESC, time DESC`, params)
+  ).rows as Row[]
   res.json(rows.map(mapAppointment))
 })
 
-appointmentsRouter.post('/', (req: Request, res: Response) => {
+appointmentsRouter.post('/', async (req: Request, res: Response) => {
   const parsed = createSchema.safeParse(req.body)
   if (!parsed.success) {
     res.status(400).json({ error: 'Payload invalide' })
@@ -92,21 +92,37 @@ appointmentsRouter.post('/', (req: Request, res: Response) => {
     price: input.price,
     paymentStatus: input.paymentStatus ?? 'unpaid',
   }
-  db.prepare(`
-    INSERT INTO appointments (id, reference, patient_id, provider_id, provider_type, provider_name, provider_photo, type, date, time, location, status, price, payment_status)
-    VALUES (@id, @reference, @patientId, @providerId, @providerType, @providerName, @providerPhoto, @type, @date, @time, @location, @status, @price, @paymentStatus)
-  `).run(appointment)
+  await db.query(
+    `INSERT INTO appointments (id, reference, patient_id, provider_id, provider_type, provider_name, provider_photo, type, date, time, location, status, price, payment_status)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      appointment.id,
+      appointment.reference,
+      appointment.patientId,
+      appointment.providerId,
+      appointment.providerType,
+      appointment.providerName,
+      appointment.providerPhoto,
+      appointment.type,
+      appointment.date,
+      appointment.time,
+      appointment.location,
+      appointment.status,
+      appointment.price,
+      appointment.paymentStatus,
+    ],
+  )
   res.status(201).json(mapAppointment({ ...appointment, provider_photo: appointment.providerPhoto }))
 })
 
-appointmentsRouter.patch('/:id/status', (req: Request, res: Response) => {
+appointmentsRouter.patch('/:id/status', async (req: Request, res: Response) => {
   const auth = req.auth!
   const parsed = z.object({ status: z.enum(MUTATION_STATUSES) }).safeParse(req.body)
   if (!parsed.success) {
     res.status(400).json({ error: 'Statut invalide' })
     return
   }
-  const row = db.prepare('SELECT * FROM appointments WHERE id = ?').get(req.params.id) as Row | undefined
+  const row = (await db.query('SELECT * FROM appointments WHERE id = ?', [req.params.id])).rows[0] as Row | undefined
   if (!row) {
     res.status(404).json({ error: 'Rendez-vous introuvable' })
     return
@@ -119,7 +135,7 @@ appointmentsRouter.patch('/:id/status', (req: Request, res: Response) => {
     res.status(403).json({ error: 'Forbidden' })
     return
   }
-  db.prepare('UPDATE appointments SET status = ? WHERE id = ?').run(parsed.data.status, req.params.id)
-  const updated = db.prepare('SELECT * FROM appointments WHERE id = ?').get(req.params.id) as Row
+  await db.query('UPDATE appointments SET status = ? WHERE id = ?', [parsed.data.status, req.params.id])
+  const updated = (await db.query('SELECT * FROM appointments WHERE id = ?', [req.params.id])).rows[0] as Row
   res.json(mapAppointment(updated))
 })

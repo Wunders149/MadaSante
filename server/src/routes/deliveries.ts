@@ -41,14 +41,14 @@ const createSchema = z.object({
   total: z.number(),
 })
 
-deliveriesRouter.get('/', (req: Request, res: Response) => {
-  const rows = db
-    .prepare('SELECT * FROM delivery_orders WHERE patient_id = ? ORDER BY date DESC')
-    .all(req.auth!.id) as Row[]
+deliveriesRouter.get('/', async (req: Request, res: Response) => {
+  const rows = (
+    await db.query('SELECT * FROM delivery_orders WHERE patient_id = ? ORDER BY date DESC', [req.auth!.id])
+  ).rows as Row[]
   res.json(rows.map(mapDelivery))
 })
 
-deliveriesRouter.post('/', (req: Request, res: Response) => {
+deliveriesRouter.post('/', async (req: Request, res: Response) => {
   const parsed = createSchema.safeParse(req.body)
   if (!parsed.success) {
     res.status(400).json({ error: 'Payload invalide' })
@@ -72,9 +72,26 @@ deliveriesRouter.post('/', (req: Request, res: Response) => {
     status: 'received',
     date: todayIso(),
   }
-  db.prepare(`
-    INSERT INTO delivery_orders (id, reference, patient_id, medicine_id, medicine_name, dose, quantity, pharmacy_id, pharmacy_name, delivery_address, delivery_time_slot, delivery_fee, total, status, date)
-    VALUES (@id, @reference, @patientId, @medicineId, @medicineName, @dose, @quantity, @pharmacyId, @pharmacyName, @deliveryAddress, @deliveryTimeSlot, @deliveryFee, @total, @status, @date)
-  `).run(order)
+  await db.query(
+    `INSERT INTO delivery_orders (id, reference, patient_id, medicine_id, medicine_name, dose, quantity, pharmacy_id, pharmacy_name, delivery_address, delivery_time_slot, delivery_fee, total, status, date)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      order.id,
+      order.reference,
+      order.patientId,
+      order.medicineId,
+      order.medicineName,
+      order.dose,
+      order.quantity,
+      order.pharmacyId,
+      order.pharmacyName,
+      order.deliveryAddress,
+      order.deliveryTimeSlot,
+      order.deliveryFee,
+      order.total,
+      order.status,
+      order.date,
+    ],
+  )
   res.status(201).json(mapDelivery(order))
 })

@@ -20,19 +20,19 @@ const TABLE_BY_ROLE: Record<string, { table: string; nameCol: string }> = {
   ambulance_driver: { table: 'ambulances', nameCol: 'provider' },
 }
 
-function fetchProfile(role: string, providerId: string | null) {
+async function fetchProfile(role: string, providerId: string | null) {
   if (!providerId) return undefined
   const mapping = TABLE_BY_ROLE[role]
   if (!mapping) return undefined
-  const row = db.prepare(`SELECT * FROM ${mapping.table} WHERE id = ?`).get(providerId) as Row | undefined
+  const row = (await db.query(`SELECT * FROM ${mapping.table} WHERE id = $1`, [providerId])).rows[0] as Row | undefined
   if (!row) return undefined
   return { id: row.id, name: row[mapping.nameCol], location: row.location, city: row.city }
 }
 
-providersRouter.get('/me', (req: Request, res: Response) => {
-  const row = db.prepare('SELECT * FROM users WHERE id = ?').get(req.auth!.id) as UserRow
+providersRouter.get('/me', async (req: Request, res: Response) => {
+  const row = (await db.query('SELECT * FROM users WHERE id = $1', [req.auth!.id])).rows[0] as UserRow
   const user = publicUser(row)
-  res.json({ user, provider: fetchProfile(user.role, user.providerId ?? null) })
+  res.json({ user, provider: await fetchProfile(user.role, user.providerId ?? null) })
 })
 
 const updateSchema = z.object({
@@ -47,7 +47,7 @@ const updateSchema = z.object({
 const photoPattern = /^data:image\/(png|jpe?g|webp|gif);base64,/
 const MAX_PHOTO_LENGTH = 3_000_000
 
-providersRouter.put('/me', (req: Request, res: Response) => {
+providersRouter.put('/me', async (req: Request, res: Response) => {
   const parsed = updateSchema.safeParse(req.body)
   if (!parsed.success) {
     res.status(400).json({ error: 'Payload invalide' })
@@ -62,35 +62,38 @@ providersRouter.put('/me', (req: Request, res: Response) => {
     res.status(400).json({ error: 'Format de photo invalide' })
     return
   }
-  const existing = db.prepare('SELECT * FROM users WHERE id = ?').get(req.auth!.id) as UserRow
+  const existingRow = (await db.query('SELECT * FROM users WHERE id = $1', [req.auth!.id])).rows[0] as UserRow
   const next = {
-    firstName: data.firstName ?? existing.first_name,
-    lastName: data.lastName ?? existing.last_name,
-    phone: data.phone ?? existing.phone,
-    email: data.email ?? existing.email,
-    location: data.location ?? existing.location ?? '',
-    photo: data.photo === undefined ? existing.photo : data.photo || null,
+    firstName: data.firstName ?? existingRow.first_name,
+    lastName: data.lastName ?? existingRow.last_name,
+    phone: data.phone ?? existingRow.phone,
+    email: data.email ?? existingRow.email,
+    location: data.location ?? existingRow.location ?? '',
+    photo: data.photo === undefined ? existingRow.photo : data.photo || null,
   }
-  if (next.email !== existing.email) {
-    const clash = db.prepare('SELECT id FROM users WHERE email = ? AND id != ?').get(next.email, req.auth!.id)
-    if (clash) {
+  if (next.email !== existingRow.email) {
+    const clash = await db.query('SELECT id FROM users WHERE email = $1 AND id != $2', [next.email, req.auth!.id])
+    if ((clash.rowCount ?? 0) > 0) {
       res.status(409).json({ error: 'Email déjà utilisé' })
       return
     }
   }
-  db.prepare(`
-    UPDATE users SET first_name = ?, last_name = ?, phone = ?, email = ?, location = ?, photo = ?
-    WHERE id = ?
-  `).run(next.firstName, next.lastName, next.phone, next.email, next.location, next.photo, req.auth!.id)
-  const updated = db.prepare('SELECT * FROM users WHERE id = ?').get(req.auth!.id) as UserRow
+  await db.query(
+    `UPDATE users SET first_name = $1, last_name = $2, phone = $3, email = $4, location = $5, photo = $6
+     WHERE id = $7`,
+    [next.firstName, next.lastName, next.phone, next.email, next.location, next.photo, req.auth!.id],
+  )
+  const updated = (await db.query('SELECT * FROM users WHERE id = $1', [req.auth!.id])).rows[0] as UserRow
   const user = publicUser(updated)
-  res.json({ user, provider: fetchProfile(user.role, user.providerId ?? null) })
+  res.json({ user, provider: await fetchProfile(user.role, user.providerId ?? null) })
 })
 
-providersRouter.get('/me/availability', (req: Request, res: Response) => {
-  const rows = db
-    .prepare('SELECT day, slot, available FROM availability WHERE provider_id = ? ORDER BY day, slot')
-    .all(req.auth!.providerId) as Row[]
+providersRouter.get('/me/availability', async (req: Request, res: Response) => {
+  const rows = (
+    await db.query('SELECT day, slot, available FROM availability WHERE provider_id = $1 ORDER BY day, slot', [
+      req.auth!.providerId,
+    ])
+  ).rows as Row[]
   res.json(rows.map((r) => ({ day: r.day, slot: r.slot, available: r.available === 1 })))
 })
 
@@ -98,20 +101,29 @@ const availabilitySchema = z.object({
   entries: z.array(z.object({ day: z.string(), slot: z.string(), available: z.boolean() })).max(200),
 })
 
-providersRouter.put('/me/availability', (req: Request, res: Response) => {
+providersRouter.put('/me/availability', async (req: Request, res: Response) => {
   const parsed = availabilitySchema.safeParse(req.body)
   if (!parsed.success) {
     res.status(400).json({ error: 'Payload invalide' })
     return
   }
   const providerId = req.auth!.providerId
-  const sync = db.transaction(() => {
-    db.prepare('DELETE FROM availability WHERE provider_id = ?').run(providerId)
-    const stmt = db.prepare(
-      'INSERT INTO availability (provider_id, day, slot, available) VALUES (?, ?, ?, ?)',
-    )
-    for (const e of parsed.data.entries) stmt.run(providerId, e.day, e.slot, e.available ? 1 : 0)
-  })
-  sync()
+  const client = await db.connect()
+  try {
+    await client.query('BEGIN')
+    await client.query('DELETE FROM availability WHERE provider_id = $1', [providerId])
+    for (const e of parsed.data.entries) {
+      await client.query(
+        'INSERT INTO availability (provider_id, day, slot, available) VALUES ($1, $2, $3, $4)',
+        [providerId, e.day, e.slot, e.available ? 1 : 0],
+      )
+    }
+    await client.query('COMMIT')
+  } catch (err) {
+    await client.query('ROLLBACK')
+    throw err
+  } finally {
+    client.release()
+  }
   res.json({ ok: true })
 })
