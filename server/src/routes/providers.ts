@@ -96,7 +96,8 @@ providersRouter.put('/me', async (req: Request, res: Response) => {
 
 // Public, unauthenticated: catalog of providers patients can browse.
 // Every UNION branch must project the same columns, and only columns that
-// actually exist: hospitals has no photo, nurses has no description.
+// actually exist: hospitals has no photo, nurses no description, ambulances
+// neither photo, description nor rating.
 const PROVIDER_UNION = `
   SELECT id, 'doctor' AS role, name, location, city, photo, rating, description FROM doctors
   UNION ALL SELECT id, 'nurse' AS role, name, location, city, photo, rating, NULL AS description FROM nurses
@@ -104,7 +105,7 @@ const PROVIDER_UNION = `
   UNION ALL SELECT id, 'laboratory' AS role, name, location, city, NULL AS photo, rating, NULL AS description FROM laboratories
   UNION ALL SELECT id, 'imaging_center' AS role, name, location, city, NULL AS photo, rating, NULL AS description FROM imaging_centers
   UNION ALL SELECT id, 'hospital' AS role, name, location, city, NULL AS photo, rating, description FROM hospitals
-  UNION ALL SELECT id, 'ambulance_driver' AS role, provider AS name, location, city, NULL AS photo, rating, NULL AS description FROM ambulances
+  UNION ALL SELECT id, 'ambulance_driver' AS role, provider AS name, location, city, NULL AS photo, NULL AS rating, NULL AS description FROM ambulances
 `
 
 providersRouterPublic.get('/', async (req: Request, res: Response) => {
