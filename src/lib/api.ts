@@ -29,6 +29,20 @@ export interface ApiErrorBody {
   error?: string
 }
 
+/**
+ * Fields accepted by `PUT /auth/me` and `PUT /providers/me`. Mirrors the
+ * server's `updateMeSchema`, so a typo here is a compile error rather than a
+ * field silently dropped on the way to the database.
+ */
+export interface AccountPatch {
+  firstName?: string
+  lastName?: string
+  phone?: string
+  email?: string
+  location?: string
+  photo?: string
+}
+
 export class ApiError extends Error {
   status: number
 
@@ -86,7 +100,7 @@ export const apiRoutes = {
   register: (body: Record<string, unknown>) =>
     api<{ token: string; user: User }>('/auth/register', { method: 'POST', body: JSON.stringify(body) }),
   me: () => api<{ user: User }>('/auth/me'),
-  updateMe: (body: Record<string, unknown>) =>
+  updateMe: (body: AccountPatch) =>
     api<{ user: User }>('/auth/me', { method: 'PUT', body: JSON.stringify(body) }),
   changePassword: (body: { currentPassword: string; newPassword: string }) =>
     api<{ ok: boolean }>('/auth/me/password', { method: 'PUT', body: JSON.stringify(body) }),
@@ -147,7 +161,7 @@ export const apiRoutes = {
   markAllNotificationsRead: () => api<{ ok: boolean }>('/notifications/read-all', { method: 'PATCH' }),
 
   providerMe: () => api<{ user: User; provider?: ProviderProfile }>('/providers/me'),
-  updateProviderMe: (body: unknown) =>
+  updateProviderMe: (body: AccountPatch) =>
     api<{ user: User; provider?: ProviderProfile }>('/providers/me', {
       method: 'PUT',
       body: JSON.stringify(body),

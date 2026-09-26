@@ -221,12 +221,18 @@ authRouter.get('/me', requireAuth, async (req, res) => {
   res.json({ user: publicUser(row) })
 })
 
+/**
+ * Every field is optional so a partial update is possible, but a field that is
+ * present must be usable. These were bare `z.string().optional()`, which meant
+ * `firstName: ''` passed and was written — an account could blank its own name
+ * and every screen that renders it then showed a gap.
+ */
 const updateMeSchema = z.object({
-  firstName: z.string().optional(),
-  lastName: z.string().optional(),
-  phone: z.string().optional(),
-  email: z.string().email().optional(),
-  location: z.string().optional(),
+  firstName: z.string().trim().min(1, 'Le prénom est requis').max(80).optional(),
+  lastName: z.string().trim().min(1, 'Le nom est requis').max(80).optional(),
+  phone: z.string().trim().min(5, 'Le téléphone est requis').max(30).optional(),
+  email: z.string().trim().email('Adresse e-mail invalide').max(160).optional(),
+  location: z.string().trim().max(300).optional(),
   photo: z.string().optional(),
 })
 
