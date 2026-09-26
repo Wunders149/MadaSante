@@ -117,6 +117,7 @@ export const apiRoutes = {
   nurses: (query?: string) => api<Nurse[]>(`/nurses${query ?? ''}`),
   ambulances: (query?: string) => api<Ambulance[]>(`/ambulances${query ?? ''}`),
   practitioners: (query?: string) => api<Practitioner[]>(`/practitioners${query ?? ''}`),
+  practitioner: (id: string) => api<Practitioner>(`/practitioners/${id}`),
   medicalNgos: (query?: string) => api<MedicalNgo[]>(`/medical-ngos${query ?? ''}`),
   summary: () => api<Record<string, number>>('/summary'),
   cities: () => api<string[]>('/cities'),

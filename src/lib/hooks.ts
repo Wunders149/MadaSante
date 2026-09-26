@@ -69,6 +69,14 @@ export function useMedicalNgos() {
   return useQuery({ queryKey: ['medical-ngos'], queryFn: () => apiRoutes.medicalNgos() })
 }
 
+export function usePractitioner(id?: string) {
+  return useQuery({
+    queryKey: ['practitioner', id],
+    queryFn: () => apiRoutes.practitioner(id as string),
+    enabled: Boolean(id),
+  })
+}
+
 export function useCatalogSummary() {
   return useQuery({ queryKey: ['summary'], queryFn: () => apiRoutes.summary() })
 }

@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import {
   ArrowLeft,
+  Brain,
   Building as BuildingGlyph,
   CalendarDays,
   Check,
@@ -22,10 +23,11 @@ import { Badge } from '../../components/ui/Badge'
 import { Avatar } from '../../components/Avatar'
 import { useApp } from '../../stores/AppStore'
 import { useAuth } from '../../stores/AuthStore'
-import { useDoctor } from '../../lib/hooks'
+import { useDoctor, usePractitioner } from '../../lib/hooks'
+import { roleLabelKey } from '../../lib/roles'
 import { nextDays } from '../../lib/constants'
 import { ApiError } from '../../lib/api'
-import type { ConsultationType, PaymentMethod } from '../../types'
+import type { BookableProvider, ConsultationType, PaymentMethod } from '../../types'
 import { formatAr, monthDay } from '../../lib/format'
 import { cn } from '../../lib/cn'
 
@@ -40,13 +42,58 @@ const consultMeta: Record<ConsultationType, { label: string; icon: typeof Stetho
 }
 
 export function NewAppointmentPage() {
-  const params = useParams<{ doctorId?: string }>()
-  const { data: doctor, isLoading } = useDoctor(params.doctorId)
+  const params = useParams<{ doctorId?: string; providerType?: string; providerId?: string }>()
+  // Two route shapes reach this page: the original /new/:doctorId and the
+  // generic /new/:providerType/:providerId used by the allied-health
+  // directory. Both normalise to the same bookable shape.
+  const providerType = params.providerType ?? (params.doctorId ? 'doctor' : undefined)
+  const providerId = params.providerId ?? params.doctorId
+  const isPractitioner = providerType !== undefined && providerType !== 'doctor'
+
+  const doctorQuery = useDoctor(isPractitioner ? undefined : providerId)
+  const practitionerQuery = usePractitioner(isPractitioner ? providerId : undefined)
   const { t, bookAppointment, pay, pushNotification, toast } = useApp()
   const { user } = useAuth()
   const navigate = useNavigate()
 
-  const [step, setStep] = useState<Step>(params.doctorId ? 1 : 0)
+  // Normalise both roles into one shape. Fields are listed explicitly rather
+  // than spread because `Doctor.type` ('generalist' | 'specialist') collides
+  // with the provider-role `type` this shape carries.
+  const doctor: BookableProvider | null = doctorQuery.data
+    ? {
+        type: 'doctor',
+        id: doctorQuery.data.id,
+        name: doctorQuery.data.name,
+        photo: doctorQuery.data.photo,
+        specialty: doctorQuery.data.specialty,
+        location: doctorQuery.data.location,
+        city: doctorQuery.data.city,
+        price: doctorQuery.data.price,
+        priceHome: doctorQuery.data.priceHome,
+        consultationTypes: doctorQuery.data.consultationTypes,
+        availabilitySlots: doctorQuery.data.availabilitySlots,
+        description: doctorQuery.data.description,
+      }
+    : null
+  const practitioner: BookableProvider | null = practitionerQuery.data
+    ? {
+        type: practitionerQuery.data.profession,
+        id: practitionerQuery.data.id,
+        name: practitionerQuery.data.name,
+        photo: practitionerQuery.data.photo,
+        specialty: practitionerQuery.data.specialty,
+        location: practitionerQuery.data.location,
+        city: practitionerQuery.data.city,
+        price: practitionerQuery.data.price,
+        priceHome: practitionerQuery.data.priceHome,
+        consultationTypes: practitionerQuery.data.consultationTypes,
+        availabilitySlots: practitionerQuery.data.availabilitySlots,
+        description: practitionerQuery.data.description,
+      }
+    : null
+  const provider = doctor ?? practitioner
+
+  const [step, setStep] = useState<Step>(providerId ? 1 : 0)
   const [type, setType] = useState<ConsultationType | null>(null)
   const [date, setDate] = useState<string | null>(null)
   const [time, setTime] = useState<string | null>(null)
@@ -54,31 +101,32 @@ export function NewAppointmentPage() {
   const [paying, setPaying] = useState(false)
   const [confirmed, setConfirmed] = useState<{ reference: string; price: number } | null>(null)
 
+  const isLoading = doctorQuery.isLoading || practitionerQuery.isLoading
+
   const price = useMemo(() => {
-    if (!type) return doctor?.price ?? 0
-    return type === 'home' ? (doctor?.priceHome ?? doctor?.price ?? 0) : (doctor?.price ?? 0)
-  }, [type, doctor])
+    if (!type) return provider?.price ?? 0
+    return type === 'home' ? (provider?.priceHome ?? provider?.price ?? 0) : (provider?.price ?? 0)
+  }, [type, provider])
 
   const platformFee = Math.round(price * 0.05)
   const total = price + platformFee
 
   const location = useMemo(() => {
-    if (!doctor) return user?.location ?? 'Antananarivo'
-    if (type === 'cabinet') return doctor.location
+    if (!provider) return user?.location ?? 'Antananarivo'
+    if (type === 'cabinet') return provider.location
     if (type === 'home') return `${user?.location ?? 'Antananarivo'} — À domicile`
-    return `${doctor.location.split(',')[0]}, ${doctor.city} — Hôpital partenaire`
-  }, [doctor, type, user])
+    return `${provider.location.split(',')[0]}, ${provider.city} — Hôpital partenaire`
+  }, [provider, type, user])
 
-  const hasDoctorId = Boolean(params.doctorId)
-
-  if (!hasDoctorId) {
+  if (!providerId) {
     return (
       <div className="page-container py-5 sm:py-7">
-        <PageHeader title={t('apt.title')} subtitle="Choisissez d’abord un professionnel" />
+        <PageHeader title={t('apt.title')} subtitle={t('apt.chooseProviderFirst')} />
         <div className="card space-y-2 p-4">
-          <HubRow icon={Stethoscope} label={t('nav.doctors')} sub="Trouver un médecin, un spécialiste" to="/patient/doctors" />
-          <HubRow icon={Phone} label={t('nav.laboratories')} sub="Prélever un échantillon" to="/patient/laboratories" />
-          <HubRow icon={CalendarDays} label={t('nav.imaging')} sub="Radiographie, écho, scanner, IRM" to="/patient/imaging" />
+          <HubRow icon={Stethoscope} label={t('nav.doctors')} sub={t('apt.hubDoctors')} to="/patient/doctors" />
+          <HubRow icon={Brain} label={t('nav.professionals')} sub={t('apt.hubProfessionals')} to="/patient/professionals" />
+          <HubRow icon={Phone} label={t('nav.laboratories')} sub={t('apt.hubLabs')} to="/patient/laboratories" />
+          <HubRow icon={CalendarDays} label={t('nav.imaging')} sub={t('apt.hubImaging')} to="/patient/imaging" />
         </div>
       </div>
     )
@@ -87,17 +135,17 @@ export function NewAppointmentPage() {
   if (isLoading) {
     return (
       <div className="page-container py-10 text-center">
-        <p className="text-sm text-ink-soft">Chargement…</p>
+        <p className="text-sm text-ink-soft">{t('common.loading')}</p>
       </div>
     )
   }
 
-  if (!doctor) {
+  if (!provider) {
     return (
       <div className="page-container py-10 text-center">
-        <p className="text-sm text-ink-soft">Médecin introuvable.</p>
-        <Button to="/patient/doctors" variant="outline" className="mt-3">
-          Retour aux médecins
+        <p className="text-sm text-ink-soft">{t('prac.notFound')}</p>
+        <Button to={isPractitioner ? '/patient/professionals' : '/patient/doctors'} variant="outline" className="mt-3">
+          {isPractitioner ? t('nav.professionals') : t('doctors.title')}
         </Button>
       </div>
     )
@@ -112,12 +160,12 @@ export function NewAppointmentPage() {
     try {
       // `consultationType` is the machine key the server prices from; `type` is
       // the translated label shown in the UI. The server ignores any price and
-      // recomputes the total from the doctor's catalog record.
+      // recomputes the total from the provider's catalog record.
       const appointment = await bookAppointment({
-        providerId: doctor.id,
-        providerType: 'doctor',
-        providerName: doctor.name,
-        providerPhoto: doctor.photo,
+        providerId: provider.id,
+        providerType: provider.type,
+        providerName: provider.name,
+        providerPhoto: provider.photo,
         type: t(consultMeta[type].label),
         consultationType: type,
         date,
@@ -128,11 +176,11 @@ export function NewAppointmentPage() {
       const charged = payment.amount
       pushNotification({
         category: 'appointment',
-        title: 'Votre rendez-vous est confirmé.',
-        message: `Rendez-vous le ${monthDay(date)} à ${time} avec ${doctor.name}.`,
+        title: t('apt.confirmedToast'),
+        message: t('apt.confirmedToastBody', { date: monthDay(date), time, name: provider.name }),
         link: '/patient/appointments',
       })
-      toast('Rendez-vous confirmé', `Réf. ${appointment.reference} · ${formatAr(charged)}`, 'success')
+      toast(t('apt.confirmedToast'), t('apt.refAmount', { ref: appointment.reference, amount: formatAr(charged) }), 'success')
       setConfirmed({ reference: appointment.reference, price: charged })
       setPaying(false)
       setStep(5)
@@ -161,24 +209,26 @@ export function NewAppointmentPage() {
         <ArrowLeft className="h-4 w-4" /> Retour
       </button>
 
-      <PageHeader title={t('apt.title')} subtitle={doctor.name} />
+      <PageHeader title={t('apt.title')} subtitle={provider.name} />
 
       <div className="mb-6">
         <ProgressTracker steps={stepTitles} />
       </div>
 
       <div className="card flex items-center gap-3 bg-brand-softer p-4">
-        <Avatar name={doctor.name} src={doctor.photo} size="md" />
+        <Avatar name={provider.name} src={provider.photo} size="md" />
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-bold text-ink">{doctor.name}</p>
-          <p className="text-xs text-ink-soft">{doctor.specialty} · {doctor.city}</p>
+          <p className="truncate text-sm font-bold text-ink">{provider.name}</p>
+          <p className="text-xs text-ink-soft">{provider.specialty} · {provider.city}</p>
         </div>
-        <Badge tone="green">{t('doctors.availableToday')}</Badge>
+        {provider.type !== 'doctor' && (
+          <Badge tone="brand">{t(roleLabelKey(provider.type))}</Badge>
+        )}
       </div>
 
       {step === 1 && (
         <section className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
-          {doctor.consultationTypes.map((c) => {
+          {provider.consultationTypes.map((c) => {
             const Icon = consultMeta[c].icon
             const active = type === c
             return (
@@ -195,7 +245,7 @@ export function NewAppointmentPage() {
                 </span>
                 <span className="text-sm font-bold text-ink">{t(consultMeta[c].label)}</span>
                 <span className="text-xs text-ink-soft">{consultMeta[c].desc}</span>
-                <span className="text-sm font-extrabold text-brand-700">{formatAr(c === 'home' ? (doctor.priceHome ?? doctor.price) : doctor.price)}</span>
+                <span className="text-sm font-extrabold text-brand-700">{formatAr(c === 'home' ? (provider.priceHome ?? provider.price) : provider.price)}</span>
               </button>
             )
           })}
@@ -245,7 +295,7 @@ export function NewAppointmentPage() {
           <h2 className="section-title mb-2">{t('apt.chooseTime')}</h2>
           <p className="mb-3 text-sm text-ink-soft">{date ? monthDay(date) : ''}</p>
           <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
-            {doctor.availabilitySlots.map((slot) => {
+            {provider.availabilitySlots.map((slot) => {
               const active = time === slot
               return (
                 <button
@@ -326,7 +376,7 @@ export function NewAppointmentPage() {
 
           <div className="card p-4">
             <div className="flex items-center justify-between text-sm">
-              <span className="text-ink-soft">{t('apt.service')} — {doctor.name}</span>
+              <span className="text-ink-soft">{t('apt.service')} — {provider.name}</span>
               <span className="font-semibold text-ink">{formatAr(price)}</span>
             </div>
             <div className="mt-1.5 flex items-center justify-between text-sm">
@@ -357,7 +407,7 @@ export function NewAppointmentPage() {
       {step === 5 && confirmed && (
         <ConfirmationView
           reference={confirmed.reference}
-          doctorName={doctor.name}
+          doctorName={provider.name}
           details={[
             { label: t('common.date'), value: monthDay(date ?? '') },
             { label: t('common.time'), value: time ?? '' },

@@ -76,6 +76,9 @@ export interface ProviderProfile {
   priceHome?: number
   specialty?: string
   description?: string
+  /** Configured consultation modes, round-tripped by the practice form. */
+  consultationTypes: string[]
+  availabilitySlots: string[]
   needsSetup: boolean
 }
 
@@ -118,6 +121,29 @@ export interface MedicalNgo {
 }
 
 export type ConsultationType = 'cabinet' | 'home' | 'hospital'
+
+/**
+ * The subset of a doctor or practitioner the booking wizard needs.
+ *
+ * Both roles are bookable and both expose consultation modes, a cabinet price
+ * and an optional home-visit price, so the wizard normalises them into this
+ * shape instead of branching on role. `type` is sent to the server, which uses
+ * it to price the booking and derive the location.
+ */
+export interface BookableProvider {
+  type: 'doctor' | Profession
+  id: string
+  name: string
+  photo?: string
+  specialty: string
+  location: string
+  city: string
+  price: number
+  priceHome?: number
+  consultationTypes: ConsultationType[]
+  availabilitySlots: string[]
+  description: string
+}
 
 export interface Doctor {
   id: string
@@ -241,7 +267,8 @@ export interface Appointment {
   reference: string
   patientId: string
   providerId: string
-  providerType: 'doctor' | 'laboratory' | 'imaging' | 'hospital' | 'clinic' | 'nurse'
+  /** The provider's role. Wide enough to cover every bookable provider. */
+  providerType: Role
   providerName: string
   providerPhoto?: string
   type: string

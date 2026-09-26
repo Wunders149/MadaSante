@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { Languages, MapPin, Sparkles, Star } from 'lucide-react'
 import { Badge } from './ui/Badge'
 import { Avatar } from './Avatar'
@@ -9,13 +10,17 @@ import type { Practitioner } from '../types'
 /**
  * One allied-health professional. The profession is shown as a badge because
  * the directory mixes all seven, so it is the first thing a patient scans for.
+ * The whole card links through to the profile, which is where booking happens.
  */
 export function PractitionerCard({ practitioner }: { practitioner: Practitioner }) {
   const { t } = useApp()
-  const { name, specialty, city, price, rating, reviews, photo, services, profession } = practitioner
+  const { name, specialty, city, price, rating, reviews, photo, services, profession, id } = practitioner
 
   return (
-    <article className="card flex flex-col gap-3 p-4 transition-shadow hover:shadow-soft sm:p-5">
+    <Link
+      to={`/patient/professionals/${id}`}
+      className="card flex flex-col gap-3 p-4 transition hover:border-brand-300 hover:shadow-soft sm:p-5"
+    >
       <div className="flex items-start gap-3">
         <Avatar name={name} src={photo} size="md" />
         <div className="min-w-0 flex-1">
@@ -25,10 +30,12 @@ export function PractitionerCard({ practitioner }: { practitioner: Practitioner 
             <MapPin className="h-3.5 w-3.5 shrink-0" /> {city}
           </p>
         </div>
-        <span className="flex shrink-0 items-center gap-1 rounded-lg bg-amber-50 px-2 py-1 text-xs font-bold text-amber-700">
-          <Star className="h-3.5 w-3.5 fill-amber-400" />
-          {Number(rating || 0).toFixed(1)}
-        </span>
+        {rating > 0 && (
+          <span className="flex shrink-0 items-center gap-1 rounded-lg bg-amber-50 px-2 py-1 text-xs font-bold text-amber-700">
+            <Star className="h-3.5 w-3.5 fill-amber-400" />
+            {rating.toFixed(1)}
+          </span>
+        )}
       </div>
 
       <div className="flex flex-wrap gap-1.5">
@@ -54,6 +61,6 @@ export function PractitionerCard({ practitioner }: { practitioner: Practitioner 
           </span>
         )}
       </div>
-    </article>
+    </Link>
   )
 }

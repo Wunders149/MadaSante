@@ -334,6 +334,17 @@ catalogRouter.get('/practitioners', async (req: Request, res: Response) => {
   res.json(rows.map(mapPractitioner))
 })
 
+catalogRouter.get('/practitioners/:id', async (req: Request, res: Response) => {
+  const row = (
+    await db.query('SELECT * FROM practitioners WHERE id = $1', [req.params.id])
+  ).rows[0] as Row | undefined
+  if (!row) {
+    res.status(404).json({ error: 'Not found' })
+    return
+  }
+  res.json(mapPractitioner(row))
+})
+
 catalogRouter.get('/medical-ngos', async (req: Request, res: Response) => {
   const q = like(String(req.query.q ?? ''))
   const city = String(req.query.city ?? '') || undefined

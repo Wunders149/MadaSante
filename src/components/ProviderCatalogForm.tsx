@@ -5,6 +5,7 @@ import { Button } from './ui/Button'
 import { Input, Label, Textarea } from './ui/Field'
 import { ApiError, apiRoutes } from '../lib/api'
 import { useProviderMe } from '../lib/hooks'
+import { supportsConsultationTypes } from '../lib/roles'
 import { useApp } from '../stores/AppStore'
 import { cn } from '../lib/cn'
 import type { ConsultationType } from '../types'
@@ -53,7 +54,12 @@ export function ProviderCatalogForm() {
       priceHome: provider.priceHome != null ? String(provider.priceHome) : '',
       specialty: provider.specialty ?? '',
       description: provider.description ?? '',
-      consultationTypes: ['cabinet'],
+      // Round-trip the configured modes instead of defaulting: overwriting
+      // these with ['cabinet'] on save silently dropped a provider's home
+      // visits, which changes what patients are charged.
+      consultationTypes: (provider.consultationTypes?.length
+        ? provider.consultationTypes
+        : ['cabinet']) as ConsultationType[],
     })
   }, [provider])
 
@@ -82,7 +88,7 @@ export function ProviderCatalogForm() {
         specialty: form.specialty || undefined,
         description: form.description || undefined,
         ...(isPriced ? { price, priceHome } : {}),
-        ...(provider?.role === 'doctor' && form.consultationTypes.length > 0
+        ...(supportsConsultationTypes(provider?.role) && form.consultationTypes.length > 0
           ? { consultationTypes: form.consultationTypes }
           : {}),
       })
@@ -156,6 +162,14 @@ export function ProviderCatalogForm() {
         />
       )}
 
+      {provider?.role !== 'doctor' && provider?.specialty && (
+        <Input
+          label={t('prov.specialty')}
+          value={form.specialty}
+          onChange={(e) => setForm({ ...form, specialty: e.target.value })}
+        />
+      )}
+
       {isPriced && (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
@@ -194,7 +208,7 @@ export function ProviderCatalogForm() {
         </div>
       )}
 
-      {provider?.role === 'doctor' && (
+      {supportsConsultationTypes(provider?.role) && (
         <div>
           <Label>{t('prov.consultTypes')}</Label>
           <div className="mt-1.5 flex flex-wrap gap-2">

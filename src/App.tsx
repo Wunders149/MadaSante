@@ -21,6 +21,7 @@ import {
   HospitalsPage,
   NursesPage,
   PractitionersPage,
+  PractitionerProfilePage,
   MedicalNgosPage,
   AmbulancePage,
   DeliveryPage,
@@ -114,7 +115,11 @@ export function App() {
             <Route path="doctors/:id" element={<DoctorProfilePage />} />
             <Route path="appointments" element={<AppointmentsPage />} />
             <Route path="appointments/new" element={<NewAppointmentPage />} />
+            {/* Legacy doctor-only shape, kept because DoctorCard and
+                DoctorProfilePage link here. */}
             <Route path="appointments/new/:doctorId" element={<NewAppointmentPage />} />
+            {/* Generic shape so any bookable role can enter the same wizard. */}
+            <Route path="appointments/new/:providerType/:providerId" element={<NewAppointmentPage />} />
             <Route path="pharmacies" element={<PharmaciesPage />} />
             <Route path="medicines" element={<MedicinesPage />} />
             <Route path="laboratories" element={<LaboratoriesPage />} />
@@ -122,6 +127,7 @@ export function App() {
             <Route path="hospitals" element={<HospitalsPage />} />
             <Route path="nurses" element={<NursesPage />} />
             <Route path="professionals" element={<PractitionersPage />} />
+            <Route path="professionals/:id" element={<PractitionerProfilePage />} />
             <Route path="ngos" element={<MedicalNgosPage />} />
             <Route path="ambulance" element={<AmbulancePage />} />
             <Route path="delivery" element={<DeliveryPage />} />

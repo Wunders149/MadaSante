@@ -49,3 +49,12 @@ export const PROVIDER_ROLES = [
   ...PROFESSIONS,
   'medical_ngo',
 ] as const
+
+/**
+ * Roles whose catalog record carries a `consultation_types` column, i.e. the
+ * ones a patient can pick cabinet / home / hospital for. Doctors and the
+ * allied-health professions; facilities and NGOs are not booked.
+ */
+export function supportsConsultationTypes(role?: string): boolean {
+  return role === 'doctor' || (!!role && (PROFESSIONS as readonly string[]).includes(role))
+}

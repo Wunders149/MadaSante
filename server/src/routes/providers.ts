@@ -30,6 +30,15 @@ async function fetchProfile(role: string, providerId: string | null) {
   const mapping = PROVIDER_TABLE[role]
   const price = row.price == null ? undefined : Number(row.price)
   const priceHome = row.price_home == null ? undefined : Number(row.price_home)
+  const parseList = (value: unknown): string[] => {
+    if (typeof value !== 'string') return []
+    try {
+      const parsed = JSON.parse(value)
+      return Array.isArray(parsed) ? parsed.map(String) : []
+    } catch {
+      return []
+    }
+  }
   return {
     id: row.id,
     name: row[mapping!.nameCol],
@@ -40,6 +49,11 @@ async function fetchProfile(role: string, providerId: string | null) {
     priceHome,
     specialty: row.specialty ?? undefined,
     description: row.description ?? undefined,
+    // Returned so the practice form can round-trip them. Without this the form
+    // fell back to a hardcoded ['cabinet'] and silently overwrote whatever the
+    // provider had configured — which also changes their home-visit pricing.
+    consultationTypes: parseList(row.consultation_types),
+    availabilitySlots: parseList(row.availability_slots),
     needsSetup: price === 0,
   }
 }

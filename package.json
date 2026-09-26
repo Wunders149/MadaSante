@@ -13,7 +13,8 @@
     "build": "tsc && vite build && npm --prefix server install && npm --prefix server run build",
     "build:server": "npm --prefix server run build",
     "preview": "vite preview",
-    "start": "node server/dist/index.js"
+    "start": "node server/dist/index.js",
+    "seed:demo": "npm --prefix server run seed:demo"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.13",
