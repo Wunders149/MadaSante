@@ -1,6 +1,6 @@
 import { Router, type Request, type Response } from 'express'
 import { z } from 'zod'
-import { db } from '../db.js'
+import { db, boundedInt } from '../db.js'
 import { requireAdmin, requireAuth } from '../auth.js'
 import { createProviderRecord } from '../catalog.js'
 
@@ -181,8 +181,8 @@ adminRouter.patch('/applications/:id', async (req, res) => {
 
 adminRouter.get('/users', async (req: Request, res: Response) => {
   const role = typeof req.query.role === 'string' ? req.query.role : undefined;
-  const page = Math.max(1, Number(req.query.page ?? 1));
-  const limit = Math.min(100, Math.max(1, Number(req.query.limit ?? 50)));
+  const page = boundedInt(req.query.page, 1, 100_000, 1);
+  const limit = boundedInt(req.query.limit, 1, 100, 50);
   const offset = (page - 1) * limit;
   const where: string[] = [];
   const params: unknown[] = [];
@@ -193,7 +193,10 @@ adminRouter.get('/users', async (req: Request, res: Response) => {
   if (role === 'patient') {
     where.push('provider_id IS NULL');
   }
-  params.push(offset, limit);
+  // LIMIT/OFFSET are inlined (via boundedInt) rather than bound: the pooler
+  // silently returns no rows for a statement that carries both as separate bind
+  // parameters. They were also previously pushed to `params` without appearing
+  // in the SQL at all, so this endpoint 500'd on every call.
   const rows = (
     await db.query(
       `SELECT id, first_name, last_name, phone, email, photo, role, location, provider_id, created_at,
@@ -202,14 +205,15 @@ adminRouter.get('/users', async (req: Request, res: Response) => {
         (SELECT COUNT(*) FROM delivery_orders d WHERE d.patient_id = users.id) AS delivery_count
        FROM users
        ${where.length ? 'WHERE ' : ''}${where.join(' AND ')}
-       ORDER BY created_at DESC NULLS LAST, id DESC`,
+       ORDER BY created_at DESC NULLS LAST, id DESC
+       LIMIT ${limit} OFFSET ${offset}`,
       params,
     )
   ).rows as unknown as Array<any>;
   const totalRows = (
     await db.query(
       `SELECT COUNT(*) AS total FROM users ${where.length ? 'WHERE ' : ''}${where.join(' AND ')}`,
-      params.slice(0, -2),
+      params,
     )
   ).rows[0] as { total: string };
   res.json({

@@ -1,7 +1,7 @@
 import { Router } from 'express'
 import type { Request, Response } from 'express'
 import { z } from 'zod'
-import { db } from '../db.js'
+import { db, boundedInt } from '../db.js'
 import { requireAuth, requireProvider } from '../auth.js'
 import { publicUser, type UserRow } from '../helpers.js'
 import { PROVIDER_TABLE, loadProviderRecord } from '../catalog.js'
@@ -136,8 +136,8 @@ const PROVIDER_UNION = `
 
 providersRouterPublic.get('/', async (req: Request, res: Response) => {
   const role = typeof req.query.role === 'string' ? req.query.role : undefined
-  const page = Math.max(1, Number(req.query.page ?? 1))
-  const limit = Math.min(200, Math.max(1, Number(req.query.limit ?? 50)))
+  const page = boundedInt(req.query.page, 1, 100_000, 1)
+  const limit = boundedInt(req.query.limit, 1, 200, 50)
   const offset = (page - 1) * limit
   const where: string[] = []
   const params: unknown[] = []
@@ -161,8 +161,8 @@ providersRouterPublic.get('/', async (req: Request, res: Response) => {
          FROM (${PROVIDER_UNION}) p
         ${whereSql}
         ORDER BY name, id
-        LIMIT $${params.length + 1} OFFSET $${params.length + 2}`,
-      [...params, offset, limit],
+        LIMIT ${limit} OFFSET ${offset}`,
+      params,
     )
   ).rows as Row[]
 

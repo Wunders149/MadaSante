@@ -144,9 +144,10 @@ paymentsRouter.post('/', async (req: Request, res: Response) => {
     client.release()
   }
 
-  res.status(201).json(
-    mapPayment({ ...payment, provider_id: payment.providerId, breakdown: JSON.stringify(payment.breakdown) }),
-  )
+  // Re-read the stored row: mapPayment reads snake_case columns, so mapping the
+  // camelCase literal dropped appointmentId from the response.
+  const stored = (await db.query('SELECT * FROM payments WHERE id = $1', [payment.id])).rows[0] as Row
+  res.status(201).json(mapPayment(stored))
 })
 
 paymentsRouter.get('/summary', async (req: Request, res: Response) => {

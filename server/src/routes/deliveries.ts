@@ -145,5 +145,9 @@ deliveriesRouter.post('/', async (req: Request, res: Response) => {
     client.release()
   }
 
-  res.status(201).json(mapDelivery(order))
+  // Re-read the stored row: mapDelivery reads snake_case columns, so mapping the
+  // camelCase literal returned a response with medicineName, pharmacyName,
+  // deliveryAddress and deliveryFee all empty.
+  const stored = (await db.query('SELECT * FROM delivery_orders WHERE id = $1', [order.id])).rows[0] as Row
+  res.status(201).json(mapDelivery(stored))
 })

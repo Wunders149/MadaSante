@@ -76,5 +76,9 @@ emergencyRouter.post('/', async (req: Request, res: Response) => {
       request.date,
     ],
   )
-  res.status(201).json(mapEmergency(request))
+  // Re-read the stored row: mapEmergency reads snake_case columns, so mapping
+  // the camelCase literal returned a response with patientName, emergencyType
+  // and destinationHospital all empty.
+  const stored = (await db.query('SELECT * FROM emergency_requests WHERE id = $1', [request.id])).rows[0] as Row
+  res.status(201).json(mapEmergency(stored))
 })

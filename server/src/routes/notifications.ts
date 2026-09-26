@@ -64,7 +64,10 @@ notificationsRouter.post('/', async (req: Request, res: Response) => {
       notification.link,
     ],
   )
-  res.status(201).json(mapNotification(notification))
+  // Re-read the stored row: mapNotification reads `created_at`, which the
+  // camelCase literal above does not have, so the response lost its timestamp.
+  const stored = (await db.query('SELECT * FROM notifications WHERE id = ?', [notification.id])).rows[0] as Row
+  res.status(201).json(mapNotification(stored))
 })
 
 notificationsRouter.patch('/:id/read', async (req: Request, res: Response) => {

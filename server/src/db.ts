@@ -27,6 +27,23 @@ export type DbClient = {
   release: (err?: Error | boolean) => void
 }
 
+/**
+ * Coerce a request value to a bounded integer, safe to inline into SQL.
+ *
+ * LIMIT/OFFSET are interpolated rather than bound as parameters because the
+ * Supabase *transaction* pooler (port 6543) mishandles a statement that
+ * carries both as separate bind parameters. Measured against the configured
+ * database: the identical query returned 2 rows with one bind parameter and
+ * 0 rows with three — silently, with no error. Inlining restores correct
+ * behaviour, and because the value is coerced to an integer inside a clamped
+ * range here, there is no injection surface.
+ */
+export function boundedInt(value: unknown, min: number, max: number, fallback: number): number {
+  const n = Math.trunc(Number(value))
+  if (!Number.isFinite(n)) return fallback
+  return Math.min(max, Math.max(min, n))
+}
+
 export const db = {
   query: (text: string, params: unknown[] = []) => pool.query(toPgSql(text), params),
   connect: async (): Promise<DbClient> => {

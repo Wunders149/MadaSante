@@ -170,7 +170,12 @@ appointmentsRouter.post('/', async (req: Request, res: Response) => {
       appointment.paymentStatus,
     ],
   )
-  res.status(201).json(mapAppointment({ ...appointment, provider_photo: appointment.providerPhoto }))
+  // Re-read the stored row rather than echoing the in-memory object: the
+  // mappers read snake_case columns, so mapping the camelCase literal returned
+  // a response with providerName/providerType/basePrice/paymentStatus all
+  // empty, and the client renders that straight into the appointments list.
+  const stored = (await db.query('SELECT * FROM appointments WHERE id = ?', [appointment.id])).rows[0] as Row
+  res.status(201).json(mapAppointment(stored))
 })
 
 /**
