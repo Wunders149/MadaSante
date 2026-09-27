@@ -103,6 +103,7 @@ export function ProviderAppointmentsPage() {
         open={!!open}
         onClose={() => setOpenId(undefined)}
         title={t('apt.detailsTitle')}
+        centered
         footer={
           <div className="flex flex-wrap items-center justify-between gap-2">
             <Badge tone="brand">{open?.reference}</Badge>

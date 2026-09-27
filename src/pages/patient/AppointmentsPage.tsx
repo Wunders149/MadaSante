@@ -75,6 +75,7 @@ export function AppointmentsPage() {
         open={!!selected}
         onClose={() => setSelected(null)}
         title={selected ? selected.providerName : ''}
+        centered
       >
         {selected && (
           <div className="space-y-4">
