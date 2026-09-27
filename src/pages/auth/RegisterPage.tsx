@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { Building2, ShieldCheck, UserPlus } from 'lucide-react'
 import { AuthShell, RoleTabs } from './shared'
 import { Button } from '../../components/ui/Button'
-import { Input, Select } from '../../components/ui/Field'
+import { Input, PasswordInput, Select } from '../../components/ui/Field'
 import { useApp } from '../../stores/AppStore'
 import { useAuth } from '../../stores/AuthStore'
 import { CITIES } from '../../lib/constants'
@@ -76,16 +76,23 @@ export function RegisterPage() {
               <option key={c} value={c}>{c}</option>
             ))}
           </Select>
-          <div className="grid grid-cols-2 gap-3">
-            <Input label={t('auth.password')} type="password" value={form.password} onChange={set('password')} required />
-            <Input
-              label={t('auth.passwordConfirm')}
-              type="password"
-              value={form.passwordConfirm}
-              onChange={set('passwordConfirm')}
-              required
-            />
-          </div>
+          {/* Full-width pair: a strength meter and a match line cannot be
+              read in a half-width column. */}
+          <PasswordInput
+            label={t('auth.password')}
+            value={form.password}
+            onChange={set('password')}
+            required
+            autoComplete="new-password"
+          />
+          <PasswordInput
+            label={t('auth.passwordConfirm')}
+            value={form.passwordConfirm}
+            onChange={set('passwordConfirm')}
+            required
+            autoComplete="new-password"
+            compareTo={form.password}
+          />
 
           {error && <p className="rounded-xl bg-red-50 px-3 py-2 text-sm font-semibold text-red-600">{error}</p>}
 

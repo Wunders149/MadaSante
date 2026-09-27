@@ -723,4 +723,15 @@ export const mg: Record<string, string> = {
   'misc.today': 'Androany',
   'misc.tomorrow': 'Rahampitso',
   'misc.emergencyIndicator': 'Serisy vonjy',
+
+  // Password field
+  'ui.pw.show': 'Aseho ny tenimiafina',
+  'ui.pw.hide': 'Vafina ny tenimiafina',
+  'ui.pw.hint': 'Litera 6 farafahakeliny — sora-baventy, sora-kambany ary isa no mahamafy azy.',
+  'ui.pw.weak': 'Malemy',
+  'ui.pw.fair': 'Antonony',
+  'ui.pw.good': 'Tsara',
+  'ui.pw.strong': 'Mafy',
+  'ui.pw.match': 'Mifanaraka ny tenimiafina',
+  'ui.pw.mismatch': 'Tsy mifanaraka ny tenimiafina',
 }

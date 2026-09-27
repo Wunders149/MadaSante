@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { KeyRound, Save } from 'lucide-react'
 import { Button } from './ui/Button'
-import { Input } from './ui/Field'
+import { PasswordInput } from './ui/Field'
 import { useApp } from '../stores/AppStore'
 import { apiRoutes } from '../lib/api'
 
@@ -44,26 +44,27 @@ export function PasswordChange() {
         <h3 className="text-base font-bold text-ink">{t('profile.passwordSection')}</h3>
       </div>
       <div className="space-y-4">
-        <Input
-          type="password"
+        <PasswordInput
           label={t('profile.currentPassword')}
           value={current}
           autoComplete="current-password"
           onChange={(e) => setCurrent(e.target.value)}
+          // An existing password has no strength to build; only the toggle.
+          showMeter={false}
+          showHint={false}
         />
-        <Input
-          type="password"
+        <PasswordInput
           label={t('profile.newPassword')}
           value={next}
           autoComplete="new-password"
           onChange={(e) => setNext(e.target.value)}
         />
-        <Input
-          type="password"
+        <PasswordInput
           label={t('profile.passwordConfirm')}
           value={confirm}
           autoComplete="new-password"
           onChange={(e) => setConfirm(e.target.value)}
+          compareTo={next}
         />
         <Button fullWidth loading={saving} onClick={submit}>
           <Save className="h-4 w-4" /> {t('common.save')}

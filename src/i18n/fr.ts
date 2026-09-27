@@ -727,4 +727,15 @@ export const fr: Record<string, string> = {
   'misc.today': 'Aujourd’hui',
   'misc.tomorrow': 'Demain',
   'misc.emergencyIndicator': 'Service d’urgence',
+
+  // Password field
+  'ui.pw.show': 'Afficher le mot de passe',
+  'ui.pw.hide': 'Masquer le mot de passe',
+  'ui.pw.hint': '6 caractères minimum — majuscule, minuscule et chiffre le rendent plus robuste.',
+  'ui.pw.weak': 'Faible',
+  'ui.pw.fair': 'Moyen',
+  'ui.pw.good': 'Bon',
+  'ui.pw.strong': 'Fort',
+  'ui.pw.match': 'Les mots de passe correspondent',
+  'ui.pw.mismatch': 'Les mots de passe ne correspondent pas',
 }

@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { KeyRound, ShieldCheck } from 'lucide-react'
 import { AuthShell, RoleTabs } from './shared'
 import { Button } from '../../components/ui/Button'
-import { Input, Select } from '../../components/ui/Field'
+import { Input, PasswordInput, Select } from '../../components/ui/Field'
 import { useApp } from '../../stores/AppStore'
 import { useAuth } from '../../stores/AuthStore'
 import { roleLabelKey, PROVIDER_ROLES } from '../../lib/roles'
@@ -49,12 +49,14 @@ export function LoginPage() {
           onChange={(e) => setEmail(e.target.value)}
           autoComplete="email"
         />
-        <Input
+        <PasswordInput
           label={t('auth.password')}
-          type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           autoComplete="current-password"
+          // An existing password has no strength to build; only the toggle.
+          showMeter={false}
+          showHint={false}
         />
 
         {tab === 'provider' && (

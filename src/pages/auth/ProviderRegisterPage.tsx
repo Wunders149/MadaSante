@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { FileUp, ShieldCheck, X } from 'lucide-react'
 import { AuthShell } from './shared'
 import { Button } from '../../components/ui/Button'
-import { Input, Select } from '../../components/ui/Field'
+import { Input, PasswordInput, Select } from '../../components/ui/Field'
 import { useApp } from '../../stores/AppStore'
 import { apiRoutes } from '../../lib/api'
 import { CITIES } from '../../lib/constants'
@@ -141,16 +141,23 @@ export function ProviderRegisterPage() {
           <Input label={t('reg.location')} value={form.location} onChange={set('location')} placeholder="Analakely, Antananarivo 101" required />
         </div>
         <Input label={t('reg.licenseNumber')} value={form.licenseNumber} onChange={set('licenseNumber')} placeholder="MED-2024-12345" required />
-        <div className="grid grid-cols-2 gap-3">
-          <Input label={t('auth.password')} type="password" value={form.password} onChange={set('password')} required />
-          <Input
-            label={t('auth.passwordConfirm')}
-            type="password"
-            value={form.passwordConfirm}
-            onChange={set('passwordConfirm')}
-            required
-          />
-        </div>
+        {/* Full-width pair: a strength meter and a match line cannot be read
+            in a half-width column. */}
+        <PasswordInput
+          label={t('auth.password')}
+          value={form.password}
+          onChange={set('password')}
+          required
+          autoComplete="new-password"
+        />
+        <PasswordInput
+          label={t('auth.passwordConfirm')}
+          value={form.passwordConfirm}
+          onChange={set('passwordConfirm')}
+          required
+          autoComplete="new-password"
+          compareTo={form.password}
+        />
 
         <div className="rounded-2xl border border-line bg-card p-4">
           <p className="mb-2 text-sm font-semibold text-ink">{t('reg.documents')}</p>

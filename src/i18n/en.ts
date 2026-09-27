@@ -701,4 +701,15 @@ export const en: Record<string, string> = {
   'misc.today': 'Today',
   'misc.tomorrow': 'Tomorrow',
   'misc.emergencyIndicator': 'Emergency service',
+
+  // Password field
+  'ui.pw.show': 'Show password',
+  'ui.pw.hide': 'Hide password',
+  'ui.pw.hint': 'At least 6 characters — upper case, lower case and a digit make it stronger.',
+  'ui.pw.weak': 'Weak',
+  'ui.pw.fair': 'Fair',
+  'ui.pw.good': 'Good',
+  'ui.pw.strong': 'Strong',
+  'ui.pw.match': 'Passwords match',
+  'ui.pw.mismatch': 'Passwords don’t match',
 }
