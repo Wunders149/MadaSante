@@ -13,6 +13,12 @@ interface Props {
   hideClose?: boolean
   /** Accessible name for the close control. */
   closeLabel?: string
+  /**
+   * Center the dialog vertically at every width. Bottom sheets read well for
+   * content-heavy dialogs, but a small yes/no confirmation floats better in
+   * the middle of the screen (iOS alerts, Material dialogs).
+   */
+  centered?: boolean
 }
 
 const sizes = {
@@ -25,7 +31,7 @@ const sizes = {
 const FOCUSABLE =
   'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
 
-export function Modal({ open, onClose, title, children, footer, size = 'md', hideClose, closeLabel = 'Fermer' }: Props) {
+export function Modal({ open, onClose, title, children, footer, size = 'md', hideClose, closeLabel = 'Fermer', centered = false }: Props) {
   const panelRef = useRef<HTMLDivElement>(null)
 
   // Escape to dismiss, a scroll lock on the page behind, and a focus trap.
@@ -77,7 +83,12 @@ export function Modal({ open, onClose, title, children, footer, size = 'md', hid
 
   if (!open) return null
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center">
+    <div
+      className={cn(
+        'fixed inset-0 z-50 flex justify-center',
+        centered ? 'items-center' : 'items-end sm:items-center',
+      )}
+    >
       <button
         aria-label={closeLabel}
         className="absolute inset-0 bg-ink/40 backdrop-blur-[2px] animate-fade-in"
@@ -90,7 +101,8 @@ export function Modal({ open, onClose, title, children, footer, size = 'md', hid
         aria-modal="true"
         tabIndex={-1}
         className={cn(
-          'relative flex max-h-[92vh] w-full flex-col overflow-hidden rounded-t-2xl bg-card shadow-lifted animate-fade-up outline-none sm:rounded-2xl',
+          'relative flex max-h-[92vh] w-full flex-col overflow-hidden bg-card shadow-lifted animate-fade-up outline-none',
+          centered ? 'rounded-2xl' : 'rounded-t-2xl sm:rounded-2xl',
           sizes[size],
         )}
       >

@@ -31,6 +31,9 @@ export function ConfirmationModal({
       onClose={onClose}
       title={title}
       size="sm"
+      // A yes/no prompt is small enough to read at a glance, so it floats in
+      // the middle of the screen instead of docking as a bottom sheet.
+      centered
       footer={
         <div className="flex justify-end gap-2">
           <Button variant="outline" onClick={onClose} disabled={loading}>
