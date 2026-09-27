@@ -12,39 +12,43 @@ const items = [
 
 export function BottomNav() {
   const { t } = useApp()
+  // Same floating pill treatment as the provider/admin MobileNav, so all
+  // three areas share one mobile navigation language.
   return (
     <nav
-      className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-card pb-[env(safe-area-inset-bottom)] lg:hidden"
+      className="pointer-events-none fixed inset-x-0 bottom-0 z-40 lg:hidden"
       aria-label="Navigation mobile"
     >
-      <div className="grid grid-cols-4">
-        {items.map((item) => (
-          <NavLink
-            key={item.to}
-            to={item.to}
-            end={item.end}
-            className={({ isActive }) =>
-              cn(
-                'flex flex-col items-center gap-1 py-2.5 text-[11px] font-semibold transition-colors',
-                isActive ? 'text-brand-700' : 'text-ink-faint',
-              )
-            }
-          >
-            {({ isActive }) => (
-              <>
-                <span
-                  className={cn(
-                    'grid h-8 w-12 place-items-center rounded-full transition-colors',
-                    isActive && 'bg-brand-50',
-                  )}
-                >
-                  <item.icon className="h-5.5 w-5.5" />
-                </span>
-                {t(item.label)}
-              </>
-            )}
-          </NavLink>
-        ))}
+      <div className="mx-auto max-w-lg px-4 pb-[calc(env(safe-area-inset-bottom)+0.875rem)]">
+        <div className="pointer-events-auto flex items-stretch gap-1 rounded-[1.75rem] border border-line bg-card/90 p-1.5 shadow-lifted backdrop-blur-xl">
+          {items.map((item) => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              end={item.end}
+              className={({ isActive }) =>
+                cn(
+                  'flex min-w-0 flex-1 flex-col items-center gap-0.5 rounded-2xl px-1 py-1.5 text-[11px] font-semibold transition-colors',
+                  isActive ? 'bg-brand-50 text-brand-700' : 'text-ink-faint hover:text-ink-soft',
+                )
+              }
+            >
+              {({ isActive }) => (
+                <>
+                  <span
+                    className={cn(
+                      'grid h-8 w-12 place-items-center rounded-full transition-colors',
+                      isActive && 'bg-white shadow-sm',
+                    )}
+                  >
+                    <item.icon className="h-5 w-5" />
+                  </span>
+                  <span className="truncate">{t(item.label)}</span>
+                </>
+              )}
+            </NavLink>
+          ))}
+        </div>
       </div>
     </nav>
   )

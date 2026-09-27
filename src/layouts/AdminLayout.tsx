@@ -52,7 +52,7 @@ export function AdminLayout() {
             </div>
           </div>
         </header>
-        <main className="px-4 pb-48 sm:px-6 lg:px-8 lg:pb-10">
+        <main className="px-4 pb-36 sm:px-6 lg:px-8 lg:pb-10">
           <Outlet />
         </main>
       </div>

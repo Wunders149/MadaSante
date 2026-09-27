@@ -65,7 +65,10 @@ export function ProviderLayout() {
           <div className="flex items-center justify-between px-8 py-4">
             <div>
               <h1 className="text-lg font-bold tracking-tight text-ink">{t('prov.title')}</h1>
-              <p className="text-xs text-ink-faint">{roleName}</p>
+              {/* Descriptive subtitle, matching the admin header. The role is
+                  already shown in the badge on the right; printing it here too
+                  read as a rendering glitch. */}
+              <p className="text-xs text-ink-faint">{t('prov.subtitle')}</p>
             </div>
             <div className="flex items-center gap-3">
               <span className="hidden rounded-full bg-brand-50 px-3 py-1 text-xs font-bold text-brand-700 sm:inline">
@@ -75,7 +78,7 @@ export function ProviderLayout() {
             </div>
           </div>
         </header>
-        <main className="px-4 pb-48 sm:px-6 lg:px-8 lg:pb-10">
+        <main className="px-4 pb-36 sm:px-6 lg:px-8 lg:pb-10">
           <Outlet />
         </main>
       </div>

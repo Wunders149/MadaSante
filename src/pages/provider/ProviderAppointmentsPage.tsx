@@ -128,7 +128,7 @@ export function ProviderAppointmentsPage() {
           <p className="font-semibold text-ink">{open?.providerName}</p>
           <p className="text-ink-soft">{open?.type}</p>
           <div className="rounded-xl bg-surface-soft px-3 py-2 text-ink-soft">
-            <p>{monthDay(open?.date ?? '')} à {open?.time}</p>
+            <p>{monthDay(open?.date ?? '')} {t('common.at')} {open?.time}</p>
             <p className="mt-1 flex items-center gap-1.5">
               <MapPin className="h-4 w-4 text-brand-600" /> {open?.location}
             </p>

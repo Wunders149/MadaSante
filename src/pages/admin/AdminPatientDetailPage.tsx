@@ -195,7 +195,7 @@ export function AdminPatientDetailPage() {
                     key={p.id}
                     icon={<CreditCard className="h-4 w-4" />}
                     primary={`${p.service} · ${p.provider_name}`}
-                    secondary={`${formatDateShort(p.date)} · ${p.method} · ${p.reference}`}
+                    secondary={`${formatDateShort(p.date)} · ${t(p.method === 'orange_money' ? 'pay.method.orange' : 'pay.method.mvola')} · ${p.reference}`}
                     right={
                       <div className="flex shrink-0 flex-col items-end gap-1">
                         <span className="text-sm font-bold text-ink">{formatAr(p.amount)}</span>

@@ -142,6 +142,7 @@ export const en: Record<string, string> = {
   'common.pagination': 'Pagination',
   'common.previous': 'Previous',
   'common.pageOf': 'Page {page} of {totalPages}',
+  'common.at': 'at',
   'common.email': 'Email',
   'common.save': 'Save',
   'common.retry': 'Retry',

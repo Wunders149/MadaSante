@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from 'react-router-dom'
-import { CalendarDays, ClipboardCheck, Home, LogOut, User, Users } from 'lucide-react'
+import { CalendarDays, ClipboardCheck, Home, User, Users } from 'lucide-react'
 import { Logo } from '../Logo'
 import { Avatar } from '../Avatar'
 import { LangSwitch } from '../LangSwitch'
@@ -36,7 +36,7 @@ interface Props {
 
 export function MobileNav({ area }: Props) {
   const { t } = useApp()
-  const { user, logout } = useAuth()
+  const { user } = useAuth()
   const navigate = useNavigate()
   const items = AREA_ITEMS[area]
 
@@ -59,52 +59,48 @@ export function MobileNav({ area }: Props) {
         </div>
       </header>
 
-      {/* Mobile bottom nav */}
+      {/* Floating pill bar. The nav itself is pointer-transparent so page
+          content behind the gutters stays clickable; the pill re-enables
+          pointer events. Logout is deliberately not in the bar: it lives on
+          the Profile tab behind a confirmation dialog, matching desktop. */}
       <nav
-        className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-card pb-[env(safe-area-inset-bottom)] lg:hidden"
-        aria-label={t('prov.title')}
+        className="pointer-events-none fixed inset-x-0 bottom-0 z-40 lg:hidden"
+        aria-label={t(area === 'admin' ? 'admin.title' : 'prov.title')}
       >
-        <div className={cn('grid', items.length === 2 ? 'grid-cols-2' : 'grid-cols-4')}>
-          {items.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end={item.end}
-              className={({ isActive }) =>
-                cn(
-                  'flex flex-col items-center gap-1 py-2.5 text-[11px] font-semibold transition-colors',
-                  isActive ? 'text-brand-700' : 'text-ink-faint',
-                )
-              }
-            >
-              {({ isActive }) => (
-                <>
-                  {/* No notification badge here: the unread count belongs to
-                      notifications, and neither area has a notifications
-                      screen, so badging "Requests" with it was misleading. */}
-                  <span
-                    className={cn(
-                      'grid h-8 w-12 place-items-center rounded-full transition-colors',
-                      isActive && 'bg-brand-50',
-                    )}
-                  >
-                    <item.icon className="h-5.5 w-5.5" />
-                  </span>
-                  {t(item.label)}
-                </>
-              )}
-            </NavLink>
-          ))}
+        <div className="mx-auto max-w-lg px-4 pb-[calc(env(safe-area-inset-bottom)+0.875rem)]">
+          <div className="pointer-events-auto flex items-stretch gap-1 rounded-[1.75rem] border border-line bg-card/90 p-1.5 shadow-lifted backdrop-blur-xl">
+            {items.map((item) => (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                end={item.end}
+                className={({ isActive }) =>
+                  cn(
+                    'flex min-w-0 flex-1 flex-col items-center gap-0.5 rounded-2xl px-1 py-1.5 text-[11px] font-semibold transition-colors',
+                    isActive ? 'bg-brand-50 text-brand-700' : 'text-ink-faint hover:text-ink-soft',
+                  )
+                }
+              >
+                {({ isActive }) => (
+                  <>
+                    {/* No per-item badge: the unread count belongs to
+                        notifications, and neither area has a notifications
+                        screen, so badging "Requests" with it would mislead. */}
+                    <span
+                      className={cn(
+                        'grid h-8 w-12 place-items-center rounded-full transition-colors',
+                        isActive && 'bg-white shadow-sm',
+                      )}
+                    >
+                      <item.icon className="h-5 w-5" />
+                    </span>
+                    <span className="truncate">{t(item.label)}</span>
+                  </>
+                )}
+              </NavLink>
+            ))}
+          </div>
         </div>
-        <button
-          onClick={() => {
-            logout()
-            navigate('/login')
-          }}
-          className="flex w-full items-center justify-center gap-2 border-t border-line py-2 text-xs font-semibold text-ink-faint transition-colors hover:text-red-600"
-        >
-          <LogOut className="h-4 w-4" /> {t('nav.logout')}
-        </button>
       </nav>
     </>
   )

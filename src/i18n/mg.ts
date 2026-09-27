@@ -145,6 +145,7 @@ export const mg: Record<string, string> = {
   'common.pagination': 'Pejy',
   'common.previous': 'Teo aloha',
   'common.pageOf': 'Pejy {page} amin’ny {totalPages}',
+  'common.at': 'amin’ny',
   'common.email': 'Mailaka',
   'common.save': 'Tehirizina',
   'common.retry': 'Andramo indray',

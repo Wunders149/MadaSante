@@ -4,8 +4,10 @@ import { cn } from '../../lib/cn'
 
 export function ToastHost() {
   const { toasts, dismissToast } = useApp()
+  // Cleared above the floating pill bar on mobile/tablet (visible up to lg);
+  // desktop anchors near the bottom edge.
   return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-20 z-[70] flex flex-col items-center gap-2 px-4 sm:bottom-6">
+    <div className="pointer-events-none fixed inset-x-0 bottom-32 z-[70] flex flex-col items-center gap-2 px-4 lg:bottom-6">
       {toasts.map((toast) => (
         <div
           key={toast.id}
