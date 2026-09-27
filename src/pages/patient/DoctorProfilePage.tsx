@@ -162,7 +162,9 @@ export function DoctorProfilePage() {
         </div>
       </div>
 
-      <Modal open={showContact} onClose={() => setShowContact(false)} title={doctor.name} size="sm">
+      {/* Small action popup: centered like the confirmation dialogs rather
+          than docked as a sheet. */}
+      <Modal open={showContact} onClose={() => setShowContact(false)} title={doctor.name} size="sm" centered>
         <div className="space-y-3">
           <a href="tel:+26133111000" className="card flex items-center gap-3 p-4 transition hover:border-brand-300">
             <span className="grid h-10 w-10 place-items-center rounded-xl bg-brand-50 text-brand-700">

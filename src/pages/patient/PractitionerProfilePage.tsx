@@ -163,11 +163,14 @@ export function PractitionerProfilePage() {
         </aside>
       </div>
 
+      {/* Small info popup: centered like the confirmation dialogs rather
+          than docked as a sheet. */}
       <Modal
         open={contactOpen}
         onClose={() => setContactOpen(false)}
         title={t('prac.contactTitle', { name: practitioner.name })}
         size="sm"
+        centered
         closeLabel={t('common.close')}
         footer={
           <Button variant="outline" onClick={() => setContactOpen(false)} className="w-full">

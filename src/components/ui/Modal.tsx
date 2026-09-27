@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import type { ReactNode } from 'react'
 import { X } from 'lucide-react'
+import { useApp } from '../../stores/AppStore'
 import { cn } from '../../lib/cn'
 
 interface Props {
@@ -31,8 +32,12 @@ const sizes = {
 const FOCUSABLE =
   'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
 
-export function Modal({ open, onClose, title, children, footer, size = 'md', hideClose, closeLabel = 'Fermer', centered = false }: Props) {
+export function Modal({ open, onClose, title, children, footer, size = 'md', hideClose, closeLabel, centered = false }: Props) {
+  const { t } = useApp()
   const panelRef = useRef<HTMLDivElement>(null)
+  // Default aria label follows the active language; 'Fermer' was hardcoded
+  // before, which leaked French into the accessibility tree for EN/MG users.
+  const resolvedCloseLabel = closeLabel ?? t('common.close')
 
   // Escape to dismiss, a scroll lock on the page behind, and a focus trap.
   // Without the trap, Tab walks out of the dialog into the dimmed content
@@ -90,7 +95,7 @@ export function Modal({ open, onClose, title, children, footer, size = 'md', hid
       )}
     >
       <button
-        aria-label={closeLabel}
+        aria-label={resolvedCloseLabel}
         className="absolute inset-0 bg-ink/40 backdrop-blur-[2px] animate-fade-in"
         onClick={onClose}
         tabIndex={-1}
@@ -112,7 +117,7 @@ export function Modal({ open, onClose, title, children, footer, size = 'md', hid
             <button
               onClick={onClose}
               className="grid h-9 w-9 place-items-center rounded-full text-ink-soft transition hover:bg-gray-100"
-              aria-label={closeLabel}
+              aria-label={resolvedCloseLabel}
             >
               <X className="h-5 w-5" />
             </button>

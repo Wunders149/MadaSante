@@ -109,7 +109,9 @@ export function HospitalCard({ hospital }: { hospital: Hospital }) {
         </div>
       </Modal>
 
-      <Modal open={showContact} onClose={() => setShowContact(false)} title={hospital.name} size="sm">
+      {/* Small action popup: centered like the confirmation dialogs rather
+          than docked as a sheet. */}
+      <Modal open={showContact} onClose={() => setShowContact(false)} title={hospital.name} size="sm" centered>
         <div className="space-y-3">
           <a
             href={`tel:${hospital.phone.replace(/\s/g, '')}`}
