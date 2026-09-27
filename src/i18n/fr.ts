@@ -731,7 +731,7 @@ export const fr: Record<string, string> = {
   // Password field
   'ui.pw.show': 'Afficher le mot de passe',
   'ui.pw.hide': 'Masquer le mot de passe',
-  'ui.pw.hint': '6 caractères minimum — majuscule, minuscule et chiffre le rendent plus robuste.',
+  'ui.pw.hint': '6 caractères minimum, avec au moins une majuscule et un chiffre.',
   'ui.pw.weak': 'Faible',
   'ui.pw.fair': 'Moyen',
   'ui.pw.good': 'Bon',

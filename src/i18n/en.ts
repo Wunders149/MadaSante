@@ -705,7 +705,7 @@ export const en: Record<string, string> = {
   // Password field
   'ui.pw.show': 'Show password',
   'ui.pw.hide': 'Hide password',
-  'ui.pw.hint': 'At least 6 characters — upper case, lower case and a digit make it stronger.',
+  'ui.pw.hint': 'At least 6 characters, with at least one upper case letter and a digit.',
   'ui.pw.weak': 'Weak',
   'ui.pw.fair': 'Fair',
   'ui.pw.good': 'Good',

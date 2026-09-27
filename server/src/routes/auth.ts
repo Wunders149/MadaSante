@@ -4,7 +4,7 @@ import { z } from 'zod'
 import { db } from '../db.js'
 import { requireAuth, signToken } from '../auth.js'
 import { rateLimit } from '../rateLimit.js'
-import { isProviderRole, PROVIDER_ROLES, publicUser, uniqueId, type UserRow } from '../helpers.js'
+import { isProviderRole, PROVIDER_ROLES, publicUser, uniqueId, passwordSchema, type UserRow } from '../helpers.js'
 
 export const authRouter = Router()
 
@@ -56,7 +56,7 @@ const registerSchema = z.object({
   lastName: z.string().min(1),
   phone: z.string().min(5),
   email: z.string().email(),
-  password: z.string().min(6),
+  password: passwordSchema,
   role: z.string(),
   location: z.string().min(1),
 })
@@ -140,7 +140,7 @@ const providerRegisterSchema = z.object({
   location: z.string().min(2),
   city: z.string().min(1),
   licenseNumber: z.string().min(3),
-  password: z.string().min(6),
+  password: passwordSchema,
   documents: z.array(documentSchema).min(1).max(3),
 })
 
@@ -285,13 +285,15 @@ authRouter.put('/me', requireAuth, async (req, res) => {
 
 const changePasswordSchema = z.object({
   currentPassword: z.string().min(1),
-  newPassword: z.string().min(6),
+  newPassword: passwordSchema,
 })
 
 authRouter.put('/me/password', requireAuth, passwordLimiter, async (req, res) => {
   const parsed = changePasswordSchema.safeParse(req.body)
   if (!parsed.success) {
-    res.status(400).json({ error: 'Le nouveau mot de passe doit contenir au moins 6 caractères' })
+    // Surface the policy's first unmet rule, not a generic message — the
+    // client shows exactly this string in its error toast.
+    res.status(400).json({ error: parsed.error.issues[0]?.message ?? 'Le nouveau mot de passe ne respecte pas la politique de sécurité' })
     return
   }
   const row = (await db.query('SELECT * FROM users WHERE id = $1', [req.auth!.id])).rows[0] as UserRow | undefined

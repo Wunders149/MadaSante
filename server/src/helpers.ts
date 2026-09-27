@@ -1,3 +1,5 @@
+import { z } from 'zod'
+
 export function generateReference(prefix: string): string {
   const year = new Date().getFullYear()
   const random = Math.floor(1000 + Math.random() * 9000)
@@ -85,6 +87,20 @@ export function isProviderRole(role: string): boolean {
 export function isPractitionerRole(role: string): boolean {
   return (PRACTITIONER_ROLES as readonly string[]).includes(role)
 }
+
+/**
+ * Password policy, shared by patient registration, provider applications and
+ * password changes. Mirrors what the client's PasswordInput strength meter
+ * promises: at least 6 characters with an upper case letter and a digit, so
+ * the UI never invites a password the server will refuse (and vice versa).
+ */
+export const PASSWORD_MIN_LENGTH = 6
+
+export const passwordSchema = z
+  .string()
+  .min(PASSWORD_MIN_LENGTH, `Le mot de passe doit contenir au moins ${PASSWORD_MIN_LENGTH} caractères`)
+  .regex(/[A-Z]/, 'Le mot de passe doit contenir au moins une majuscule')
+  .regex(/\d/, 'Le mot de passe doit contenir au moins un chiffre')
 
 /** A neutral default specialty so a new record is not blank on first save. */
 export const PROFESSION_SPECIALTY: Record<string, string> = {
