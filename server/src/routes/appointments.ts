@@ -14,6 +14,8 @@ import {
   locationFor,
   platformFeeFor,
 } from '../catalog.js'
+import { emitToUser, emitToProviders } from '../realtime.js'
+import { createNotification } from '../payments.js'
 
 export const appointmentsRouter = Router()
 appointmentsRouter.use(requireAuth)
@@ -191,7 +193,22 @@ appointmentsRouter.post('/', async (req: Request, res: Response) => {
   // a response with providerName/providerType/basePrice/paymentStatus all
   // empty, and the client renders that straight into the appointments list.
   const stored = (await db.query('SELECT * FROM appointments WHERE id = ?', [appointment.id])).rows[0] as Row
-  res.status(201).json(mapAppointment(stored))
+  const mapped = mapAppointment(stored)
+  
+  // Emit real-time events
+  emitToUser(appointment.patientId, 'appointment.created', mapped)
+  emitToProviders('appointment.new', mapped)
+  
+  // Create notification for the provider
+  await createNotification({
+    userId: appointment.patientId,
+    title: 'Rendez-vous confirmé',
+    message: `Votre rendez-vous avec ${providerName} est confirmé pour le ${appointment.date} à ${appointment.time}.`,
+    category: 'appointment',
+    link: '/patient/appointments',
+  })
+  
+  res.status(201).json(mapped)
 })
 
 /**
@@ -233,5 +250,30 @@ appointmentsRouter.patch('/:id/status', async (req: Request, res: Response) => {
 
   await db.query('UPDATE appointments SET status = ? WHERE id = ?', [next, req.params.id])
   const updated = (await db.query('SELECT * FROM appointments WHERE id = ?', [req.params.id])).rows[0] as Row
-  res.json(mapAppointment(updated))
+  const mapped = mapAppointment(updated)
+  
+  // Emit real-time events
+  emitToUser(String(row.patient_id), 'appointment.updated', mapped)
+  emitToProviders('appointment.updated', mapped)
+  
+  // Create notification for status changes
+  if (next === 'confirmed' && current === 'pending') {
+    await createNotification({
+      userId: String(row.patient_id),
+      title: 'Rendez-vous accepté',
+      message: `Votre rendez-vous avec ${String(row.provider_name)} a été accepté.`,
+      category: 'appointment',
+      link: '/patient/appointments',
+    })
+  } else if (next === 'cancelled') {
+    await createNotification({
+      userId: String(row.patient_id),
+      title: 'Rendez-vous annulé',
+      message: `Votre rendez-vous avec ${String(row.provider_name)} a été annulé.`,
+      category: 'appointment',
+      link: '/patient/appointments',
+    })
+  }
+  
+  res.json(mapped)
 })

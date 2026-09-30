@@ -14,6 +14,15 @@ import type {
 import { apiRoutes } from '../lib/api'
 import { useAuth } from './AuthStore'
 import { translate } from '../i18n'
+import {
+  initSocket,
+  disconnectSocket,
+  onAppointmentUpdated,
+  onEmergencyUpdated,
+  onDeliveryUpdated,
+  onPaymentUpdated,
+  onNotificationCreated,
+} from '../lib/socket'
 
 export interface Toast {
   id: string
@@ -104,7 +113,7 @@ const EMPTY = {
 }
 
 export function AppProvider({ children }: { children: ReactNode }) {
-  const { user } = useAuth()
+  const { user, accessToken: token } = useAuth()
   const [lang, setLangState] = useState<Lang>(() => {
     const saved = localStorage.getItem('ms_lang')
     return saved === 'mg' || saved === 'en' ? saved : 'fr'
@@ -124,6 +133,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!user) {
       setData(EMPTY)
+      disconnectSocket()
       return
     }
     let cancelled = false
@@ -142,10 +152,58 @@ export function AppProvider({ children }: { children: ReactNode }) {
         if (cancelled) return
         setData(EMPTY)
       })
+
+    // Initialize Socket.IO for real-time updates
+    if (token) {
+      initSocket(token)
+      
+      // Listen for appointment updates
+      onAppointmentUpdated((updated) => {
+        setData((prev) => ({
+          ...prev,
+          appointments: prev.appointments.map((a) => (a.id === updated.id ? updated : a)),
+        }))
+      })
+
+      // Listen for emergency updates
+      onEmergencyUpdated((updated) => {
+        setData((prev) => ({
+          ...prev,
+          emergencyRequests: prev.emergencyRequests.map((e) => (e.id === updated.id ? updated : e)),
+        }))
+      })
+
+      // Listen for delivery updates
+      onDeliveryUpdated((updated) => {
+        setData((prev) => ({
+          ...prev,
+          deliveries: prev.deliveries.map((d) => (d.id === updated.id ? updated : d)),
+        }))
+      })
+
+      // Listen for payment updates
+      onPaymentUpdated((updated) => {
+        setData((prev) => ({
+          ...prev,
+          payments: prev.payments.map((p) =>
+            p.id === updated.paymentId ? { ...p, status: updated.status as Payment['status'] } : p
+          ),
+        }))
+      })
+
+      // Listen for new notifications
+      onNotificationCreated((notification) => {
+        setData((prev) => ({
+          ...prev,
+          notifications: [notification, ...prev.notifications],
+        }))
+      })
+    }
+
     return () => {
       cancelled = true
     }
-  }, [user])
+  }, [user, token])
 
   const t = useCallback(
     (key: string, params?: Record<string, string | number>) => translate(lang, key, params),

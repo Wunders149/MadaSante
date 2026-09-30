@@ -1,0 +1,316 @@
+1. Product Vision:
+Mada Santé — “Manampy anao” — Ensemble pour une santé meilleure.
+Mada Santé is a digital healthcare platform connecting patients with healthcare professionals and healthcare services.
+The platform must allow a patient to:
+- Find a general practitioner or specialist
+- Request a medical consultation
+- Choose consultation at a medical office, home, hospital, or clinic
+- Find pharmacies and medications
+- Request help finding unavailable medication
+- Find laboratories and imaging centers
+- Request laboratory/imaging services
+- Contact hospitals and clinics
+- Request emergency assistance and ambulance services
+- Request a nurse at home
+- Request medication delivery
+- Pay through supported Malagasy payment methods
+- Receive notifications and appointment reminders
+Important: Mada Santé is not only a doctor-consultation application. It is a healthcare-services marketplace connecting patients with doctors, nurses, pharmacies, laboratories, imaging centers, hospitals, clinics, ambulance providers, and delivery personnel.
+
+2. User Roles:
+Create separate experiences for:
+👤 Patient
+Can:
+- Create an account
+- Manage profile
+- Search doctors
+- Search healthcare services
+- Request consultations
+- Book appointments
+- Request home services
+- Find medications
+- Request medication delivery
+- Find laboratories
+- Find imaging centers
+- Contact hospitals/clinics
+- Request ambulance/emergency assistance
+- Track requests
+- Make payments
+- Receive notifications
+👨‍⚕️ Doctor / Specialist
+Can:
+- Create professional profile
+- Specify specialty
+- Define consultation types
+- Set availability
+- Accept/reject appointments
+- Manage consultations
+- Communicate with patients
+- View upcoming appointments
+- Track earnings/payments
+👩‍⚕️ Nurse
+Can:
+- Create professional profile
+- Define home-care services
+- Set availability
+- Accept home-care requests
+- View patient requests
+- Manage appointments
+- Track earnings
+💊 Pharmacy
+Can:
+- Create pharmacy profile
+- Manage available medications
+- Receive medication requests
+- Indicate whether a medication is available
+- Process delivery requests
+- Manage orders
+🧪 Laboratory
+Can:
+- Create laboratory profile
+- List available analyses
+- Manage requests
+- Set availability
+- Confirm appointments
+🩻 Imaging Center
+Can:
+- List available imaging services
+- Receive requests
+- Manage appointments
+- Confirm availability
+🏥 Hospital / Clinic
+Can:
+- Create establishment profile
+- List departments/services
+- Receive patient requests
+- Manage appointments
+- Manage emergency/contact requests
+🚑 Ambulance Provider
+Can:
+- Receive emergency requests
+- Accept/reject missions
+- View patient location
+- Update mission status
+- Track completed missions
+🛵 Delivery Personnel
+Can:
+- Receive medication delivery requests
+- Accept delivery missions
+- Track pickup/delivery
+- Update delivery status
+- Track earnings
+🛠️ Administrator
+Can:
+- Manage users
+- Verify healthcare professionals
+- Verify establishments
+- Manage services
+- Manage payments
+- Monitor consultations
+- Monitor emergencies
+- Manage reports
+- Manage platform settings
+
+3. Doctor Search
+Create a powerful search system.
+Search by:
+- Name
+- Specialty
+- Disease/problem
+- Location
+- Availability
+- Consultation type
+Filters:
+- Généraliste
+- Cardiologue
+- Pédiatre
+- Dermatologue
+- Gynécologue
+- etc.
+Each doctor card should display:
+- Photo
+- Name
+- Specialty
+- Location
+- Verification badge
+- Consultation type
+- Availability
+- Price
+- Rating
+- “Voir profil”
+- “Prendre rendez-vous”
+
+4. Consultation Booking
+Allow patients to choose:
+Consultation type
+- Cabinet
+- Domicile
+- Hôpital
+- Clinique
+Flow:
+Choose doctor → Choose consultation type → Choose date/time → Confirm → Payment → Appointment confirmed
+Display a clear appointment summary.
+
+5. Home Consultation
+Patients can request:
+“Un professionnel vient chez vous.”
+Collect:
+- Address
+- GPS location
+- Reason for consultation
+- Preferred time
+- Urgency level
+- Additional information
+Match the request with available professionals.
+
+6. Pharmacy & Medication
+Create a medication search system.
+Patient enters:
+“Paracétamol”
+Display:
+- Medication name
+- Pharmacy
+- Availability
+- Distance
+- Price if available
+- Opening status
+- Delivery availability
+If unavailable:
+“Médicament introuvable ? Nous pouvons vous orienter vers une autre pharmacie.”
+
+Allow the patient to request:
+“Trouver ce médicament”
+The platform can contact available pharmacies.
+
+7. Medication Delivery
+Patient selects:
+Pharmacy → Medication → Quantity → Delivery address → Delivery time
+Statuses:
+Demande créée → Pharmacie confirmée → Préparation → Livreur assigné → En livraison → Livré
+
+8. Laboratory & Imaging
+Create two service categories:
+🧪 Laboratoire
+Search for:
+- Blood tests
+- Urine tests
+- Medical analyses
+- Other laboratory services
+🩻 Imagerie
+Search for:
+- X-ray
+- Ultrasound
+- Scanner
+- MRI
+- Other imaging services
+If a requested service is unavailable:
+“Service indisponible ici. Mada Santé peut vous orienter vers un établissement partenaire.”
+
+9. Hospital & Clinic Services
+Create a dedicated:
+Hôpitaux / Cliniques
+section.
+Display:
+- Name
+- Type
+- Location
+- Departments
+- Available services
+- Emergency availability
+- Contact
+- Opening hours
+- Appointment availability
+Patients should be able to request:
+“Être orienté vers cet établissement.”
+
+10. Emergency & Ambulance
+Create a highly visible emergency feature.
+Button:
+🚨 URGENCE
+The patient can request:
+“Besoin d'une ambulance”
+Collect:
+- Current location
+- Patient name
+- Phone number
+- Emergency type
+- Description
+- Number of patients
+Workflow:
+Emergency request → Ambulance provider notified → Accepted → Ambulance dispatched → En route → Arrived → Mission completed
+The interface should be extremely simple because the user may be under stress.
+
+11. Nurse at Home
+Create:
+👩‍⚕️ Soins à domicile
+Services may include:
+- Basic nursing care
+- Wound care
+- Injection
+- Medication assistance
+- Post-hospital care
+- Elderly assistance
+Patient selects:
+Service → Nurse → Date/time → Address → Confirm
+
+12. Payments
+Support Malagasy payment methods:
+💰 Payment methods
+- Orange Money
+- MVola / Mbola
+Create a payment abstraction layer:
+PaymentProvider
+ ├── OrangeMoneyProvider
+ └── MvolaProvider
+
+Payment statuses:
+- Pending
+- Processing
+- Successful
+- Failed
+- Refunded
+Payments can include:
+- Doctor fee
+- Nurse fee
+- Delivery fee
+- Ambulance fee
+- Platform fee
+Clearly separate each component of the price.
+Example:
+Consultation        30,000 Ar
+Delivery             5,000 Ar
+Platform fee         2,000 Ar
+----------------------------
+Total                37,000 Ar
+
+13. Notifications
+Implement notifications for:
+- Appointment confirmation
+- Appointment reminder
+- Doctor acceptance
+- Nurse acceptance
+- Pharmacy confirmation
+- Medication availability
+- Delivery status
+- Laboratory appointment
+- Imaging appointment
+- Emergency status
+- Payment confirmation
+Use:
+- In-app notifications
+- Push notifications
+- SMS architecture prepared for future integration
+
+14. Real-Time Communication
+Use Socket.IO for real-time events.
+Examples:
+appointment.updated
+request.accepted
+request.rejected
+ambulance.dispatched
+delivery.assigned
+delivery.updated
+payment.updated
+notification.created
+
+Allow patients and professionals to communicate when appropriate.

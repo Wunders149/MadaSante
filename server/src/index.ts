@@ -1,5 +1,6 @@
 import fs from 'node:fs'
 import path from 'node:path'
+import http from 'node:http'
 import express from 'express'
 import cors from 'cors'
 import type { NextFunction, Request, Response } from 'express'
@@ -17,6 +18,7 @@ import { providersRouter, providersRouterPublic } from './routes/providers.js'
 import { deliveriesRouter } from './routes/deliveries.js'
 import { emergencyRouter } from './routes/emergency.js'
 import { adminRouter } from './routes/admin.js'
+import { initRealtime } from './realtime.js'
 
 assertProductionConfig()
 await migrate()
@@ -24,6 +26,10 @@ await ensureAdmin()
 await backfillProviderRecords()
 
 const app = express()
+const server = http.createServer(app)
+
+// Initialize Socket.IO
+initRealtime(server)
 
 // In production the API also serves the SPA, so traffic is same-origin and no
 // CORS grant is needed. Grant cross-origin access only to explicitly configured
@@ -93,6 +99,6 @@ app.use((err: Error, _req: Request, res: Response, next: NextFunction) => {
   res.status(500).json({ error: publicErrorMessage(err) })
 })
 
-app.listen(config.port, () => {
+server.listen(config.port, () => {
   console.log(`Mada Sante API listening on http://localhost:${config.port}`)
 })

@@ -46,11 +46,12 @@
     "dotenv": "^17.4.2",
     "express": "^5.1.0",
     "jsonwebtoken": "^9.0.2",
-    "pg": "^8.16.3",
     "lucide-react": "^1.48.0",
+    "pg": "^8.16.3",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "react-router-dom": "^7.18.4",
+    "socket.io-client": "^4.8.4",
     "tailwindcss": "^4.3.3",
     "zod": "^3.25.76"
   }
