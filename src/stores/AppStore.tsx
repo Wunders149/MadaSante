@@ -17,11 +17,13 @@ import { translate } from '../i18n'
 import {
   initSocket,
   disconnectSocket,
+  onAppointmentCreated,
   onAppointmentUpdated,
   onEmergencyUpdated,
   onDeliveryUpdated,
   onPaymentUpdated,
   onNotificationCreated,
+  onNewEmergency,
 } from '../lib/socket'
 
 export interface Toast {
@@ -156,48 +158,71 @@ export function AppProvider({ children }: { children: ReactNode }) {
     // Initialize Socket.IO for real-time updates
     if (token) {
       initSocket(token)
+      const unsubscribe: Array<() => void> = []
       
       // Listen for appointment updates
-      onAppointmentUpdated((updated) => {
+      unsubscribe.push(onAppointmentCreated((created) => {
+        setData((prev) => ({
+          ...prev,
+          appointments: prev.appointments.some((appointment) => appointment.id === created.id)
+            ? prev.appointments.map((appointment) => appointment.id === created.id ? created : appointment)
+            : [created, ...prev.appointments],
+        }))
+      }))
+
+      unsubscribe.push(onAppointmentUpdated((updated) => {
         setData((prev) => ({
           ...prev,
           appointments: prev.appointments.map((a) => (a.id === updated.id ? updated : a)),
         }))
-      })
+      }))
 
       // Listen for emergency updates
-      onEmergencyUpdated((updated) => {
+      unsubscribe.push(onEmergencyUpdated((updated) => {
         setData((prev) => ({
           ...prev,
-          emergencyRequests: prev.emergencyRequests.map((e) => (e.id === updated.id ? updated : e)),
+          emergencyRequests: prev.emergencyRequests.map((e) => (e.id === updated.id ? { ...e, ...updated } : e)),
         }))
-      })
+      }))
 
       // Listen for delivery updates
-      onDeliveryUpdated((updated) => {
+      unsubscribe.push(onDeliveryUpdated((updated) => {
         setData((prev) => ({
           ...prev,
-          deliveries: prev.deliveries.map((d) => (d.id === updated.id ? updated : d)),
+          deliveries: prev.deliveries.map((d) => (d.id === updated.id ? { ...d, ...updated } : d)),
         }))
-      })
+      }))
 
       // Listen for payment updates
-      onPaymentUpdated((updated) => {
+      unsubscribe.push(onPaymentUpdated((updated) => {
         setData((prev) => ({
           ...prev,
           payments: prev.payments.map((p) =>
             p.id === updated.paymentId ? { ...p, status: updated.status as Payment['status'] } : p
           ),
         }))
-      })
+      }))
 
       // Listen for new notifications
-      onNotificationCreated((notification) => {
+      unsubscribe.push(onNotificationCreated((notification) => {
         setData((prev) => ({
           ...prev,
-          notifications: [notification, ...prev.notifications],
+          notifications: prev.notifications.some((item) => item.id === notification.id)
+            ? prev.notifications
+            : [notification, ...prev.notifications],
         }))
-      })
+      }))
+
+      unsubscribe.push(onNewEmergency(() => {
+        void apiRoutes.emergencyRequests().then((emergencyRequests) => {
+          setData((prev) => ({ ...prev, emergencyRequests }))
+        }).catch(() => undefined)
+      }))
+
+      return () => {
+        cancelled = true
+        unsubscribe.forEach((stop) => stop())
+      }
     }
 
     return () => {
@@ -226,7 +251,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const pushNotification = useCallback(
     async (n: Omit<NotificationItem, 'id' | 'read' | 'createdAt'>) => {
       const created = await apiRoutes.createNotification(n)
-      setData((prev) => ({ ...prev, notifications: [created, ...prev.notifications] }))
+      setData((prev) => ({
+        ...prev,
+        notifications: prev.notifications.some((item) => item.id === created.id)
+          ? prev.notifications
+          : [created, ...prev.notifications],
+      }))
     },
     [],
   )

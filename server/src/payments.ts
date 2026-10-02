@@ -188,20 +188,25 @@ export async function createNotification(input: {
   message: string
   category: 'appointment' | 'payment' | 'delivery' | 'emergency' | 'system'
   link?: string
-}): Promise<void> {
+}): Promise<{ id: string; title: string; message: string; category: typeof input.category; read: boolean; createdAt: string; link?: string }> {
   const id = uniqueId('notif')
+  const createdAt = new Date().toISOString()
   await db.query(
     `INSERT INTO notifications (id, user_id, title, message, category, read, created_at, link)
      VALUES ($1, $2, $3, $4, $5, 0, $6, $7)`,
-    [id, input.userId, input.title, input.message, input.category, new Date().toISOString(), input.link ?? null]
+    [id, input.userId, input.title, input.message, input.category, createdAt, input.link ?? null]
   )
 
   // Emit real-time notification
-  emitToUser(input.userId, 'notification.created', {
+  const notification = {
     id,
     title: input.title,
     message: input.message,
     category: input.category,
+    read: false,
+    createdAt,
     link: input.link,
-  })
+  }
+  emitToUser(input.userId, 'notification.created', notification)
+  return notification
 }

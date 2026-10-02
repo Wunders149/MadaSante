@@ -1,6 +1,7 @@
 import { Server as HttpServer } from 'node:http'
 import { Server, type Socket } from 'socket.io'
 import { config } from './config.js'
+import { db } from './db.js'
 
 let io: Server | null = null
 
@@ -33,10 +34,20 @@ export function initRealtime(server: HttpServer): Server {
     try {
       // eslint-disable-next-line @typescript-eslint/no-require-imports
       const jwt = require('jsonwebtoken')
-      const claims = jwt.verify(token, config.jwtSecret) as { id: string; role: string }
-      socket.data.userId = claims.id
-      socket.data.role = claims.role
-      next()
+      const claims = jwt.verify(token, config.jwtSecret) as { id: string }
+      void db.query('SELECT id, role, provider_id FROM users WHERE id = $1', [claims.id])
+        .then((result) => {
+          const user = result.rows[0] as { id: string; role: string; provider_id: string | null } | undefined
+          if (!user) {
+            next(new Error('Unauthorized'))
+            return
+          }
+          socket.data.userId = user.id
+          socket.data.role = user.role
+          socket.data.providerId = user.provider_id
+          next()
+        })
+        .catch(() => next(new Error('Unauthorized')))
     } catch {
       next(new Error('Unauthorized'))
     }
@@ -49,10 +60,10 @@ export function initRealtime(server: HttpServer): Server {
     // Join a personal room for direct notifications
     socket.join(`user:${userId}`)
 
-    // Providers join their provider room
-    if (role !== 'patient' && role !== 'admin') {
-      socket.join(`provider:${userId}`)
-    }
+    socket.join(`role:${role}`)
+
+    const providerId = socket.data.providerId as string | null | undefined
+    if (providerId) socket.join(`provider:${providerId}`)
 
     // Ambulance drivers join the emergency dispatch room
     if (role === 'ambulance_driver') {
@@ -83,6 +94,14 @@ export function emitToUser(userId: string, event: string, data: unknown): void {
   io?.to(`user:${userId}`).emit(event, data)
 }
 
+export function emitToProvider(providerId: string, event: string, data: unknown): void {
+  io?.to(`provider:${providerId}`).emit(event, data)
+}
+
+export function emitToRoles(roles: string[], event: string, data: unknown): void {
+  io?.to(roles.map((role) => `role:${role}`)).emit(event, data)
+}
+
 /**
  * Emit an event to all connected clients (broadcast).
  */
@@ -104,9 +123,3 @@ export function emitToAdminMonitor(event: string, data: unknown): void {
   io?.to('admin:monitor').emit(event, data)
 }
 
-/**
- * Emit an event to all providers.
- */
-export function emitToProviders(event: string, data: unknown): void {
-  io?.emit(event, data)
-}

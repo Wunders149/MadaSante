@@ -4,6 +4,7 @@ import { Send } from 'lucide-react'
 import { apiRoutes } from '../lib/api'
 import { useAuth } from '../stores/AuthStore'
 import { useApp } from '../stores/AppStore'
+import { onMessageCreated } from '../lib/socket'
 import { PageHeader } from './ui/Headers'
 import { EmptyState } from './ui/States'
 import { Button } from './ui/Button'
@@ -31,6 +32,13 @@ export function MessagesPanel() {
     enabled: Boolean(selectedId),
     refetchInterval: 5_000,
   })
+
+  useEffect(() => onMessageCreated(({ conversationId }) => {
+    void queryClient.invalidateQueries({ queryKey: ['conversations'] })
+    if (conversationId === selectedId) {
+      void queryClient.invalidateQueries({ queryKey: ['messages', selectedId] })
+    }
+  }), [queryClient, selectedId])
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth' })

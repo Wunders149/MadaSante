@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Home as HomeIcon } from 'lucide-react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { PageHeader } from '../../components/ui/Headers'
@@ -8,6 +8,7 @@ import { Badge } from '../../components/ui/Badge'
 import { EmptyState } from '../../components/ui/States'
 import { apiRoutes } from '../../lib/api'
 import { useApp } from '../../stores/AppStore'
+import { onRequestUpdated } from '../../lib/socket'
 
 const SERVICES = [
   'Soin infirmier de base',
@@ -24,6 +25,10 @@ export function HomeCarePage() {
   const { data: requests = [] } = useQuery({ queryKey: ['home-requests'], queryFn: apiRoutes.homeRequests })
   const [form, setForm] = useState({ service: SERVICES[0], address: '', reason: '', preferredTime: '', urgency: 'normal' as 'normal' | 'urgence', location: '' })
   const [saving, setSaving] = useState(false)
+
+  useEffect(() => onRequestUpdated(({ type }) => {
+    if (type === 'home') void queryClient.invalidateQueries({ queryKey: ['home-requests'] })
+  }), [queryClient])
 
   const submit = async () => {
     if (!form.address || !form.reason || !form.preferredTime) {

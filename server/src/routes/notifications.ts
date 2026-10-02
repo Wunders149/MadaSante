@@ -3,6 +3,7 @@ import type { Request, Response } from 'express'
 import { z } from 'zod'
 import { db } from '../db.js'
 import { requireAuth } from '../auth.js'
+import { createNotification } from '../payments.js'
 
 export const notificationsRouter = Router()
 notificationsRouter.use(requireAuth)
@@ -39,35 +40,14 @@ notificationsRouter.post('/', async (req: Request, res: Response) => {
     res.status(400).json({ error: 'Payload invalide' })
     return
   }
-  const input = parsed.data
-  const notification = {
-    id: `notif-${Date.now()}`,
+  const notification = await createNotification({
     userId: req.auth!.id,
-    title: input.title,
-    message: input.message ?? '',
-    category: input.category,
-    read: 0,
-    createdAt: new Date().toISOString(),
-    link: input.link ?? null,
-  }
-  await db.query(
-    `INSERT INTO notifications (id, user_id, title, message, category, read, created_at, link)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-    [
-      notification.id,
-      notification.userId,
-      notification.title,
-      notification.message,
-      notification.category,
-      notification.read,
-      notification.createdAt,
-      notification.link,
-    ],
-  )
-  // Re-read the stored row: mapNotification reads `created_at`, which the
-  // camelCase literal above does not have, so the response lost its timestamp.
-  const stored = (await db.query('SELECT * FROM notifications WHERE id = ?', [notification.id])).rows[0] as Row
-  res.status(201).json(mapNotification(stored))
+    title: parsed.data.title,
+    message: parsed.data.message ?? '',
+    category: parsed.data.category,
+    link: parsed.data.link,
+  })
+  res.status(201).json(notification)
 })
 
 notificationsRouter.patch('/:id/read', async (req: Request, res: Response) => {

@@ -14,7 +14,7 @@ import {
   locationFor,
   platformFeeFor,
 } from '../catalog.js'
-import { emitToUser, emitToProviders } from '../realtime.js'
+import { emitToProvider, emitToUser } from '../realtime.js'
 import { createNotification } from '../payments.js'
 
 export const appointmentsRouter = Router()
@@ -197,7 +197,7 @@ appointmentsRouter.post('/', async (req: Request, res: Response) => {
   
   // Emit real-time events
   emitToUser(appointment.patientId, 'appointment.created', mapped)
-  emitToProviders('appointment.new', mapped)
+  emitToProvider(appointment.providerId, 'appointment.new', mapped)
   
   // Create notification for the provider
   await createNotification({
@@ -254,7 +254,7 @@ appointmentsRouter.patch('/:id/status', async (req: Request, res: Response) => {
   
   // Emit real-time events
   emitToUser(String(row.patient_id), 'appointment.updated', mapped)
-  emitToProviders('appointment.updated', mapped)
+  emitToProvider(String(row.provider_id), 'appointment.updated', mapped)
   
   // Create notification for status changes
   if (next === 'confirmed' && current === 'pending') {

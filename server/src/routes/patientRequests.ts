@@ -4,7 +4,8 @@ import { z } from 'zod'
 import { db } from '../db.js'
 import { requireAuth } from '../auth.js'
 import { generateReference, todayIso, uniqueId } from '../helpers.js'
-import { emitToProviders, emitToUser } from '../realtime.js'
+import { emitToRoles, emitToUser } from '../realtime.js'
+import { createNotification } from '../payments.js'
 
 export const patientRequestsRouter = Router()
 patientRequestsRouter.use(requireAuth)
@@ -63,7 +64,13 @@ patientRequestsRouter.post('/medication-requests', async (req: Request, res: Res
       todayIso(),
     ],
   )
-  emitToProviders('request.created', { type: 'medication', id, reference })
+  emitToRoles(['pharmacy'], 'request.created', { type: 'medication', id, reference })
+  await createNotification({
+    userId: req.auth!.id,
+    title: 'Demande de médicament envoyée',
+    message: `Votre demande ${reference} a été envoyée aux pharmacies.`,
+    category: 'system',
+  })
   const stored = (await db.query('SELECT * FROM medication_requests WHERE id = $1', [id])).rows[0] as Row
   res.status(201).json(mapMedicationRequest(stored))
 })
@@ -75,6 +82,10 @@ patientRequestsRouter.get('/medication-requests', async (req: Request, res: Resp
       await db.query('SELECT * FROM medication_requests WHERE patient_id = ? ORDER BY date DESC', [auth.id])
     ).rows as Row[]
     res.json(rows.map(mapMedicationRequest))
+    return
+  }
+  if (auth.role !== 'pharmacy' && auth.role !== 'admin') {
+    res.status(403).json({ error: 'Forbidden' })
     return
   }
   // Pharmacies and admins triage all open requests.
@@ -98,9 +109,16 @@ patientRequestsRouter.patch('/medication-requests/:id', async (req: Request, res
     return
   }
   await db.query('UPDATE medication_requests SET status = ? WHERE id = ?', [parsed.data.status, row.id])
-  emitToUser(String(row.patient_id), 'notification.created', {
+  await createNotification({
+    userId: String(row.patient_id),
     title: 'Demande de médicament',
     message: `Votre demande ${row.reference} est maintenant : ${parsed.data.status}`,
+    category: 'system',
+  })
+  emitToUser(String(row.patient_id), 'request.updated', {
+    type: 'medication',
+    id: String(row.id),
+    status: parsed.data.status,
   })
   const updated = (await db.query('SELECT * FROM medication_requests WHERE id = $1', [row.id])).rows[0] as Row
   res.json(mapMedicationRequest(updated))
@@ -171,7 +189,18 @@ patientRequestsRouter.post('/home-requests', async (req: Request, res: Response)
       todayIso(),
     ],
   )
-  emitToProviders('request.created', { type: 'home', id, reference })
+  emitToRoles(
+    ['nurse', 'doctor', 'psychologist', 'psychiatrist', 'kinesitherapist', 'ergotherapist', 'speech_therapist', 'dietitian', 'midwife'],
+    'request.created',
+    { type: 'home', id, reference },
+  )
+  await createNotification({
+    userId: req.auth!.id,
+    title: 'Demande de soins à domicile envoyée',
+    message: `Votre demande ${reference} a été transmise aux professionnels concernés.`,
+    category: 'system',
+    link: '/patient/home-care',
+  })
   const stored = (await db.query('SELECT * FROM home_requests WHERE id = $1', [id])).rows[0] as Row
   res.status(201).json(mapHomeRequest(stored))
 })
@@ -183,6 +212,10 @@ patientRequestsRouter.get('/home-requests', async (req: Request, res: Response) 
       await db.query('SELECT * FROM home_requests WHERE patient_id = ? ORDER BY date DESC', [auth.id])
     ).rows as Row[]
     res.json(rows.map(mapHomeRequest))
+    return
+  }
+  if (auth.role !== 'admin' && !isHomeProviderRole(auth.role)) {
+    res.status(403).json({ error: 'Forbidden' })
     return
   }
   // Professionals (nurses, doctors, MG allied-health) see open requests to accept.
@@ -223,10 +256,14 @@ patientRequestsRouter.patch('/home-requests/:id', async (req: Request, res: Resp
       row.id,
     ])
   }
-  emitToUser(String(row.patient_id), 'notification.created', {
+  await createNotification({
+    userId: String(row.patient_id),
     title: 'Soins à domicile',
     message: `Demande ${row.reference} : ${parsed.data.status}`,
+    category: 'system',
+    link: '/patient/home-care',
   })
+  emitToUser(String(row.patient_id), 'request.updated', { type: 'home', id: String(row.id), status: parsed.data.status })
   const updated = (await db.query('SELECT * FROM home_requests WHERE id = $1', [row.id])).rows[0] as Row
   res.json(mapHomeRequest(updated))
 })

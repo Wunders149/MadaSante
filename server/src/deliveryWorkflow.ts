@@ -1,6 +1,6 @@
 import { db } from './db.js'
 import { generateReference, todayIso, uniqueId } from './helpers.js'
-import { emitToUser, emitToProviders } from './realtime.js'
+import { emitToProvider, emitToUser } from './realtime.js'
 import { createNotification } from './payments.js'
 
 /**
@@ -110,13 +110,9 @@ export async function createDeliveryOrder(input: {
   }
 
   // Notify pharmacy
-  emitToProviders('delivery.new', {
+  emitToProvider(medicine.pharmacy_id, 'delivery.new', {
     id,
     reference,
-    medicineName: medicine.name,
-    quantity: input.quantity,
-    pharmacyId: medicine.pharmacy_id,
-    deliveryAddress: input.deliveryAddress,
   })
 
   // Create notification for patient

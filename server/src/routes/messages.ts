@@ -161,7 +161,7 @@ messagesRouter.post('/conversations/:id/messages', async (req: Request, res: Res
   )
   // Notify the other participant in real time.
   const otherId = String(conv.patient_id) === auth.id ? String(conv.provider_id) : String(conv.patient_id)
-  emitToUser(otherId, 'message.created', { conversationId: conv.id, text: parsed.data.text.trim() })
+  emitToUser(otherId, 'message.created', { conversationId: conv.id })
   const stored = (await db.query('SELECT * FROM messages WHERE id = $1', [id])).rows[0] as Row
   res.status(201).json(mapMessage(stored))
 })

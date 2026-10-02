@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Ambulance, Inbox, MapPin, Phone } from 'lucide-react'
 import { PageHeader } from '../../components/ui/Headers'
@@ -11,6 +11,7 @@ import { useAuth } from '../../stores/AuthStore'
 import { ApiError, apiRoutes } from '../../lib/api'
 import { useAmbulances } from '../../lib/hooks'
 import { Badge } from '../../components/ui/Badge'
+import { onNewDelivery, onRequestCreated } from '../../lib/socket'
 
 const HOME_ROLES = ['nurse', 'doctor', 'psychologist', 'psychiatrist', 'kinesitherapist', 'ergotherapist', 'speech_therapist', 'dietitian', 'midwife']
 const isHomeRole = (role?: string) => !!role && HOME_ROLES.includes(role)
@@ -122,9 +123,24 @@ function HomeRequestsList() {
 export function ProviderRequestsPage() {
   const { t, appointments, setAppointmentStatus, toast } = useApp()
   const { user } = useAuth()
+  const queryClient = useQueryClient()
   const { data: ambulances = [] } = useAmbulances()
   const [tab, setTab] = useState<Tab>('appointments')
   const [busyId, setBusyId] = useState<string | null>(null)
+
+  useEffect(() => {
+    const stopRequestListener = onRequestCreated(({ type }) => {
+      const queryKey = type === 'home' ? ['home-requests'] : ['medication-requests']
+      void queryClient.invalidateQueries({ queryKey })
+    })
+    const stopDeliveryListener = onNewDelivery(() => {
+      void queryClient.invalidateQueries({ queryKey: ['deliveries'] })
+    })
+    return () => {
+      stopRequestListener()
+      stopDeliveryListener()
+    }
+  }, [queryClient])
 
   const providerId = user?.providerId
   const mine = useMemo(() => appointments.filter((a) => a.providerId === providerId), [appointments, providerId])
