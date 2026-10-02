@@ -44,7 +44,7 @@ function DocView({ mime, data, fileName, docTypeLabel }: { mime: string; data: s
 
 export function AdminApplicationDetailPage() {
   const { id } = useParams()
-  const { t } = useApp()
+  const { t, toast } = useApp()
   const { data, isLoading, isError } = useAdminApplication(id)
   const queryClient = useQueryClient()
   const [note, setNote] = useState('')
@@ -55,6 +55,7 @@ export function AdminApplicationDetailPage() {
       apiRoutes.adminReviewApplication(id as string, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'applications'] })
+      toast(t('admin.savedReview'), undefined, 'success')
     },
   })
 
@@ -123,6 +124,21 @@ export function AdminApplicationDetailPage() {
           </p>
         </div>
         <p className="mt-2 text-sm text-ink-faint">{app.location}</p>
+
+        <div className="mt-4 grid gap-3 sm:grid-cols-3">
+          <div className="rounded-2xl bg-brand-50 p-3">
+            <p className="text-[11px] font-bold uppercase tracking-wider text-ink-faint">Statut</p>
+            <p className="mt-1 text-sm font-bold text-brand-700">{t(`admin.${app.status}`)}</p>
+          </div>
+          <div className="rounded-2xl bg-slate-50 p-3">
+            <p className="text-[11px] font-bold uppercase tracking-wider text-ink-faint">Documents</p>
+            <p className="mt-1 text-sm font-bold text-ink">{app.documents?.length ?? 0}</p>
+          </div>
+          <div className="rounded-2xl bg-emerald-50 p-3">
+            <p className="text-[11px] font-bold uppercase tracking-wider text-ink-faint">Soumis</p>
+            <p className="mt-1 text-sm font-bold text-emerald-700">{app.createdAt ? formatDateShort(app.createdAt) : '—'}</p>
+          </div>
+        </div>
 
         {reviewed && app.reviewNote && (
           <div className="mt-4 rounded-xl bg-gray-50 p-3">
