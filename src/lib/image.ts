@@ -1,13 +1,29 @@
 const MAX_UPLOAD_BYTES = 8 * 1024 * 1024
 
+export const MEDIA_BASE = (import.meta.env.VITE_MEDIA_BASE_URL ?? '').replace(/\/$/, '')
+
+export function resolveMediaUrl(src?: string | null): string | undefined {
+  if (!src) return undefined
+  if (/^(data:|blob:|https?:\/\/)/i.test(src)) return src
+  if (src.startsWith('/')) return `${MEDIA_BASE}${src}`
+  return `${MEDIA_BASE}/${src}`.replace(/\/+/g, '/')
+}
+
+export function validateImageFile(file: File, maxBytes = MAX_UPLOAD_BYTES): void {
+  if (!file.type.startsWith('image/')) {
+    throw new Error('Veuillez choisir une image')
+  }
+  if (file.size > maxBytes) {
+    throw new Error(`Image trop volumineuse (max ${Math.round(maxBytes / (1024 * 1024))} Mo)`) 
+  }
+}
+
 export function fileToResizedDataUrl(file: File, maxSize = 512, quality = 0.85): Promise<string> {
   return new Promise((resolve, reject) => {
-    if (!file.type.startsWith('image/')) {
-      reject(new Error('Veuillez choisir une image'))
-      return
-    }
-    if (file.size > MAX_UPLOAD_BYTES) {
-      reject(new Error('Image trop volumineuse (max 8 Mo)'))
+    try {
+      validateImageFile(file)
+    } catch (error) {
+      reject(error)
       return
     }
     const reader = new FileReader()

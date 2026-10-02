@@ -1,5 +1,6 @@
 import { cn } from '../lib/cn'
 import { initials } from '../lib/format'
+import { resolveMediaUrl } from '../lib/image'
 
 interface AvatarProps {
   name: string
@@ -17,10 +18,11 @@ const sizes = {
 }
 
 export function Avatar({ name, src, size = 'md', className }: AvatarProps) {
-  if (src) {
+  const resolvedSrc = resolveMediaUrl(src)
+  if (resolvedSrc) {
     return (
       <img
-        src={src}
+        src={resolvedSrc}
         alt={name}
         className={cn('shrink-0 rounded-full object-cover ring-2 ring-white shadow-sm', sizes[size], className)}
         referrerPolicy="no-referrer"

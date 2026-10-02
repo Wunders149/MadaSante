@@ -59,6 +59,11 @@ export function DoctorProfilePage() {
     c === 'home' ? <HomeGlyph className="h-4 w-4 text-brand-600" /> : c === 'hospital' ? <BuildingGlyph className="h-4 w-4 text-brand-600" /> : <Stethoscope className="h-4 w-4 text-brand-600" />
 
   const availabilitySummary = doctor.availabilitySlots.length > 0 ? doctor.availabilitySlots.slice(0, 4).join(' · ') : 'Disponibilité à confirmer'
+  const bookingSteps = [
+    'Profil vérifié et renseigné',
+    'Confirmation rapide par le professionnel',
+    'Suivi et contact via la plateforme',
+  ]
 
   return (
     <div className="page-container py-5 sm:py-7">
@@ -181,6 +186,18 @@ export function DoctorProfilePage() {
                   </div>
                 ))}
               </div>
+            </div>
+
+            <div className="rounded-2xl border border-brand-100 bg-brand-50/60 p-3">
+              <p className="text-xs font-bold uppercase tracking-wide text-brand-700">Comment ça se passe</p>
+              <ul className="mt-2 space-y-2 text-sm text-ink-soft">
+                {bookingSteps.map((step) => (
+                  <li key={step} className="flex items-start gap-2">
+                    <span className="mt-0.5 grid h-5 w-5 place-items-center rounded-full bg-brand-600 text-[10px] font-bold text-white">✓</span>
+                    <span>{step}</span>
+                  </li>
+                ))}
+              </ul>
             </div>
 
             <div className="flex flex-col gap-2">

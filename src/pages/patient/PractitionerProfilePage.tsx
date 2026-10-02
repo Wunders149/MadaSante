@@ -55,6 +55,11 @@ export function PractitionerProfilePage() {
       amount: c === 'home' ? (practitioner.priceHome ?? practitioner.price) : practitioner.price,
     }))
   const availabilitySummary = practitioner.availabilitySlots.length > 0 ? practitioner.availabilitySlots.slice(0, 4).join(' · ') : t('doctors.noSlot')
+  const bookingSteps = [
+    'Profil vérifié et détaillé',
+    'Prise de rendez-vous simple et sécurisée',
+    'Confirmation et suivi via la plateforme',
+  ]
 
   return (
     <div className="page-container max-w-5xl py-5 sm:py-7">
@@ -169,6 +174,18 @@ export function PractitionerProfilePage() {
           )}
 
           <p className="mt-3 text-xs text-ink-faint">{t('prac.bookingNote')}</p>
+
+          <div className="mt-4 rounded-2xl border border-brand-100 bg-brand-50/70 p-3">
+            <p className="text-xs font-bold uppercase tracking-wide text-brand-700">Comment ça se passe</p>
+            <ul className="mt-2 space-y-2 text-sm text-ink-soft">
+              {bookingSteps.map((step) => (
+                <li key={step} className="flex items-start gap-2">
+                  <span className="mt-0.5 grid h-5 w-5 place-items-center rounded-full bg-brand-600 text-[10px] font-bold text-white">✓</span>
+                  <span>{step}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
 
           <Button className="mt-4 w-full" size="lg" to={bookPath} disabled={practitioner.price <= 0}>
             <CalendarPlus className="h-4 w-4" /> {t('doctors.book')}
