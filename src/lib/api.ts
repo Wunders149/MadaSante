@@ -204,6 +204,11 @@ export const apiRoutes = {
       body: JSON.stringify(body),
     }),
   availability: () => api<{ day: string; slot: string; available: boolean }[]>('/providers/me/availability'),
+  switchProviderRole: (role: string) =>
+    api<{ token: string; user: User; provider?: ProviderProfile }>('/providers/me/role', {
+      method: 'PUT',
+      body: JSON.stringify({ role }),
+    }),
   saveAvailability: (entries: { day: string; slot: string; available: boolean }[]) =>
     api<{ ok: boolean }>('/providers/me/availability', { method: 'PUT', body: JSON.stringify({ entries }) }),
   providers: (params?: {

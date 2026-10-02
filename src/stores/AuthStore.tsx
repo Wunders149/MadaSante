@@ -16,6 +16,7 @@ interface AuthContextValue {
   login: (email: string, password: string, role: Role) => Promise<User>
   register: (data: Partial<User> & { role: Role; password: string }) => Promise<User>
   updateUser: (user: User) => void
+  replaceSession: (token: string, user: User) => void
   logout: () => void
 }
 
@@ -90,6 +91,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [apply],
   )
 
+  const replaceSession = useCallback(
+    (token: string, user: User) => {
+      apply(token, user)
+    },
+    [apply],
+  )
+
   const logout = useCallback(async () => {
     try {
       await apiRoutes.logout()
@@ -122,6 +130,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     login,
     register,
     updateUser,
+    replaceSession,
     logout,
   }
 

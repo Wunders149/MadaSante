@@ -2,9 +2,9 @@ import { Router } from 'express'
 import type { Request, Response } from 'express'
 import { z } from 'zod'
 import { db, boundedInt } from '../db.js'
-import { requireAuth, requireProvider } from '../auth.js'
-import { publicUser, type UserRow } from '../helpers.js'
-import { PROVIDER_TABLE, loadProviderRecord } from '../catalog.js'
+import { requireAuth, requireProvider, signToken } from '../auth.js'
+import { publicUser, PROVIDER_ROLES, type UserRow } from '../helpers.js'
+import { PROVIDER_TABLE, createProviderRecord, loadProviderRecord } from '../catalog.js'
 
 export const providersRouter = Router()
 // Public, unauthenticated route: catalog of providers for patients to browse.
@@ -403,4 +403,69 @@ providersRouter.put('/me/catalog', async (req: Request, res: Response) => {
   const updated = await db.query(`SELECT * FROM ${mapping.table} WHERE id = $1`, [providerId])
   const userRow = (await db.query('SELECT * FROM users WHERE id = $1', [req.auth!.id])).rows[0] as UserRow
   res.json({ user: publicUser(userRow), provider: await fetchProfile(userRow.role, providerId), record: updated.rows[0] })
+})
+
+/**
+ * Switch the account to a different healthcare provider role.
+ *
+ * The catalog record is what patients browse and what prices bookings, and it
+ * is role-shaped, so switching role means retiring the old record and creating
+ * a fresh one for the new role — carrying over only the identity fields. A new
+ * JWT is returned because its claims carry the role for the realtime layer.
+ */
+providersRouter.put('/me/role', async (req: Request, res: Response) => {
+  const parsed = z.object({ role: z.string() }).safeParse(req.body)
+  if (!parsed.success) {
+    res.status(400).json({ error: 'Payload invalide' })
+    return
+  }
+  const nextRole = parsed.data.role
+  if (!(PROVIDER_ROLES as readonly string[]).includes(nextRole)) {
+    res.status(400).json({ error: 'Rôle professionnel inconnu' })
+    return
+  }
+  if (nextRole === req.auth!.role) {
+    res.status(400).json({ error: 'Vous avez déjà ce rôle' })
+    return
+  }
+
+  const oldMapping = PROVIDER_TABLE[req.auth!.role]
+  const oldRecord = await loadProviderRecord(req.auth!.role, req.auth!.providerId)
+  const nameCol = oldMapping?.nameCol ?? 'name'
+  const name = oldRecord ? String(oldRecord[nameCol] ?? '') : ''
+  const phone = oldRecord ? String(oldRecord.phone ?? '') : ''
+  const location = oldRecord ? String(oldRecord.location ?? '') : ''
+  const city = oldRecord ? String(oldRecord.city ?? '') : ''
+
+  const client = await db.connect()
+  try {
+    await client.query('BEGIN')
+    const newProviderId = await createProviderRecord(client, {
+      role: nextRole,
+      orgName: name || 'Professionnel',
+      phone,
+      location,
+      city,
+    })
+    if (oldMapping && req.auth!.providerId) {
+      await client.query(`DELETE FROM ${oldMapping.table} WHERE id = $1`, [req.auth!.providerId])
+      await client.query('DELETE FROM availability WHERE provider_id = $1', [req.auth!.providerId])
+    }
+    await client.query('UPDATE users SET role = $1, provider_id = $2 WHERE id = $3', [
+      nextRole,
+      newProviderId,
+      req.auth!.id,
+    ])
+    await client.query('COMMIT')
+  } catch (err) {
+    await client.query('ROLLBACK')
+    throw err
+  } finally {
+    client.release()
+  }
+
+  const row = (await db.query('SELECT * FROM users WHERE id = $1', [req.auth!.id])).rows[0] as UserRow
+  const user = publicUser(row)
+  const token = signToken({ id: user.id, role: user.role, providerId: user.providerId ?? null })
+  res.json({ token, user, provider: await fetchProfile(user.role, user.providerId ?? null) })
 })
