@@ -72,12 +72,12 @@ export function RegisterPage() {
       ) : (
         <form onSubmit={handleSubmit} className="mt-5 space-y-3">
           <div className="grid grid-cols-2 gap-3">
-            <Input label={t('auth.firstName')} value={form.firstName} onChange={set('firstName')} required />
-            <Input label={t('auth.lastName')} value={form.lastName} onChange={set('lastName')} required />
+            <Input label={t('auth.firstName')} name="firstName" value={form.firstName} onChange={set('firstName')} required />
+            <Input label={t('auth.lastName')} name="lastName" value={form.lastName} onChange={set('lastName')} required />
           </div>
-          <Input label={t('auth.phone')} type="tel" value={form.phone} onChange={set('phone')} placeholder="+261 34 …" required />
-          <Input label={t('auth.email')} type="email" value={form.email} onChange={set('email')} required />
-          <Select label={t('auth.location')} value={form.location} onChange={set('location')}>
+          <Input label={t('auth.phone')} type="tel" name="phone" value={form.phone} onChange={set('phone')} placeholder="+261 34 …" required />
+          <Input label={t('auth.email')} type="email" name="email" value={form.email} onChange={set('email')} required />
+          <Select label={t('auth.location')} name="location" value={form.location} onChange={set('location')}>
             {CITIES.map((c) => (
               <option key={c} value={c}>{c}</option>
             ))}
@@ -86,6 +86,7 @@ export function RegisterPage() {
               read in a half-width column. */}
           <PasswordInput
             label={t('auth.password')}
+            name="password"
             value={form.password}
             onChange={set('password')}
             required
@@ -93,6 +94,7 @@ export function RegisterPage() {
           />
           <PasswordInput
             label={t('auth.passwordConfirm')}
+            name="passwordConfirm"
             value={form.passwordConfirm}
             onChange={set('passwordConfirm')}
             required

@@ -121,36 +121,37 @@ export function ProviderRegisterPage() {
   return (
     <AuthShell title={t('reg.title')} subtitle={t('reg.subtitle')}>
       <form onSubmit={handleSubmit} className="mt-5 space-y-3">
-        <Select label={t('reg.role')} value={form.role} onChange={set('role')}>
+        <Select label={t('reg.role')} name="role" value={form.role} onChange={set('role')}>
           {providerRoles.map((r) => (
             <option key={r} value={r}>
               {t(roleLabelKey(r))}
             </option>
           ))}
         </Select>
-        <Input label={t('reg.orgName')} value={form.orgName} onChange={set('orgName')} required />
+        <Input label={t('reg.orgName')} name="orgName" value={form.orgName} onChange={set('orgName')} required />
 
         <div className="grid grid-cols-2 gap-3">
-          <Input label={t('auth.firstName')} value={form.firstName} onChange={set('firstName')} required />
-          <Input label={t('auth.lastName')} value={form.lastName} onChange={set('lastName')} required />
+          <Input label={t('auth.firstName')} name="firstName" value={form.firstName} onChange={set('firstName')} required />
+          <Input label={t('auth.lastName')} name="lastName" value={form.lastName} onChange={set('lastName')} required />
         </div>
         <div className="grid grid-cols-2 gap-3">
-          <Input label={t('auth.phone')} type="tel" value={form.phone} onChange={set('phone')} placeholder="+261 34 …" required />
-          <Input label={t('auth.email')} type="email" value={form.email} onChange={set('email')} required />
+          <Input label={t('auth.phone')} type="tel" name="phone" value={form.phone} onChange={set('phone')} placeholder="+261 34 …" required />
+          <Input label={t('auth.email')} type="email" name="email" value={form.email} onChange={set('email')} required />
         </div>
         <div className="grid grid-cols-2 gap-3">
-          <Select label={t('reg.city')} value={form.city} onChange={set('city')}>
+          <Select label={t('reg.city')} name="city" value={form.city} onChange={set('city')}>
             {CITIES.map((c) => (
               <option key={c} value={c}>{c}</option>
             ))}
           </Select>
-          <Input label={t('reg.location')} value={form.location} onChange={set('location')} placeholder="Analakely, Antananarivo 101" required />
+          <Input label={t('reg.location')} name="location" value={form.location} onChange={set('location')} placeholder="Analakely, Antananarivo 101" required />
         </div>
-        <Input label={t('reg.licenseNumber')} value={form.licenseNumber} onChange={set('licenseNumber')} placeholder="MED-2024-12345" required />
+        <Input label={t('reg.licenseNumber')} name="licenseNumber" value={form.licenseNumber} onChange={set('licenseNumber')} placeholder="MED-2024-12345" required />
         {/* Full-width pair: a strength meter and a match line cannot be read
             in a half-width column. */}
         <PasswordInput
           label={t('auth.password')}
+          name="password"
           value={form.password}
           onChange={set('password')}
           required
@@ -158,6 +159,7 @@ export function ProviderRegisterPage() {
         />
         <PasswordInput
           label={t('auth.passwordConfirm')}
+          name="passwordConfirm"
           value={form.passwordConfirm}
           onChange={set('passwordConfirm')}
           required

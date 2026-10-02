@@ -13,7 +13,9 @@ export function PasswordChange() {
   const [confirm, setConfirm] = useState('')
   const [saving, setSaving] = useState(false)
 
-  const submit = async () => {
+  const submit = async (event?: React.FormEvent) => {
+    event?.preventDefault()
+
     if (next !== confirm) {
       toast(t('common.error'), t('profile.passwordMismatch'), 'error')
       return
@@ -49,10 +51,11 @@ export function PasswordChange() {
         </span>
         <h3 className="text-base font-bold text-ink">{t('profile.passwordSection')}</h3>
       </div>
-      <div className="space-y-4">
+      <form onSubmit={(event) => void submit(event)} className="space-y-4">
         <PasswordInput
           label={t('profile.currentPassword')}
           value={current}
+          name="currentPassword"
           autoComplete="current-password"
           onChange={(e) => setCurrent(e.target.value)}
           // An existing password has no strength to build; only the toggle.
@@ -62,20 +65,22 @@ export function PasswordChange() {
         <PasswordInput
           label={t('profile.newPassword')}
           value={next}
+          name="newPassword"
           autoComplete="new-password"
           onChange={(e) => setNext(e.target.value)}
         />
         <PasswordInput
           label={t('profile.passwordConfirm')}
           value={confirm}
+          name="confirmPassword"
           autoComplete="new-password"
           onChange={(e) => setConfirm(e.target.value)}
           compareTo={next}
         />
-        <Button fullWidth loading={saving} onClick={submit}>
+        <Button type="submit" fullWidth loading={saving}>
           <Save className="h-4 w-4" /> {t('common.save')}
         </Button>
-      </div>
+      </form>
     </div>
   )
 }

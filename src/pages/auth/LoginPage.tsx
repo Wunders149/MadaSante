@@ -45,12 +45,14 @@ export function LoginPage() {
         <Input
           label={t('auth.email')}
           type="email"
+          name="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           autoComplete="email"
         />
         <PasswordInput
           label={t('auth.password')}
+          name="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           autoComplete="current-password"
@@ -65,6 +67,7 @@ export function LoginPage() {
                 past a dozen professions; a select keeps every role reachable. */}
             <Select
               label={t('auth.asProvider')}
+              name="providerRole"
               value={providerRole}
               onChange={(e) => setProviderRole(e.target.value as Role)}
             >
