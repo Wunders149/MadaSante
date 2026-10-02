@@ -40,8 +40,30 @@ export function ProviderCatalogForm() {
     specialty: '',
     description: '',
     consultationTypes: [] as ConsultationType[],
+    // Role-specific profile fields (stored as line lists for editing).
+    qualification: '',
+    openingHours: '',
+    deliveryAvailable: false,
+    emergencyAvailable: false,
+    available: true,
+    freeCare: false,
+    responseTime: '',
+    type: '',
+    sector: 'public' as 'public' | 'private',
+    focus: '',
+    email: '',
+    website: '',
+    servicesText: '',
+    testsText: '',
+    vehiclesText: '',
+    coverageText: '',
+    languagesText: '',
+    examsText: '',
   })
   const [saving, setSaving] = useState(false)
+
+  const linesToList = (text: string): string[] =>
+    text.split('\n').map((l) => l.trim()).filter(Boolean)
 
   useEffect(() => {
     if (!provider) return
@@ -49,7 +71,7 @@ export function ProviderCatalogForm() {
       name: provider.name ?? '',
       city: provider.city ?? '',
       location: provider.location ?? '',
-      phone: '',
+      phone: provider.phone ?? '',
       price: provider.price != null ? String(provider.price) : '',
       priceHome: provider.priceHome != null ? String(provider.priceHome) : '',
       specialty: provider.specialty ?? '',
@@ -60,6 +82,24 @@ export function ProviderCatalogForm() {
       consultationTypes: (provider.consultationTypes?.length
         ? provider.consultationTypes
         : ['cabinet']) as ConsultationType[],
+      qualification: provider.qualification ?? '',
+      openingHours: provider.openingHours ?? '',
+      deliveryAvailable: provider.deliveryAvailable ?? false,
+      emergencyAvailable: provider.emergencyAvailable ?? false,
+      available: provider.available ?? true,
+      freeCare: provider.freeCare ?? false,
+      responseTime: provider.responseTime ?? '',
+      type: provider.type ?? '',
+      sector: (provider.sector as 'public' | 'private') || 'public',
+      focus: provider.focus ?? '',
+      email: provider.email ?? '',
+      website: provider.website ?? '',
+      servicesText: (provider.services ?? []).join('\n'),
+      testsText: (provider.tests ?? []).join('\n'),
+      vehiclesText: (provider.vehicles ?? []).join('\n'),
+      coverageText: (provider.coverage ?? []).join('\n'),
+      languagesText: (provider.languages ?? []).join('\n'),
+      examsText: (provider.exams ?? []).map((e) => `${e.type} | ${e.price}`).join('\n'),
     })
   }, [provider])
 
@@ -78,6 +118,12 @@ export function ProviderCatalogForm() {
       toast(t('common.error'), t('prov.priceInvalid'), 'error')
       return
     }
+    const role = provider?.role ?? ''
+    const isPractitioner = ['psychologist', 'psychiatrist', 'kinesitherapist', 'ergotherapist', 'speech_therapist', 'dietitian', 'midwife'].includes(role)
+    const exams = linesToList(form.examsText).map((line) => {
+      const [name, price] = line.split('|').map((s) => s.trim())
+      return { type: name, price: Number(price) }
+    }).filter((e) => e.type && Number.isFinite(e.price) && e.price >= 0)
     setSaving(true)
     try {
       await apiRoutes.updateProviderCatalog({
@@ -90,6 +136,46 @@ export function ProviderCatalogForm() {
         ...(isPriced ? { price, priceHome } : {}),
         ...(supportsConsultationTypes(provider?.role) && form.consultationTypes.length > 0
           ? { consultationTypes: form.consultationTypes }
+          : {}),
+        // Role-specific profile fields, mirroring the provider's catalog table.
+        ...((role === 'nurse' || isPractitioner) ? { qualification: form.qualification, services: linesToList(form.servicesText) } : {}),
+        ...(role === 'doctor' ? { languages: linesToList(form.languagesText), type: form.type || undefined } : {}),
+        ...(isPractitioner ? { languages: linesToList(form.languagesText) } : {}),
+        ...(role === 'pharmacy'
+          ? { openingHours: form.openingHours || undefined, deliveryAvailable: form.deliveryAvailable }
+          : {}),
+        ...(role === 'hospital'
+          ? {
+              openingHours: form.openingHours || undefined,
+              emergencyAvailable: form.emergencyAvailable,
+              services: linesToList(form.servicesText),
+              type: form.type || undefined,
+              sector: form.sector,
+            }
+          : {}),
+        ...(role === 'laboratory'
+          ? { openingHours: form.openingHours || undefined, tests: linesToList(form.testsText) }
+          : {}),
+        ...(role === 'imaging_center'
+          ? { openingHours: form.openingHours || undefined, exams }
+          : {}),
+        ...(role === 'ambulance_driver'
+          ? {
+              vehicles: linesToList(form.vehiclesText),
+              available: form.available,
+              responseTime: form.responseTime || undefined,
+            }
+          : {}),
+        ...(role === 'medical_ngo'
+          ? {
+              focus: form.focus || undefined,
+              coverage: linesToList(form.coverageText),
+              services: linesToList(form.servicesText),
+              openingHours: form.openingHours || undefined,
+              email: form.email || undefined,
+              website: form.website || undefined,
+              freeCare: form.freeCare,
+            }
           : {}),
       })
       await queryClient.invalidateQueries({ queryKey: ['providers', 'me'] })
@@ -244,6 +330,126 @@ export function ProviderCatalogForm() {
           className="resize-none"
         />
       </div>
+
+      {/* Role-specific professional details (TODO §2: create professional profile). */}
+      {provider && (
+        <div className="space-y-4 border-t border-line pt-4">
+          <div>
+            <h3 className="text-sm font-bold text-ink">{t('prov.roleSection')}</h3>
+            <p className="mt-0.5 text-xs text-ink-soft">{t('prov.roleSectionDesc')}</p>
+          </div>
+
+          {(provider.role === 'nurse' || ['psychologist', 'psychiatrist', 'kinesitherapist', 'ergotherapist', 'speech_therapist', 'dietitian', 'midwife'].includes(provider.role)) && (
+            <>
+              <Input label={t('prov.qualification')} value={form.qualification} onChange={(e) => setForm({ ...form, qualification: e.target.value })} />
+              <Label>{t('prov.servicesLabel')}</Label>
+              <Textarea rows={3} value={form.servicesText} onChange={(e) => setForm({ ...form, servicesText: e.target.value })} />
+            </>
+          )}
+
+          {provider.role === 'doctor' && (
+            <>
+              <Input label={t('prov.languagesLabel')} value={form.languagesText} onChange={(e) => setForm({ ...form, languagesText: e.target.value })} />
+              <Label>{t('prov.type')}</Label>
+              <select className="w-full rounded-xl border border-line bg-card px-3.5 py-2.5 text-sm text-ink" value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })}>
+                <option value="generalist">{t('prov.generalist')}</option>
+                <option value="specialist">{t('prov.specialist')}</option>
+              </select>
+            </>
+          )}
+
+          {['psychologist', 'psychiatrist', 'kinesitherapist', 'ergotherapist', 'speech_therapist', 'dietitian', 'midwife'].includes(provider.role) && (
+            <>
+              <Input label={t('prov.languagesLabel')} value={form.languagesText} onChange={(e) => setForm({ ...form, languagesText: e.target.value })} />
+            </>
+          )}
+
+          {provider.role === 'pharmacy' && (
+            <>
+              <Input label={t('prov.openingHours')} value={form.openingHours} onChange={(e) => setForm({ ...form, openingHours: e.target.value })} />
+              <label className="flex items-center gap-2 text-sm font-medium text-ink">
+                <input type="checkbox" checked={form.deliveryAvailable} onChange={(e) => setForm({ ...form, deliveryAvailable: e.target.checked })} />
+                {t('prov.deliveryAvailable')}
+              </label>
+            </>
+          )}
+
+          {provider.role === 'hospital' && (
+            <>
+              <Input label={t('prov.openingHours')} value={form.openingHours} onChange={(e) => setForm({ ...form, openingHours: e.target.value })} />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>{t('prov.type')}</Label>
+                  <select className="w-full rounded-xl border border-line bg-card px-3.5 py-2.5 text-sm text-ink" value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })}>
+                    <option value="hospital">{t('prov.hospitalType')}</option>
+                    <option value="clinic">{t('prov.clinicType')}</option>
+                  </select>
+                </div>
+                <div>
+                  <Label>{t('prov.sector')}</Label>
+                  <select className="w-full rounded-xl border border-line bg-card px-3.5 py-2.5 text-sm text-ink" value={form.sector} onChange={(e) => setForm({ ...form, sector: e.target.value as 'public' | 'private' })}>
+                    <option value="public">{t('prov.public')}</option>
+                    <option value="private">{t('prov.private')}</option>
+                  </select>
+                </div>
+              </div>
+              <Label>{t('prov.servicesLabel')}</Label>
+              <Textarea rows={3} value={form.servicesText} onChange={(e) => setForm({ ...form, servicesText: e.target.value })} />
+              <label className="flex items-center gap-2 text-sm font-medium text-ink">
+                <input type="checkbox" checked={form.emergencyAvailable} onChange={(e) => setForm({ ...form, emergencyAvailable: e.target.checked })} />
+                {t('prov.emergencyAvailable')}
+              </label>
+            </>
+          )}
+
+          {provider.role === 'laboratory' && (
+            <>
+              <Input label={t('prov.openingHours')} value={form.openingHours} onChange={(e) => setForm({ ...form, openingHours: e.target.value })} />
+              <Label>{t('prov.testsLabel')}</Label>
+              <Textarea rows={3} value={form.testsText} onChange={(e) => setForm({ ...form, testsText: e.target.value })} />
+            </>
+          )}
+
+          {provider.role === 'imaging_center' && (
+            <>
+              <Input label={t('prov.openingHours')} value={form.openingHours} onChange={(e) => setForm({ ...form, openingHours: e.target.value })} />
+              <Label>{t('prov.examsLabel')}</Label>
+              <Textarea rows={3} value={form.examsText} onChange={(e) => setForm({ ...form, examsText: e.target.value })} />
+            </>
+          )}
+
+          {provider.role === 'ambulance_driver' && (
+            <>
+              <Label>{t('prov.vehiclesLabel')}</Label>
+              <Textarea rows={3} value={form.vehiclesText} onChange={(e) => setForm({ ...form, vehiclesText: e.target.value })} />
+              <Input label={t('prov.responseTime')} value={form.responseTime} onChange={(e) => setForm({ ...form, responseTime: e.target.value })} />
+              <label className="flex items-center gap-2 text-sm font-medium text-ink">
+                <input type="checkbox" checked={form.available} onChange={(e) => setForm({ ...form, available: e.target.checked })} />
+                {t('prov.available')}
+              </label>
+            </>
+          )}
+
+          {provider.role === 'medical_ngo' && (
+            <>
+              <Input label={t('prov.focus')} value={form.focus} onChange={(e) => setForm({ ...form, focus: e.target.value })} />
+              <Input label={t('prov.openingHours')} value={form.openingHours} onChange={(e) => setForm({ ...form, openingHours: e.target.value })} />
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <Input label={t('common.email')} type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+                <Input label={t('prov.website')} value={form.website} onChange={(e) => setForm({ ...form, website: e.target.value })} />
+              </div>
+              <Label>{t('prov.servicesLabel')}</Label>
+              <Textarea rows={3} value={form.servicesText} onChange={(e) => setForm({ ...form, servicesText: e.target.value })} />
+              <Label>{t('prov.coverageLabel')}</Label>
+              <Textarea rows={3} value={form.coverageText} onChange={(e) => setForm({ ...form, coverageText: e.target.value })} />
+              <label className="flex items-center gap-2 text-sm font-medium text-ink">
+                <input type="checkbox" checked={form.freeCare} onChange={(e) => setForm({ ...form, freeCare: e.target.checked })} />
+                {t('prov.freeCare')}
+              </label>
+            </>
+          )}
+        </div>
+      )}
 
       <Button fullWidth size="lg" loading={saving} onClick={save}>
         <Save className="h-4 w-4" /> {t('prov.savePractice')}

@@ -39,6 +39,20 @@ async function fetchProfile(role: string, providerId: string | null) {
       return []
     }
   }
+  const boolCol = (value: unknown): boolean | undefined =>
+    value == null ? undefined : value === 1 || value === true
+  const parseExams = (value: unknown): { type: string; price: number }[] => {
+    if (typeof value !== 'string') return []
+    try {
+      const parsed = JSON.parse(value)
+      if (!Array.isArray(parsed)) return []
+      return parsed
+        .map((e) => ({ type: String((e as Record<string, unknown>)?.type ?? ''), price: Number((e as Record<string, unknown>)?.price ?? 0) }))
+        .filter((e) => e.type)
+    } catch {
+      return []
+    }
+  }
   return {
     id: row.id,
     name: row[mapping!.nameCol],
@@ -55,6 +69,27 @@ async function fetchProfile(role: string, providerId: string | null) {
     consultationTypes: parseList(row.consultation_types),
     availabilitySlots: parseList(row.availability_slots),
     needsSetup: price === 0,
+    // Role-specific professional details (TODO §2: each provider role creates a
+    // professional profile), so every type can complete its profile via one endpoint.
+    phone: (row.phone as string | undefined) ?? undefined,
+    qualification: (row.qualification as string | undefined) ?? undefined,
+    openingHours: (row.opening_hours as string | undefined) ?? undefined,
+    deliveryAvailable: boolCol(row.delivery_available),
+    emergencyAvailable: boolCol(row.emergency_available),
+    available: boolCol(row.available),
+    freeCare: boolCol(row.free_care),
+    responseTime: (row.response_time as string | undefined) ?? undefined,
+    type: (row.type as string | undefined) ?? undefined,
+    sector: (row.sector as string | undefined) ?? undefined,
+    focus: (row.focus as string | undefined) ?? undefined,
+    email: (row.email as string | undefined) ?? undefined,
+    website: (row.website as string | undefined) ?? undefined,
+    services: parseList(row.services),
+    tests: parseList(row.tests),
+    vehicles: parseList(row.vehicles),
+    coverage: parseList(row.coverage),
+    languages: parseList(row.languages),
+    exams: parseExams(row.exams),
   }
 }
 
@@ -262,6 +297,25 @@ const catalogDetailsSchema = z.object({
   description: z.string().max(600).optional(),
   consultationTypes: z.array(z.enum(['cabinet', 'home', 'hospital'])).min(1).optional(),
   phone: z.string().min(5).optional(),
+  // Role-specific fields, each only applied where the role's table has the column.
+  qualification: z.string().min(2).max(120).optional(),
+  openingHours: z.string().max(120).optional(),
+  deliveryAvailable: z.boolean().optional(),
+  emergencyAvailable: z.boolean().optional(),
+  available: z.boolean().optional(),
+  freeCare: z.boolean().optional(),
+  responseTime: z.string().max(60).optional(),
+  type: z.string().max(40).optional(),
+  sector: z.enum(['public', 'private']).optional(),
+  focus: z.string().max(120).optional(),
+  email: z.string().email().optional().or(z.literal('')),
+  website: z.string().max(200).optional(),
+  services: z.array(z.string().max(60)).max(40).optional(),
+  tests: z.array(z.string().max(80)).max(60).optional(),
+  vehicles: z.array(z.string().max(60)).max(20).optional(),
+  coverage: z.array(z.string().max(60)).max(20).optional(),
+  languages: z.array(z.string().max(40)).max(10).optional(),
+  exams: z.array(z.object({ type: z.string().max(80), price: z.number().int().nonnegative() })).max(60).optional(),
 })
 
 providersRouter.put('/me/catalog', async (req: Request, res: Response) => {
@@ -316,6 +370,27 @@ providersRouter.put('/me/catalog', async (req: Request, res: Response) => {
       set('price_home', data.price ?? Number(record.price ?? 0))
     }
   }
+
+  // Role-specific fields. Every one is guarded by the column actually existing
+  // on the role's table, so the same schema serves every provider type.
+  if (data.qualification !== undefined && 'qualification' in record) set('qualification', data.qualification)
+  if (data.openingHours !== undefined && 'opening_hours' in record) set('opening_hours', data.openingHours)
+  if (data.deliveryAvailable !== undefined && 'delivery_available' in record) set('delivery_available', data.deliveryAvailable ? 1 : 0)
+  if (data.emergencyAvailable !== undefined && 'emergency_available' in record) set('emergency_available', data.emergencyAvailable ? 1 : 0)
+  if (data.available !== undefined && 'available' in record) set('available', data.available ? 1 : 0)
+  if (data.freeCare !== undefined && 'free_care' in record) set('free_care', data.freeCare ? 1 : 0)
+  if (data.responseTime !== undefined && 'response_time' in record) set('response_time', data.responseTime)
+  if (data.type !== undefined && 'type' in record) set('type', data.type)
+  if (data.sector !== undefined && 'sector' in record) set('sector', data.sector)
+  if (data.focus !== undefined && 'focus' in record) set('focus', data.focus)
+  if (data.email !== undefined && 'email' in record) set('email', data.email || null)
+  if (data.website !== undefined && 'website' in record) set('website', data.website || null)
+  if (data.services !== undefined && 'services' in record) set('services', JSON.stringify(data.services))
+  if (data.tests !== undefined && 'tests' in record) set('tests', JSON.stringify(data.tests))
+  if (data.vehicles !== undefined && 'vehicles' in record) set('vehicles', JSON.stringify(data.vehicles))
+  if (data.coverage !== undefined && 'coverage' in record) set('coverage', JSON.stringify(data.coverage))
+  if (data.languages !== undefined && 'languages' in record) set('languages', JSON.stringify(data.languages))
+  if (data.exams !== undefined && 'exams' in record) set('exams', JSON.stringify(data.exams))
 
   if (sets.length === 0) {
     res.status(400).json({ error: 'Aucun champ à modifier' })

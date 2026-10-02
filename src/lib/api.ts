@@ -180,6 +180,24 @@ export const apiRoutes = {
     description?: string
     consultationTypes?: ConsultationType[]
     phone?: string
+    qualification?: string
+    openingHours?: string
+    deliveryAvailable?: boolean
+    emergencyAvailable?: boolean
+    available?: boolean
+    freeCare?: boolean
+    responseTime?: string
+    type?: string
+    sector?: 'public' | 'private'
+    focus?: string
+    email?: string
+    website?: string
+    services?: string[]
+    tests?: string[]
+    vehicles?: string[]
+    coverage?: string[]
+    languages?: string[]
+    exams?: { type: string; price: number }[]
   }) =>
     api<{ user: User; provider?: ProviderProfile }>('/providers/me/catalog', {
       method: 'PUT',

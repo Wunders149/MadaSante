@@ -80,6 +80,26 @@ export interface ProviderProfile {
   consultationTypes: string[]
   availabilitySlots: string[]
   needsSetup: boolean
+  /** Role-specific professional details (see catalog tables). */
+  phone?: string
+  qualification?: string
+  openingHours?: string
+  deliveryAvailable?: boolean
+  emergencyAvailable?: boolean
+  available?: boolean
+  freeCare?: boolean
+  responseTime?: string
+  type?: string
+  sector?: string
+  focus?: string
+  email?: string
+  website?: string
+  services: string[]
+  tests: string[]
+  vehicles: string[]
+  coverage: string[]
+  languages: string[]
+  exams: { type: string; price: number }[]
 }
 
 export interface Practitioner {
