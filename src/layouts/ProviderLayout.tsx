@@ -8,6 +8,7 @@ import {
   CreditCard,
   Home,
   LogOut,
+  MessageSquare,
   UserRound,
 } from 'lucide-react'
 import { Sidebar, SidebarLink } from '../components/layout/Sidebar'
@@ -37,6 +38,7 @@ export function ProviderLayout() {
     { to: '/provider/availability', label: t('prov.availability'), icon: Clock },
     { to: '/provider/requests', label: t('prov.requests'), icon: ClipboardList },
     { to: '/provider/payments', label: t('prov.payments'), icon: CreditCard },
+    { to: '/provider/messages', label: t('prov.messages'), icon: MessageSquare },
     { to: '/provider/profile', label: t('prov.profile'), icon: UserRound },
   ]
 

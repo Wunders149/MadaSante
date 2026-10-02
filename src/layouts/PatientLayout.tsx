@@ -7,8 +7,10 @@ import {
   CreditCard,
   FlaskConical,
   HandHeart,
+  HeartPulse,
   Home,
   LogOut,
+  MessageSquare,
   Package,
   Pill,
   Scan,
@@ -50,6 +52,8 @@ export function PatientLayout() {
     { to: '/patient/delivery', label: t('nav.delivery'), icon: Package },
     { to: '/patient/appointments', label: t('nav.appointments'), icon: CalendarDays },
     { to: '/patient/payments', label: t('nav.payments'), icon: CreditCard },
+    { to: '/patient/home-care', label: t('nav.homeCare'), icon: HeartPulse },
+    { to: '/patient/messages', label: t('nav.messages'), icon: MessageSquare },
   ]
 
   const footer = (

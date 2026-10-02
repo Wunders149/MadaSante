@@ -32,6 +32,20 @@ export const PLATFORM_FEE_RATE = 0.05
 export const DELIVERY_FEE = 3_500
 export const FREE_DELIVERY_ABOVE = 20_000
 
+// Active fee configuration, seeded from the defaults and re-settable from the
+// admin settings page (persisted in platform_settings, re-applied on boot).
+let activeFeeRate = PLATFORM_FEE_RATE
+let activeDeliveryFee = DELIVERY_FEE
+
+export function configureFees(input: { platformFeeRate?: number; deliveryFee?: number }): void {
+  if (input.platformFeeRate !== undefined && Number.isFinite(input.platformFeeRate)) {
+    activeFeeRate = input.platformFeeRate
+  }
+  if (input.deliveryFee !== undefined && Number.isFinite(input.deliveryFee)) {
+    activeDeliveryFee = input.deliveryFee
+  }
+}
+
 /**
  * Consultation keys.
  *
@@ -57,19 +71,22 @@ export const PROVIDER_TABLE: Record<string, { table: string; nameCol: string }> 
   imaging_center: { table: 'imaging_centers', nameCol: 'name' },
   hospital: { table: 'hospitals', nameCol: 'name' },
   ambulance_driver: { table: 'ambulances', nameCol: 'provider' },
+  delivery_driver: { table: 'delivery_drivers', nameCol: 'name' },
   medical_ngo: { table: 'medical_ngos', nameCol: 'name' },
   ...Object.fromEntries(
     PRACTITIONER_ROLES.map((role) => [role, { table: 'practitioners', nameCol: 'name' }]),
   ),
 }
 
-/** Roles that can be booked, i.e. everything except NGO-style organisations. */
+/** Roles that can be booked, i.e. everything except NGO-style organisations
+ *  and delivery drivers (deliveries are ordered against a pharmacy, then
+ *  assigned to a driver — not booked directly). */
 export const BOOKABLE_ROLES = PROVIDER_ROLES.filter(
-  (role) => !(FACILITY_ROLES as readonly string[]).includes(role),
+  (role) => !(FACILITY_ROLES as readonly string[]).includes(role) && role !== 'delivery_driver',
 )
 
 export function platformFeeFor(basePrice: number): number {
-  return Math.round(basePrice * PLATFORM_FEE_RATE)
+  return Math.round(basePrice * activeFeeRate)
 }
 
 type Queryable = { query: (text: string, params?: unknown[]) => Promise<{ rows: Row[] }> }
@@ -123,7 +140,7 @@ export function locationFor(
 
 /** Delivery fee for a subtotal, free above the threshold. */
 export function deliveryFeeFor(subtotal: number): number {
-  return subtotal >= FREE_DELIVERY_ABOVE ? 0 : DELIVERY_FEE
+  return subtotal >= FREE_DELIVERY_ABOVE ? 0 : activeDeliveryFee
 }
 
 const DEFAULT_OPENING_HOURS = 'Lundi – Samedi : 08:00 – 18:00'
@@ -205,6 +222,13 @@ export async function createProviderRecord(
         `INSERT INTO medical_ngos (id, name, focus, location, city, services, coverage, opening_hours, phone, email, website, free_care, rating, description)
          VALUES ($1, $2, $3, $4, $5, '[]', '[]', $6, $7, NULL, NULL, 0, 0, '')`,
         [id, name, 'Santé générale', location, city, DEFAULT_OPENING_HOURS, phone],
+      )
+      break
+    case 'delivery_driver':
+      await client.query(
+        `INSERT INTO delivery_drivers (id, name, location, city, phone, vehicles, available, rating)
+         VALUES ($1, $2, $3, $4, $5, '[]', 0, 0)`,
+        [id, name, location, city, phone],
       )
       break
     default:

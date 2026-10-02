@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Outlet, useNavigate } from 'react-router-dom'
-import { ClipboardCheck, LogOut, ShieldCheck, UserCog, Users } from 'lucide-react'
+import { BarChart3, ClipboardCheck, LogOut, Settings, ShieldCheck, UserCog, Users } from 'lucide-react'
 import { Sidebar, SidebarLink } from '../components/layout/Sidebar'
 import { MobileNav } from '../components/layout/MobileNav'
 import { LangSwitch } from '../components/LangSwitch'
@@ -20,6 +20,8 @@ export function AdminLayout() {
   const items: NavEntry[] = [
     { to: '/admin', label: t('admin.applications'), icon: ClipboardCheck, end: true },
     { to: '/admin/patients', label: t('admin.patients'), icon: Users },
+    { to: '/admin/reports', label: t('admin.reports'), icon: BarChart3 },
+    { to: '/admin/settings', label: t('admin.settings'), icon: Settings },
     { to: '/admin/profile', label: t('admin.profile'), icon: UserCog },
   ]
 

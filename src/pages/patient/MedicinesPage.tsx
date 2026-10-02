@@ -6,19 +6,36 @@ import { SearchBar } from '../../components/SearchBar'
 import { MedicineCard } from '../../components/MedicineCard'
 import { OrientationBanner } from '../../components/OrientationBanner'
 import { EmptyState } from '../../components/ui/States'
+import { Button } from '../../components/ui/Button'
 import { useApp } from '../../stores/AppStore'
+import { apiRoutes } from '../../lib/api'
 import { useMedicines, usePharmacies } from '../../lib/hooks'
 import type { Medicine } from '../../types'
 import { formatAr } from '../../lib/format'
 
 export function MedicinesPage() {
-  const { t } = useApp()
+  const { t, toast } = useApp()
   const { data: medicines = [] } = useMedicines()
   const { data: pharmacies = [] } = usePharmacies()
   const [params] = useSearchParams()
   const [query, setQuery] = useState(params.get('pharmacy') ? '' : '')
+  const [requesting, setRequesting] = useState(false)
   const pharmacyFilter = params.get('pharmacy') ?? ''
   const pharm = pharmacies.find((p) => p.id === pharmacyFilter)
+
+  const requestMed = async () => {
+    const name = query.trim()
+    if (!name) return
+    setRequesting(true)
+    try {
+      await apiRoutes.findMedication({ medicineName: name, quantity: 1 })
+      toast(t('med.findSent'), t('med.findSentDesc'), 'success')
+    } catch (err) {
+      toast(t('common.error'), err instanceof Error ? err.message : undefined, 'error')
+    } finally {
+      setRequesting(false)
+    }
+  }
 
   const results = useMemo<Medicine[]>(() => {
     const needle = query.trim().toLowerCase()
@@ -72,6 +89,9 @@ export function MedicinesPage() {
             actionLabel={t('med.alternativeBtn')}
             actionTo={`/patient/pharmacies`}
           />
+          <Button fullWidth size="lg" loading={requesting} onClick={requestMed}>
+            {t('med.findThis')}
+          </Button>
         </section>
       )}
 
@@ -84,11 +104,16 @@ export function MedicinesPage() {
             <MedicineCard key={m.id} medicine={m} />
           ))}
           {results.length === 0 && (
-            <EmptyState
-              icon={<Pill className="h-6 w-6" />}
-              title={t('common.noResults')}
-              description={t('search.noResultsDesc')}
-            />
+            <>
+              <EmptyState
+                icon={<Pill className="h-6 w-6" />}
+                title={t('common.noResults')}
+                description={t('search.noResultsDesc')}
+              />
+              <Button fullWidth size="lg" loading={requesting} onClick={requestMed}>
+                {t('med.findThis')}
+              </Button>
+            </>
           )}
         </section>
       )}

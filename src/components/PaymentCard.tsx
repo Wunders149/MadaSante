@@ -4,10 +4,12 @@ import { useApp } from '../stores/AppStore'
 import { StatusBadge } from './ui/StatusBadge'
 import { formatAr, monthDay } from '../lib/format'
 
-const statusTone: Record<Payment['status'], 'green' | 'slate' | 'red'> = {
+const statusTone: Record<Payment['status'], 'green' | 'slate' | 'red' | 'amber' | 'blue'> = {
   success: 'green',
   pending: 'slate',
+  processing: 'blue',
   failed: 'red',
+  refunded: 'amber',
 }
 
 export function PaymentCard({ payment, onOpen }: { payment: Payment; onOpen?: () => void }) {

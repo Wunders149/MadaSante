@@ -1,16 +1,23 @@
 import type {
+  AdminReports,
+  AdminSettings,
   Ambulance,
   Appointment,
   AppointmentStatus,
   ConsultationType,
+  Conversation,
   DeliveryOrder,
+  DeliveryStatus,
   Doctor,
   EmergencyRequest,
+  HomeRequest,
   Hospital,
   ImagingCenter,
   Laboratory,
   MedicalNgo,
+  MedicationRequest,
   Medicine,
+  Message,
   NotificationItem,
   Nurse,
   Payment,
@@ -228,6 +235,9 @@ export const apiRoutes = {
   adminUser: (id: string) => api<AdminUserDetail>(`/admin/users/${id}`),
 
   deliveries: () => api<DeliveryOrder[]>('/deliveries'),
+  updateDeliveryStatus: (id: string, status: DeliveryStatus, deliveryPerson?: string) =>
+    api<DeliveryOrder>(`/deliveries/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status, deliveryPerson }) }),
+  deliveryDrivers: () => api<{ id: string; name: string; location: string; city: string; phone: string; vehicles: string[]; available: boolean; rating: number }[]>('/delivery-drivers'),
   /**
    * Orders a medicine. Name, dose, pharmacy, unit price, delivery fee and
    * total are all resolved server-side from the medicine record, so only the
@@ -240,6 +250,35 @@ export const apiRoutes = {
     deliveryTimeSlot: string
     prescriptionConfirmed?: boolean
   }) => api<DeliveryOrder>('/deliveries', { method: 'POST', body: JSON.stringify(body) }),
+
+  medicationRequests: () => api<MedicationRequest[]>('/medication-requests'),
+  findMedication: (body: { medicineName: string; quantity?: number; note?: string }) =>
+    api<MedicationRequest>('/medication-requests', { method: 'POST', body: JSON.stringify(body) }),
+  setMedicationRequestStatus: (id: string, status: MedicationRequest['status']) =>
+    api<MedicationRequest>(`/medication-requests/${id}`, { method: 'PATCH', body: JSON.stringify({ status }) }),
+
+  homeRequests: () => api<HomeRequest[]>('/home-requests'),
+  createHomeRequest: (body: { service: string; address: string; reason: string; preferredTime: string; urgency?: 'normal' | 'urgence'; location?: string }) =>
+    api<HomeRequest>('/home-requests', { method: 'POST', body: JSON.stringify(body) }),
+  updateHomeRequest: (id: string, status: HomeRequest['status'], providerName?: string) =>
+    api<HomeRequest>(`/home-requests/${id}`, { method: 'PATCH', body: JSON.stringify({ status, providerName }) }),
+
+  conversations: () => api<Conversation[]>('/conversations'),
+  openConversation: (providerId: string) =>
+    api<Conversation>('/conversations', { method: 'POST', body: JSON.stringify({ providerId }) }),
+  messages: (conversationId: string) => api<Message[]>(`/conversations/${conversationId}/messages`),
+  sendMessage: (conversationId: string, text: string) =>
+    api<Message>(`/conversations/${conversationId}/messages`, { method: 'POST', body: JSON.stringify({ text }) }),
+
+  pushSubscribe: (body: { endpoint: string; keys: { p256dh: string; auth: string } }) =>
+    api<{ ok: boolean }>('/notifications/push-subscriptions', { method: 'POST', body: JSON.stringify(body) }),
+
+  refundPayment: (id: string) => api<Payment>(`/payments/${id}/refund`, { method: 'POST' }),
+  adminReports: () => api<AdminReports>('/admin/reports'),
+  adminSettings: () => api<AdminSettings>('/admin/settings'),
+  saveAdminSettings: (body: { platformFeeRate?: number; deliveryFee?: number }) =>
+    api<{ ok: boolean }>('/admin/settings', { method: 'PUT', body: JSON.stringify(body) }),
+
 
   emergencyRequests: () => api<EmergencyRequest[]>('/emergency-requests'),
   createEmergencyRequest: (body: unknown) =>

@@ -29,6 +29,9 @@ export function DoctorCard({ doctor, compact }: { doctor: Doctor; compact?: bool
             <Badge tone={doctor.type === 'generalist' ? 'green' : 'blue'}>
               {typeLabel[doctor.type]}
             </Badge>
+            <Badge tone="brand">
+              ✓ {t('doctors.verified')}
+            </Badge>
           </div>
           <p className="mt-0.5 flex items-center gap-1 text-sm text-ink-soft">
             <Stethoscope className="h-3.5 w-3.5 shrink-0 text-brand-600" />

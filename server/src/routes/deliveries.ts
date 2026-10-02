@@ -45,7 +45,7 @@ deliveriesRouter.get('/', async (req: Request, res: Response) => {
   const auth = req.auth!
   
   // Pharmacy and delivery providers see all active deliveries
-  if (auth.role === 'pharmacy' || auth.role === 'ambulance_driver' || auth.role === 'admin') {
+  if (auth.role === 'pharmacy' || auth.role === 'ambulance_driver' || auth.role === 'delivery_driver' || auth.role === 'admin') {
     const deliveries = await getActiveDeliveries()
     res.json(deliveries)
     return
@@ -107,7 +107,7 @@ deliveriesRouter.patch('/:id/status', async (req: Request, res: Response) => {
   }
 
   // Only pharmacy and delivery providers can update status
-  if (auth.role !== 'pharmacy' && auth.role !== 'ambulance_driver' && auth.role !== 'admin') {
+  if (auth.role !== 'pharmacy' && auth.role !== 'ambulance_driver' && auth.role !== 'delivery_driver' && auth.role !== 'admin') {
     res.status(403).json({ error: 'Forbidden' })
     return
   }

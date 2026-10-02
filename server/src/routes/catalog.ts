@@ -178,14 +178,19 @@ catalogRouter.get('/doctors', async (req: Request, res: Response) => {
   const q = like(String(req.query.q ?? ''))
   const city = String(req.query.city ?? '') || undefined
   const type = String(req.query.type ?? '') || undefined
+  const consultation = String(req.query.consultation ?? '') || undefined
   const where: string[] = []
   const params: unknown[] = []
-  if (q) where.push('(LOWER(name) LIKE ? OR LOWER(specialty) LIKE ? OR LOWER(city) LIKE ?)')
+  // `q` also matches the description so searching a disease/problem (e.g.
+  // "diabète") finds doctors whose practice mentions it.
+  if (q) where.push('(LOWER(name) LIKE ? OR LOWER(specialty) LIKE ? OR LOWER(city) LIKE ? OR LOWER(description) LIKE ?)')
   if (city) where.push('city = ?')
   if (type) where.push('type = ?')
-  if (q) params.push(q, q, q)
+  if (consultation) where.push('consultation_types LIKE ?')
+  if (q) params.push(q, q, q, q)
   if (city) params.push(city)
   if (type) params.push(type)
+  if (consultation) params.push(`%"${consultation}"%`)
   const rows = (
     await db.query(`SELECT * FROM doctors${where.length ? ` WHERE ${where.join(' AND ')}` : ''} ORDER BY rating DESC`, params)
   ).rows as Row[]
@@ -257,6 +262,21 @@ catalogRouter.get('/nurses', async (req: Request, res: Response) => {
 })
 
 catalogRouter.get('/ambulances', list('ambulances', mapAmbulance, 'provider'))
+
+function mapDeliveryDriver(r: Row) {
+  return {
+    id: r.id,
+    name: r.name,
+    location: r.location,
+    city: r.city,
+    phone: r.phone,
+    vehicles: parse(r.vehicles as string),
+    available: bool(r.available as number),
+    rating: r.rating,
+  }
+}
+
+catalogRouter.get('/delivery-drivers', list('delivery_drivers', mapDeliveryDriver))
 
 function mapPractitioner(r: Row) {
   return {

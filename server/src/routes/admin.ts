@@ -2,7 +2,7 @@ import { Router, type Request, type Response } from 'express'
 import { z } from 'zod'
 import { db, boundedInt } from '../db.js'
 import { requireAdmin, requireAuth } from '../auth.js'
-import { createProviderRecord } from '../catalog.js'
+import { createProviderRecord, configureFees, DELIVERY_FEE, PLATFORM_FEE_RATE } from '../catalog.js'
 
 export const adminRouter = Router()
 adminRouter.use(requireAuth, requireAdmin)
@@ -248,6 +248,62 @@ adminRouter.get('/users', async (req: Request, res: Response) => {
  * page enormous.
  */
 const RECENT_LIMIT = 20
+
+// ── Monitoring & settings ────────────────────────────────────────────────
+
+adminRouter.get('/reports', async (_req: Request, res: Response) => {
+  const [appointments, payments, emergencies, deliveries, providers] = await Promise.all([
+    db.query(`SELECT status, COUNT(*)::int AS count FROM appointments GROUP BY status`),
+    db.query(`SELECT status, COUNT(*)::int AS count, COALESCE(SUM(amount),0)::int AS total FROM payments GROUP BY status`),
+    db.query(`SELECT status, COUNT(*)::int AS count FROM emergency_requests GROUP BY status`),
+    db.query(`SELECT status, COUNT(*)::int AS count FROM delivery_orders GROUP BY status`),
+    db.query(`SELECT role, COUNT(*)::int AS count FROM users GROUP BY role ORDER BY role`),
+  ])
+  res.json({
+    appointments: appointments.rows,
+    payments: payments.rows,
+    emergencies: emergencies.rows,
+    deliveries: deliveries.rows,
+    usersByRole: providers.rows,
+  })
+})
+
+const SETTINGS_KEYS = ['platform_fee_rate', 'delivery_fee'] as const
+type SettingKey = (typeof SETTINGS_KEYS)[number]
+
+adminRouter.get('/settings', async (_req: Request, res: Response) => {
+  const rows = (await db.query(`SELECT key, value FROM platform_settings`)).rows as { key: string; value: string }[]
+  const map = Object.fromEntries(rows.map((r) => [r.key, r.value]))
+  res.json({
+    platformFeeRate: Number(map.platform_fee_rate ?? PLATFORM_FEE_RATE),
+    deliveryFee: Number(map.delivery_fee ?? DELIVERY_FEE),
+  })
+})
+
+adminRouter.put('/settings', async (req: Request, res: Response) => {
+  const parsed = z
+    .object({
+      platformFeeRate: z.number().min(0).max(1).optional(),
+      deliveryFee: z.number().int().nonnegative().optional(),
+    })
+    .safeParse(req.body)
+  if (!parsed.success) {
+    res.status(400).json({ error: 'Payload invalide' })
+    return
+  }
+  const entries: [SettingKey, number][] = []
+  if (parsed.data.platformFeeRate !== undefined) entries.push(['platform_fee_rate', parsed.data.platformFeeRate])
+  if (parsed.data.deliveryFee !== undefined) entries.push(['delivery_fee', parsed.data.deliveryFee])
+  for (const [key, value] of entries) {
+    await db.query(
+      `INSERT INTO platform_settings (key, value) VALUES ($1, $2)
+       ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`,
+      [key, String(value)],
+    )
+  }
+  configureFees({ platformFeeRate: parsed.data.platformFeeRate, deliveryFee: parsed.data.deliveryFee })
+  res.json({ ok: true })
+})
 
 adminRouter.get('/users/:id', async (req: Request, res: Response) => {
   const row = (

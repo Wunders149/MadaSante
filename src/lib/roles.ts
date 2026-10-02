@@ -10,6 +10,7 @@ export function roleLabelKey(role?: string): string {
     imaging_center: 'auth.imagingRole',
     hospital: 'auth.hospitalRole',
     ambulance_driver: 'auth.ambulanceRole',
+    delivery_driver: 'auth.deliveryRole',
     psychologist: 'auth.psychologistRole',
     psychiatrist: 'auth.psychiatristRole',
     kinesitherapist: 'auth.kineRole',
@@ -46,6 +47,7 @@ export const PROVIDER_ROLES = [
   'imaging_center',
   'hospital',
   'ambulance_driver',
+  'delivery_driver',
   ...PROFESSIONS,
   'medical_ngo',
 ] as const

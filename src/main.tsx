@@ -17,6 +17,13 @@ const queryClient = new QueryClient({
 
 const rootElement = document.getElementById('root')
 
+if ('serviceWorker' in navigator) {
+  // Standalone-ready service worker used for web-push notifications.
+  navigator.serviceWorker.register('/sw.js').catch(() => {
+    // Push is best-effort; the app works fully without it.
+  })
+}
+
 if (rootElement) {
   createRoot(rootElement).render(
     <StrictMode>

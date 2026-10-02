@@ -7,6 +7,7 @@ export type Role =
   | 'imaging_center'
   | 'hospital'
   | 'ambulance_driver'
+  | 'delivery_driver'
   | 'psychologist'
   | 'psychiatrist'
   | 'kinesitherapist'
@@ -306,7 +307,7 @@ export interface Appointment {
 }
 
 export type PaymentMethod = 'orange_money' | 'mvola'
-export type PaymentStatus = 'success' | 'pending' | 'failed'
+export type PaymentStatus = 'success' | 'pending' | 'processing' | 'failed' | 'refunded'
 
 export interface Payment {
   id: string
@@ -323,7 +324,7 @@ export interface Payment {
   breakdown: { label: string; amount: number }[]
 }
 
-export type DeliveryStatus = 'received' | 'preparing' | 'in_delivery' | 'delivered'
+export type DeliveryStatus = 'received' | 'pharmacy_confirmed' | 'preparing' | 'delivery_assigned' | 'in_delivery' | 'delivered'
 
 export interface DeliveryOrder {
   id: string
@@ -370,6 +371,84 @@ export interface NotificationItem {
 }
 
 export type ProviderApplicationStatus = 'pending' | 'approved' | 'rejected'
+
+export interface DeliveryDriver {
+  id: string
+  name: string
+  location: string
+  city: string
+  phone: string
+  vehicles: string[]
+  available: boolean
+  rating: number
+}
+
+export type MedicationRequestStatus = 'pending' | 'available' | 'unavailable' | 'closed'
+
+export interface MedicationRequest {
+  id: string
+  reference: string
+  patientId: string
+  patientName: string
+  medicineName: string
+  quantity: number
+  note: string
+  status: MedicationRequestStatus
+  date: string
+}
+
+export type HomeRequestStatus = 'received' | 'accepted' | 'in_progress' | 'completed' | 'cancelled'
+
+export interface HomeRequest {
+  id: string
+  reference: string
+  patientId: string
+  patientName: string
+  phone: string
+  service: string
+  address: string
+  reason: string
+  preferredTime: string
+  urgency: 'normal' | 'urgence'
+  location: string
+  providerId?: string
+  providerName?: string
+  status: HomeRequestStatus
+  date: string
+}
+
+export interface Conversation {
+  id: string
+  patientId: string
+  providerId: string
+  patientName: string
+  providerName: string
+  createdAt: string
+  lastMessage?: string
+  lastAt?: string
+}
+
+export interface Message {
+  id: string
+  conversationId: string
+  senderId: string
+  senderRole: string
+  text: string
+  createdAt: string
+}
+
+export interface AdminReports {
+  appointments: { status: string; count: number }[]
+  payments: { status: string; count: number; total: number }[]
+  emergencies: { status: string; count: number }[]
+  deliveries: { status: string; count: number }[]
+  usersByRole: { role: string; count: number }[]
+}
+
+export interface AdminSettings {
+  platformFeeRate: number
+  deliveryFee: number
+}
 
 export interface ProviderDocument {
   id: string

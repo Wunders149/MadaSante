@@ -86,3 +86,34 @@ notificationsRouter.patch('/read-all', async (req: Request, res: Response) => {
   await db.query('UPDATE notifications SET read = 1 WHERE user_id = ?', [req.auth!.id])
   res.json({ ok: true })
 })
+
+// ── Web push subscriptions (architecture ready for a push service) ───────
+// The server stores the browser's PushSubscription; a production deployment
+// would send via web-push with VAPID keys (see sendPushNotification).
+
+notificationsRouter.post('/push-subscriptions', async (req: Request, res: Response) => {
+  const parsed = z
+    .object({
+      endpoint: z.string().min(10),
+      keys: z.object({ p256dh: z.string(), auth: z.string() }),
+    })
+    .safeParse(req.body)
+  if (!parsed.success) {
+    res.status(400).json({ error: 'Payload invalide' })
+    return
+  }
+  const id = `push-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+  await db.query('INSERT INTO push_subscriptions (id, user_id, endpoint, keys, created_at) VALUES (?, ?, ?, ?, ?)', [
+    id,
+    req.auth!.id,
+    parsed.data.endpoint,
+    JSON.stringify(parsed.data.keys),
+    new Date().toISOString(),
+  ])
+  res.status(201).json({ ok: true, id })
+})
+
+notificationsRouter.delete('/push-subscriptions', async (req: Request, res: Response) => {
+  await db.query('DELETE FROM push_subscriptions WHERE user_id = ?', [req.auth!.id])
+  res.json({ ok: true })
+})

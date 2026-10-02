@@ -150,6 +150,48 @@ paymentsRouter.post('/', async (req: Request, res: Response) => {
   res.status(201).json(mapPayment(stored))
 })
 
+/**
+ * Refund a successful payment. Refunded amounts are excluded from the
+ * provider's revenue summary and the appointment is marked unpaid again if the
+ * payment is tied to one.
+ */
+paymentsRouter.post('/:id/refund', async (req: Request, res: Response) => {
+  const auth = req.auth!
+  const row = (await db.query('SELECT * FROM payments WHERE id = ?', [req.params.id])).rows[0] as Row | undefined
+  if (!row) {
+    res.status(404).json({ error: 'Paiement introuvable' })
+    return
+  }
+  if (auth.role !== 'admin' && row.provider_id !== auth.providerId) {
+    res.status(403).json({ error: 'Forbidden' })
+    return
+  }
+  if (row.status === 'refunded') {
+    res.status(409).json({ error: 'Paiement déjà remboursé' })
+    return
+  }
+  if (row.status !== 'success') {
+    res.status(409).json({ error: 'Seul un paiement réussi peut être remboursé' })
+    return
+  }
+  const client = await db.connect()
+  try {
+    await client.query('BEGIN')
+    await client.query(`UPDATE payments SET status = 'refunded' WHERE id = $1`, [row.id])
+    if (row.appointment_id) {
+      await client.query(`UPDATE appointments SET payment_status = 'unpaid' WHERE id = $1`, [row.appointment_id])
+    }
+    await client.query('COMMIT')
+  } catch (err) {
+    await client.query('ROLLBACK')
+    throw err
+  } finally {
+    client.release()
+  }
+  const updated = (await db.query('SELECT * FROM payments WHERE id = $1', [row.id])).rows[0] as Row
+  res.json(mapPayment(updated))
+})
+
 paymentsRouter.get('/summary', async (req: Request, res: Response) => {
   const auth = req.auth!
   if (auth.role === 'patient' || !auth.providerId) {

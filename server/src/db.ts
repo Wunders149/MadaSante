@@ -180,6 +180,78 @@ export async function migrate() {
       response_time TEXT NOT NULL
     );
 
+    CREATE TABLE IF NOT EXISTS delivery_drivers (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      location TEXT NOT NULL,
+      city TEXT NOT NULL,
+      phone TEXT NOT NULL,
+      vehicles TEXT NOT NULL,
+      available INT NOT NULL,
+      rating DOUBLE PRECISION NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS medication_requests (
+      id TEXT PRIMARY KEY,
+      reference TEXT NOT NULL UNIQUE,
+      patient_id TEXT NOT NULL,
+      patient_name TEXT NOT NULL,
+      medicine_name TEXT NOT NULL,
+      quantity INT NOT NULL,
+      note TEXT NOT NULL,
+      status TEXT NOT NULL,
+      date TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS home_requests (
+      id TEXT PRIMARY KEY,
+      reference TEXT NOT NULL UNIQUE,
+      patient_id TEXT NOT NULL,
+      patient_name TEXT NOT NULL,
+      phone TEXT NOT NULL,
+      service TEXT NOT NULL,
+      address TEXT NOT NULL,
+      reason TEXT NOT NULL,
+      preferred_time TEXT NOT NULL,
+      urgency TEXT NOT NULL,
+      location TEXT NOT NULL,
+      provider_id TEXT,
+      provider_name TEXT,
+      status TEXT NOT NULL,
+      date TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS conversations (
+      id TEXT PRIMARY KEY,
+      patient_id TEXT NOT NULL,
+      provider_id TEXT NOT NULL,
+      patient_name TEXT NOT NULL,
+      provider_name TEXT NOT NULL,
+      created_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS messages (
+      id TEXT PRIMARY KEY,
+      conversation_id TEXT NOT NULL,
+      sender_id TEXT NOT NULL,
+      sender_role TEXT NOT NULL,
+      text TEXT NOT NULL,
+      created_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS push_subscriptions (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      endpoint TEXT NOT NULL,
+      keys TEXT NOT NULL,
+      created_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS platform_settings (
+      key TEXT PRIMARY KEY,
+      value TEXT NOT NULL
+    );
+
     CREATE TABLE IF NOT EXISTS practitioners (
       id TEXT PRIMARY KEY,
       profession TEXT NOT NULL,

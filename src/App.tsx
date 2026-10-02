@@ -39,6 +39,8 @@ const PaymentsPage = lazy(() => import('./pages/patient/PaymentsPage').then((m) 
 const ProfilePage = lazy(() => import('./pages/patient/ProfilePage').then((m) => ({ default: m.ProfilePage })))
 const NotificationsPage = lazy(() => import('./pages/patient/NotificationsPage').then((m) => ({ default: m.NotificationsPage })))
 const OrientationPage = lazy(() => import('./pages/patient/OrientationPage').then((m) => ({ default: m.OrientationPage })))
+const HomeCarePage = lazy(() => import('./pages/patient/HomeCarePage').then((m) => ({ default: m.HomeCarePage })))
+const MessagesPage = lazy(() => import('./pages/patient/MessagesPage').then((m) => ({ default: m.MessagesPage })))
 
 const ProviderDashboardPage = lazy(() => import('./pages/provider/ProviderDashboardPage').then((m) => ({ default: m.ProviderDashboardPage })))
 const ProviderAppointmentsPage = lazy(() => import('./pages/provider/ProviderAppointmentsPage').then((m) => ({ default: m.ProviderAppointmentsPage })))
@@ -46,12 +48,15 @@ const ProviderAvailabilityPage = lazy(() => import('./pages/provider/ProviderAva
 const ProviderRequestsPage = lazy(() => import('./pages/provider/ProviderRequestsPage').then((m) => ({ default: m.ProviderRequestsPage })))
 const ProviderPaymentsPage = lazy(() => import('./pages/provider/ProviderPaymentsPage').then((m) => ({ default: m.ProviderPaymentsPage })))
 const ProviderProfilePage = lazy(() => import('./pages/provider/ProviderProfilePage').then((m) => ({ default: m.ProviderProfilePage })))
+const ProviderMessagesPage = lazy(() => import('./pages/provider/ProviderMessagesPage').then((m) => ({ default: m.ProviderMessagesPage })))
 
 const AdminApplicationsPage = lazy(() => import('./pages/admin/AdminApplicationsPage').then((m) => ({ default: m.AdminApplicationsPage })))
 const AdminApplicationDetailPage = lazy(() => import('./pages/admin/AdminApplicationDetailPage').then((m) => ({ default: m.AdminApplicationDetailPage })))
 const AdminPatientsPage = lazy(() => import('./pages/admin/AdminPatientsPage').then((m) => ({ default: m.AdminPatientsPage })))
 const AdminPatientDetailPage = lazy(() => import('./pages/admin/AdminPatientDetailPage').then((m) => ({ default: m.AdminPatientDetailPage })))
 const AdminProfilePage = lazy(() => import('./pages/admin/AdminProfilePage').then((m) => ({ default: m.AdminProfilePage })))
+const AdminReportsPage = lazy(() => import('./pages/admin/AdminReportsPage').then((m) => ({ default: m.AdminReportsPage })))
+const AdminSettingsPage = lazy(() => import('./pages/admin/AdminSettingsPage').then((m) => ({ default: m.AdminSettingsPage })))
 
 type GuardRole = 'patient' | 'provider' | 'admin'
 
@@ -159,6 +164,8 @@ function LazyRoutes() {
             <Route path="profile" element={<ProfilePage />} />
             <Route path="notifications" element={<NotificationsPage />} />
             <Route path="orientation" element={<OrientationPage />} />
+            <Route path="home-care" element={<HomeCarePage />} />
+            <Route path="messages" element={<MessagesPage />} />
           </Route>
 
           <Route
@@ -177,6 +184,7 @@ function LazyRoutes() {
             <Route path="requests" element={<ProviderRequestsPage />} />
             <Route path="payments" element={<ProviderPaymentsPage />} />
             <Route path="profile" element={<ProviderProfilePage />} />
+            <Route path="messages" element={<ProviderMessagesPage />} />
           </Route>
 
           <Route
@@ -197,6 +205,8 @@ function LazyRoutes() {
                 loaded an application by the wrong id. */}
             <Route path="patients/:id" element={<AdminPatientDetailPage />} />
             <Route path="profile" element={<AdminProfilePage />} />
+            <Route path="reports" element={<AdminReportsPage />} />
+            <Route path="settings" element={<AdminSettingsPage />} />
           </Route>
 
           <Route path="/" element={<RootRedirect />} />

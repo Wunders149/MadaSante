@@ -76,6 +76,7 @@ export const PROVIDER_ROLES = [
   'imaging_center',
   'hospital',
   'ambulance_driver',
+  'delivery_driver',
   ...PRACTITIONER_ROLES,
   ...FACILITY_ROLES,
 ] as const

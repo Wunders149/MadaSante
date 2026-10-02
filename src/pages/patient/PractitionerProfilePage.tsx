@@ -1,7 +1,8 @@
 import { useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import { CalendarPlus, CheckCircle2, Languages, MapPin, Star } from 'lucide-react'
 import { useApp } from '../../stores/AppStore'
+import { apiRoutes } from '../../lib/api'
 import { usePractitioner } from '../../lib/hooks'
 import { PageHeader } from '../../components/ui/Headers'
 import { Button } from '../../components/ui/Button'
@@ -27,7 +28,8 @@ const CONSULT_LABEL: Record<ConsultationType, string> = {
  */
 export function PractitionerProfilePage() {
   const { id } = useParams()
-  const { t } = useApp()
+  const navigate = useNavigate()
+  const { t, toast } = useApp()
   const { data: practitioner, isLoading } = usePractitioner(id)
   const [contactOpen, setContactOpen] = useState(false)
 
@@ -150,8 +152,15 @@ export function PractitionerProfilePage() {
           {practitioner.price <= 0 && (
             <p className="mt-2 text-xs font-medium text-amber-700">{t('prac.noPriceYet')}</p>
           )}
-          <Button className="mt-2 w-full" variant="outline" onClick={() => setContactOpen(true)}>
-            {t('common.contact')}
+          <Button className="mt-2 w-full" variant="outline" onClick={async () => {
+            try {
+              await apiRoutes.openConversation(practitioner.id)
+              navigate('/patient/messages')
+            } catch (err) {
+              toast(t('common.error'), err instanceof Error ? err.message : undefined, 'error')
+            }
+          }}>
+            {t('msg.open')}
           </Button>
 
           <Link

@@ -72,7 +72,9 @@ export function DoctorsPage() {
     const needle = filters.text.trim().toLowerCase()
     return allDoctors
       .filter((d) => {
-        if (needle && !(d.name.toLowerCase().includes(needle) || d.specialty.toLowerCase().includes(needle))) return false
+        // Match the name, specialty or description, so searching a
+        // disease/problem finds doctors whose practice mentions it.
+        if (needle && !(d.name.toLowerCase().includes(needle) || d.specialty.toLowerCase().includes(needle) || d.description.toLowerCase().includes(needle))) return false
         if (filters.type !== 'all' && d.type !== filters.type) return false
         if (filters.specialty !== 'all' && d.specialty !== filters.specialty) return false
         if (filters.city !== 'all' && d.city !== filters.city) return false

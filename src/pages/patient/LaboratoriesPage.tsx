@@ -4,6 +4,7 @@ import { PageHeader } from '../../components/ui/Headers'
 import { SearchBar } from '../../components/SearchBar'
 import { LaboratoryCard } from '../../components/LaboratoryCard'
 import { EmptyState } from '../../components/ui/States'
+import { OrientationBanner } from '../../components/OrientationBanner'
 import { useApp } from '../../stores/AppStore'
 import { useLaboratories } from '../../lib/hooks'
 
@@ -30,11 +31,18 @@ const { t } = useApp()
       <SearchBar value={query} onChange={setQuery} placeholder={t('lab.searchPlaceholder')} />
 
       {list.length === 0 ? (
-        <div className="mt-6">
+        <div className="mt-6 space-y-4">
           <EmptyState
             icon={<SearchX className="h-6 w-6" />}
             title={t('common.noResults')}
             description={t('common.noResultsDesc')}
+          />
+          <OrientationBanner
+            icon={SearchX}
+            compact
+            title={t('lab.unavailable')}
+            actionLabel={t('orient.title')}
+            actionTo="/patient/orientation"
           />
         </div>
       ) : (

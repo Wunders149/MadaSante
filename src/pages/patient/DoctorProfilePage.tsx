@@ -15,6 +15,7 @@ import {
   Stethoscope,
 } from 'lucide-react'
 import { useApp } from '../../stores/AppStore'
+import { apiRoutes } from '../../lib/api'
 import { useDoctor } from '../../lib/hooks'
 import { Avatar } from '../../components/Avatar'
 import { Button } from '../../components/ui/Button'
@@ -25,7 +26,7 @@ import { formatAr } from '../../lib/format'
 export function DoctorProfilePage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const { t } = useApp()
+  const { t, toast } = useApp()
   const [showContact, setShowContact] = useState(false)
   const { data: doctor, isLoading } = useDoctor(id)
 
@@ -150,8 +151,15 @@ export function DoctorProfilePage() {
               <Button size="lg" fullWidth to={`/patient/appointments/new/${doctor.id}`}>
                 <CalendarDays className="h-5 w-5" /> {t('doctors.book')}
               </Button>
-              <Button variant="outline" size="lg" fullWidth onClick={() => setShowContact(true)}>
-                <MessageCircle className="h-4 w-4" /> {t('common.contact')}
+              <Button variant="outline" size="lg" fullWidth onClick={async () => {
+                try {
+                  await apiRoutes.openConversation(doctor.id)
+                  navigate('/patient/messages')
+                } catch (err) {
+                  toast(t('common.error'), err instanceof Error ? err.message : undefined, 'error')
+                }
+              }}>
+                <MessageCircle className="h-4 w-4" /> {t('msg.open')}
               </Button>
             </div>
 

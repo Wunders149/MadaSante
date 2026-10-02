@@ -7,22 +7,26 @@ import { cn } from '../lib/cn'
 
 const statusTone: Record<DeliveryStatus, 'green' | 'amber' | 'blue' | 'slate' | 'brand'> = {
   received: 'amber',
+  pharmacy_confirmed: 'blue',
   preparing: 'blue',
+  delivery_assigned: 'brand',
   in_delivery: 'brand',
   delivered: 'green',
 }
 
 const statusStep: Record<DeliveryStatus, number> = {
   received: 1,
-  preparing: 2,
-  in_delivery: 3,
-  delivered: 4,
+  pharmacy_confirmed: 2,
+  preparing: 3,
+  delivery_assigned: 4,
+  in_delivery: 5,
+  delivered: 6,
 }
 
 export function DeliveryStatusTracker({ status }: { status: DeliveryStatus }) {
   const { t } = useApp()
   const current = statusStep[status]
-  const labels: DeliveryStatus[] = ['received', 'preparing', 'in_delivery', 'delivered']
+  const labels: DeliveryStatus[] = ['received', 'pharmacy_confirmed', 'preparing', 'delivery_assigned', 'in_delivery', 'delivered']
   return (
     <div className="flex items-center gap-1" aria-label="Statut de la livraison">
       {labels.map((label, i) => {

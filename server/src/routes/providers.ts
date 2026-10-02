@@ -165,6 +165,7 @@ const PROVIDER_UNION = `
   UNION ALL SELECT id, 'imaging_center' AS role, name, location, city, NULL AS photo, rating, NULL AS description FROM imaging_centers
   UNION ALL SELECT id, 'hospital' AS role, name, location, city, NULL AS photo, rating, description FROM hospitals
   UNION ALL SELECT id, 'ambulance_driver' AS role, provider AS name, location, city, NULL AS photo, NULL AS rating, NULL AS description FROM ambulances
+  UNION ALL SELECT id, 'delivery_driver' AS role, name, location, city, NULL AS photo, rating, NULL AS description FROM delivery_drivers
   UNION ALL SELECT id, profession AS role, name, location, city, photo, rating, description FROM practitioners
   UNION ALL SELECT id, 'medical_ngo' AS role, name, location, city, NULL AS photo, rating, description FROM medical_ngos
 `

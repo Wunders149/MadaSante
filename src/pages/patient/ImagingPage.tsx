@@ -4,6 +4,7 @@ import { PageHeader } from '../../components/ui/Headers'
 import { SearchBar } from '../../components/SearchBar'
 import { ImagingCard } from '../../components/ImagingCard'
 import { EmptyState } from '../../components/ui/States'
+import { OrientationBanner } from '../../components/OrientationBanner'
 import { useApp } from '../../stores/AppStore'
 import { useImagingCenters } from '../../lib/hooks'
 
@@ -30,11 +31,18 @@ const { t } = useApp()
       <SearchBar value={query} onChange={setQuery} placeholder={t('img.searchPlaceholder')} />
 
       {list.length === 0 ? (
-        <div className="mt-6">
+        <div className="mt-6 space-y-4">
           <EmptyState
             icon={<ScanSearch className="h-6 w-6" />}
             title={t('common.noResults')}
             description={t('common.noResultsDesc')}
+          />
+          <OrientationBanner
+            icon={ScanSearch}
+            compact
+            title={t('imaging.unavailable')}
+            actionLabel={t('orient.title')}
+            actionTo="/patient/orientation"
           />
         </div>
       ) : (
