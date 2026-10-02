@@ -54,17 +54,21 @@ export function PractitionerProfilePage() {
       key: c,
       amount: c === 'home' ? (practitioner.priceHome ?? practitioner.price) : practitioner.price,
     }))
+  const availabilitySummary = practitioner.availabilitySlots.length > 0 ? practitioner.availabilitySlots.slice(0, 4).join(' · ') : t('doctors.noSlot')
 
   return (
     <div className="page-container max-w-5xl py-5 sm:py-7">
-      <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
-        <div>
-          <div className="card p-5">
-            <div className="flex items-start gap-4">
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="space-y-4">
+          <div
+            className="card overflow-hidden border border-brand-100 p-5 sm:p-6"
+            style={{ backgroundImage: 'linear-gradient(90deg, rgba(236,253,245,0.9) 0%, rgba(255,255,255,0.96) 50%, rgba(240,253,244,0.9) 100%)' }}
+          >
+            <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
               <Avatar name={practitioner.name} src={practitioner.photo} size="xl" />
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
-                  <h1 className="text-xl font-extrabold tracking-tight text-ink">{practitioner.name}</h1>
+                  <h1 className="text-xl font-extrabold tracking-tight text-ink sm:text-2xl">{practitioner.name}</h1>
                   {practitioner.rating > 0 && (
                     <span className="flex items-center gap-1 rounded-lg bg-amber-50 px-2 py-1 text-xs font-bold text-amber-700">
                       <Star className="h-3.5 w-3.5 fill-amber-400" />
@@ -75,6 +79,7 @@ export function PractitionerProfilePage() {
                     </span>
                   )}
                 </div>
+
                 <p className="mt-1 flex items-center gap-1.5 text-sm text-ink-soft">
                   <CheckCircle2 className="h-4 w-4 shrink-0 text-brand-600" />
                   {t(roleLabelKey(practitioner.profession))} · {practitioner.specialty}
@@ -87,29 +92,48 @@ export function PractitionerProfilePage() {
                     <Languages className="h-4 w-4 shrink-0" /> {practitioner.languages.join(' · ')}
                   </p>
                 )}
-                <p className="mt-3 text-xs font-medium text-ink-faint">{practitioner.qualification}</p>
-              </div>
-            </div>
 
-            <div className="mt-4 flex flex-wrap gap-1.5">
-              <Badge tone="brand">{t(roleLabelKey(practitioner.profession))}</Badge>
-              {practitioner.services.map((service) => (
-                <Badge key={service} tone="slate">
-                  {service}
-                </Badge>
-              ))}
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <Badge tone="brand">{t(roleLabelKey(practitioner.profession))}</Badge>
+                  {practitioner.services.map((service) => (
+                    <Badge key={service} tone="slate">
+                      {service}
+                    </Badge>
+                  ))}
+                </div>
+
+                <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                  <div className="rounded-2xl border border-white/70 bg-white/70 p-3">
+                    <p className="text-[11px] font-bold uppercase tracking-wide text-ink-faint">Avis</p>
+                    <p className="mt-1 flex items-center gap-1 font-bold text-amber-600">
+                      <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
+                      {practitioner.rating > 0 ? practitioner.rating.toFixed(1) : 'N/A'}
+                    </p>
+                  </div>
+                  <div className="rounded-2xl border border-white/70 bg-white/70 p-3">
+                    <p className="text-[11px] font-bold uppercase tracking-wide text-ink-faint">Créneaux</p>
+                    <p className="mt-1 text-sm font-semibold text-ink">{practitioner.availabilitySlots.length}</p>
+                  </div>
+                  <div className="rounded-2xl border border-white/70 bg-white/70 p-3">
+                    <p className="text-[11px] font-bold uppercase tracking-wide text-ink-faint">Prix</p>
+                    <p className="mt-1 text-sm font-semibold text-ink">{practitioner.price > 0 ? formatAr(practitioner.price) : t('prac.priceOnRequest')}</p>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
           {practitioner.description && (
-            <div className="card mt-4 p-5">
+            <div className="card p-5">
               <h2 className="section-title">{t('prac.about')}</h2>
               <p className="mt-2 text-sm leading-relaxed text-ink-soft">{practitioner.description}</p>
+              <p className="mt-3 text-xs font-medium text-ink-faint">{practitioner.qualification}</p>
             </div>
           )}
 
-          <div className="card mt-4 p-5">
+          <div className="card p-5">
             <h2 className="section-title">{t('doctors.slots')}</h2>
+            <p className="mt-2 text-sm text-ink-soft">{availabilitySummary}</p>
             <div className="mt-3 flex flex-wrap gap-1.5">
               {practitioner.availabilitySlots.length === 0 ? (
                 <p className="text-sm text-ink-soft">{t('doctors.noSlot')}</p>
@@ -163,6 +187,14 @@ export function PractitionerProfilePage() {
             {t('msg.open')}
           </Button>
 
+          <button
+            type="button"
+            onClick={() => setContactOpen(true)}
+            className="mt-3 w-full rounded-xl border border-line bg-slate-50 px-3 py-2.5 text-sm font-semibold text-ink-soft transition hover:border-brand-200 hover:text-brand-700"
+          >
+            Voir les détails de contact
+          </button>
+
           <Link
             to="/patient/professionals"
             className="mt-4 block text-center text-xs font-semibold text-brand-700 hover:text-brand-800"
@@ -172,8 +204,6 @@ export function PractitionerProfilePage() {
         </aside>
       </div>
 
-      {/* Small info popup: centered like the confirmation dialogs rather
-          than docked as a sheet. */}
       <Modal
         open={contactOpen}
         onClose={() => setContactOpen(false)}
