@@ -4,6 +4,7 @@ import { Button } from './ui/Button'
 import { PasswordInput } from './ui/Field'
 import { useApp } from '../stores/AppStore'
 import { apiRoutes } from '../lib/api'
+import { getPasswordIssues } from '../lib/password'
 
 export function PasswordChange() {
   const { t, toast } = useApp()
@@ -17,8 +18,13 @@ export function PasswordChange() {
       toast(t('common.error'), t('profile.passwordMismatch'), 'error')
       return
     }
-    if (next.length < 6) {
-      toast(t('common.error'), t('profile.passwordTooShort'), 'error')
+
+    const issues = getPasswordIssues(next)
+    if (issues.length > 0) {
+      const message = issues.includes('length')
+        ? t('profile.passwordTooShort')
+        : t('profile.passwordPolicy')
+      toast(t('common.error'), message, 'error')
       return
     }
     setSaving(true)

@@ -2,6 +2,7 @@ import { useId, useState } from 'react'
 import type { InputHTMLAttributes, ReactNode, SelectHTMLAttributes, TextareaHTMLAttributes } from 'react'
 import { Check, Eye, EyeOff, X } from 'lucide-react'
 import { cn } from '../../lib/cn'
+import { getPasswordScore } from '../../lib/password'
 import { useApp } from '../../stores/AppStore'
 
 const controlBase =
@@ -69,12 +70,7 @@ export function PasswordInput({
   const [visible, setVisible] = useState(false)
 
   const text = typeof value === 'string' ? value : ''
-  const score = [
-    text.length >= 6,
-    /[a-z]/.test(text),
-    /[A-Z]/.test(text),
-    /\d/.test(text),
-  ].filter(Boolean).length
+  const score = getPasswordScore(text)
   const band = [
     { min: 1, labelKey: 'weak', bar: 'bg-red-400', text: 'text-red-500' },
     { min: 2, labelKey: 'fair', bar: 'bg-amber-400', text: 'text-amber-600' },

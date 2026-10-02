@@ -506,6 +506,7 @@ export const en: Record<string, string> = {
   'profile.passwordChangedDesc': 'Your password was changed successfully.',
   'profile.passwordMismatch': 'Passwords do not match.',
   'profile.passwordTooShort': 'The new password must be at least 6 characters.',
+  'profile.passwordPolicy': 'Use at least 6 characters, including one uppercase letter and one digit.',
 
   'prov.title': 'Professional space',
   'prov.dashboard': 'Dashboard',

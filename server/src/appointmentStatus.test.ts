@@ -123,7 +123,7 @@ test('provider roles are recognised, and allied health counts as providers', () 
   assert.equal(isPractitionerRole('doctor'), false, 'doctors have their own catalog table')
   assert.equal(PRACTITIONER_ROLES.length, 7)
   assert.equal(new Set(PROVIDER_ROLES).size, PROVIDER_ROLES.length, 'no duplicate roles')
-  assert.equal(PROVIDER_ROLES.length, 15)
+  assert.equal(PROVIDER_ROLES.length, 16)
 })
 
 test('uniqueId produces distinct, prefix-tagged identifiers', () => {

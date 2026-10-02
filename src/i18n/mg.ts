@@ -524,6 +524,7 @@ export const mg: Record<string, string> = {
   'profile.passwordChangedDesc': 'Voaova soa aman-tsara ny teny miafinao.',
   'profile.passwordMismatch': 'Tsy mitovy ny teny miafina roa.',
   'profile.passwordTooShort': 'Tsy maintsy misy litera 6 farafahakeliny ny teny miafina vaovao.',
+  'profile.passwordPolicy': 'Ampiasao litera 6 farafahakeliny, misy litera lehibe iray ary isa iray farafahakeliny.',
 
   // Provider
   'prov.title': 'Toeran’ny matihanina',

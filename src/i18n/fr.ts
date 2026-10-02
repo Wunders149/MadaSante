@@ -527,6 +527,7 @@ export const fr: Record<string, string> = {
   'profile.passwordChangedDesc': 'Votre mot de passe a été modifié avec succès.',
   'profile.passwordMismatch': 'Les mots de passe ne correspondent pas.',
   'profile.passwordTooShort': 'Le nouveau mot de passe doit contenir au moins 6 caractères.',
+  'profile.passwordPolicy': 'Utilisez au moins 6 caractères, dont une majuscule et un chiffre.',
 
   // Provider
   'prov.title': 'Espace professionnel',

@@ -7,6 +7,7 @@ import { Input, PasswordInput, Select } from '../../components/ui/Field'
 import { useApp } from '../../stores/AppStore'
 import { apiRoutes } from '../../lib/api'
 import { CITIES } from '../../lib/constants'
+import { getPasswordIssues } from '../../lib/password'
 import { roleLabelKey, PROVIDER_ROLES } from '../../lib/roles'
 import type { Role } from '../../types'
 
@@ -71,6 +72,11 @@ export function ProviderRegisterPage() {
     setError('')
     if (form.password !== form.passwordConfirm) {
       setError(t('reg.passwordMismatch'))
+      return
+    }
+    const issues = getPasswordIssues(form.password)
+    if (issues.length > 0) {
+      setError(t('ui.pw.hint'))
       return
     }
     if (docs.length === 0) {

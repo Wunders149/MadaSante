@@ -89,7 +89,7 @@ export function AdminApplicationsPage() {
           />
         </div>
 
-        <label className="flex min-w-[170px] flex-col gap-1 text-xs font-semibold text-ink-faint">
+        <label className="flex min-w-42.5 flex-col gap-1 text-xs font-semibold text-ink-faint">
           <span>Tri</span>
           <select
             value={sortMode}

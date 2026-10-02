@@ -7,6 +7,7 @@ import { Input, PasswordInput, Select } from '../../components/ui/Field'
 import { useApp } from '../../stores/AppStore'
 import { useAuth } from '../../stores/AuthStore'
 import { CITIES } from '../../lib/constants'
+import { getPasswordIssues } from '../../lib/password'
 
 export function RegisterPage() {
   const { t } = useApp()
@@ -32,7 +33,12 @@ export function RegisterPage() {
     e.preventDefault()
     setError('')
     if (form.password !== form.passwordConfirm) {
-      setError('Les mots de passe ne correspondent pas.')
+      setError(t('reg.passwordMismatch'))
+      return
+    }
+    const issues = getPasswordIssues(form.password)
+    if (issues.length > 0) {
+      setError(t('ui.pw.hint'))
       return
     }
     setLoading(true)
